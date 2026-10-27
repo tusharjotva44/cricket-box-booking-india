@@ -107,3 +107,12 @@
 @keyframes stadiumBallMove{0%,100%{translate:0 0}25%{translate:-8px 5px}50%{translate:-3px 13px}75%{translate:6px 5px}}
 @keyframes stadiumBallGlow{from{box-shadow:0 5px 15px #0003,0 0 0 0 #c6f44d22}to{box-shadow:0 5px 18px #0004,0 0 0 9px #c6f44d18}}
 @media(prefers-reduced-motion:reduce){.stadium,.stadium:before,.stadium .pitch,.stadium .pitch:before,.stadium .pitch:after,.stadium .stumps,.stadium .ball{animation:none!important}}
+
+
+/* Header WhatsApp contact */
+.header-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.whatsapp-contact{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 13px;border:1px solid #b7e4c7;border-radius:12px;background:#ecfdf3;color:#128c4a;font-size:13px;font-weight:700;white-space:nowrap;transition:background .2s,border-color .2s,transform .2s}
+.whatsapp-contact svg{width:21px;height:21px;flex:0 0 21px}
+.whatsapp-contact:hover{background:#dcfce7;border-color:#25d366;transform:translateY(-1px)}
+@media(max-width:650px){.header-actions{gap:7px}.whatsapp-contact{gap:5px;padding:9px 8px;font-size:11px}.whatsapp-contact svg{width:18px;height:18px;flex-basis:18px}.owner-btn{font-size:10px;padding:9px 8px}}
+@media(max-width:370px){.whatsapp-contact span{display:none}.whatsapp-contact{padding:9px}}
