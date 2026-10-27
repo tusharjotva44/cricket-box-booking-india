@@ -3,7 +3,8 @@ const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', own
 const demoGrounds = [
  {id:'demo1',sportType:'Box Cricket',name:'Greenfield Cricket Arena',location:'Ahmedabad, Gujarat',price:1200,description:'Well-maintained turf, floodlights and space for your team.',image:'',slots:['06:00 AM','07:00 AM','08:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true},
  {id:'demo2',sportType:'Box Cricket',name:'PowerPlay Box Cricket',location:'Surat, Gujarat',price:1500,description:'A lively box cricket venue for friends and weekend matches.',image:'',slots:['07:00 AM','08:00 AM','09:00 AM','05:00 PM','06:00 PM','09:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo3',sportType:'Box Cricket',name:'The Cricket Yard',location:'Vadodara, Gujarat',price:1000,description:'Convenient local turf with flexible evening slots.',image:'',slots:['06:00 AM','08:00 AM','04:00 PM','06:00 PM','07:00 PM'],owner:'demo-owner',demo:true}
+ {id:'demo3',sportType:'Box Cricket',name:'The Cricket Yard',location:'Vadodara, Gujarat',price:1000,description:'Convenient local turf with flexible evening slots.',image:'',slots:['06:00 AM','08:00 AM','04:00 PM','06:00 PM','07:00 PM'],owner:'demo-owner',demo:true},
+ {id:'demo4',sportType:'Pickleball',name:'Demo Pickleball Court',location:'Ahmedabad, Gujarat',price:800,description:'Test pickleball court listing for previewing sport filters and slot booking.',image:'',slots:['08:00 AM','09:00 AM','10:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true}
 ];
 const read = (key, fallback=[]) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
 const write = (key,value) => localStorage.setItem(key,JSON.stringify(value));
