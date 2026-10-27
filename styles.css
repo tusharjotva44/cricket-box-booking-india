@@ -90,3 +90,20 @@
 @media(max-width:800px){.owner-cta{margin:10px 5% 55px;padding:38px 6%;grid-template-columns:1fr;gap:8px}.owner-cta h2{font-size:38px}.owner-cta-visual{height:285px;margin-top:10px}.owner-float-tag-top{right:0}.owner-float-tag-bottom{left:0}}
 @media(max-width:430px){.owner-cta{padding:30px 22px;border-radius:23px}.owner-cta h2{font-size:33px}.owner-cta p{font-size:14px}.owner-cta-points{gap:9px;flex-direction:column}.owner-cta-visual{transform:scale(.9);margin:0 -12px}.owner-float-tag{padding:10px 11px}.owner-float-tag-top{right:-6px}.owner-float-tag-bottom{left:-7px}}
 @media(prefers-reduced-motion:reduce){.owner-cta-visual,.owner-court,.owner-ball,.owner-float-tag,.owner-visual-glow{animation:none!important}.owner-cta-action,.owner-cta-action span{transition:none!important}}
+
+
+/* Animated cricket stadium illustration */
+.stadium{transform-origin:center;animation:stadiumFloat 5s ease-in-out infinite;will-change:transform}
+.stadium:before{animation:stadiumBoundaryGlow 3.5s ease-in-out infinite alternate}
+.stadium .pitch{transform-origin:center;animation:pitchShimmer 4s ease-in-out infinite}
+.stadium .pitch:before,.stadium .pitch:after{animation:pitchLinesGlow 2.8s ease-in-out infinite alternate}
+.stadium .stumps{transform-origin:center;animation:stumpsBounce 2.6s ease-in-out infinite}
+.stadium .ball{animation:stadiumBallMove 3.2s ease-in-out infinite,stadiumBallGlow 1.8s ease-in-out infinite alternate;will-change:transform}
+@keyframes stadiumFloat{0%,100%{translate:0 0;rotate:-12deg}50%{translate:0 -8px;rotate:-9deg}}
+@keyframes stadiumBoundaryGlow{from{border-color:#9fc47f;opacity:.65}to{border-color:#d4f5a4;opacity:1}}
+@keyframes pitchShimmer{0%,100%{filter:brightness(1)}50%{filter:brightness(1.13)}}
+@keyframes pitchLinesGlow{from{opacity:.65}to{opacity:1}}
+@keyframes stumpsBounce{0%,100%{translate:0 0}50%{translate:0 -3px}}
+@keyframes stadiumBallMove{0%,100%{translate:0 0}25%{translate:-8px 5px}50%{translate:-3px 13px}75%{translate:6px 5px}}
+@keyframes stadiumBallGlow{from{box-shadow:0 5px 15px #0003,0 0 0 0 #c6f44d22}to{box-shadow:0 5px 18px #0004,0 0 0 9px #c6f44d18}}
+@media(prefers-reduced-motion:reduce){.stadium,.stadium:before,.stadium .pitch,.stadium .pitch:before,.stadium .pitch:after,.stadium .stumps,.stadium .ball{animation:none!important}}
