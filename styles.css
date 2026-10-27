@@ -7,3 +7,22 @@
 .booking-availability{margin:0;padding:12px 14px;border:1px solid #dce7d5;border-radius:10px;background:#f4f8ef;color:#526b46;font-size:12px;line-height:1.5}.modal select{width:100%;border:1px solid #e1e7df;background:#fbfcfa;border-radius:9px;padding:12px;font-size:13px;color:var(--ink)}
 
 .search-panel select{width:100%;border:1px solid #e1e7df;background:#fbfcfa;border-radius:9px;padding:12px;font-size:13px;letter-spacing:0;color:var(--ink);outline:none}.search-panel select:focus{border-color:#fb923c}
+
+
+/* About Us feature cards */
+#about .section-heading{text-align:center;max-width:760px;margin:0 auto 34px}
+#about .section-heading>p{margin:0 auto;max-width:650px;color:var(--muted);line-height:1.8}
+#about .how-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;max-width:1120px;margin:0 auto}
+#about .how-card{position:relative;overflow:hidden;isolation:isolate;min-height:230px;padding:30px 26px;background:linear-gradient(145deg,#fff 0%,#fff7ed 100%);border:1px solid #fed7aa;border-radius:22px;box-shadow:0 8px 24px rgba(23,37,84,.06);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s;animation:aboutCardIn .65s both}
+#about .how-card:nth-child(2){animation-delay:.12s}
+#about .how-card:nth-child(3){animation-delay:.24s}
+#about .how-card:before{content:"";position:absolute;z-index:-1;width:150px;height:150px;right:-65px;top:-70px;border-radius:50%;background:rgba(249,115,22,.09);transition:transform .4s,background .4s}
+#about .how-card:hover{transform:translateY(-9px);border-color:#f97316;box-shadow:0 20px 38px rgba(23,37,84,.13)}
+#about .how-card:hover:before{transform:scale(1.55);background:rgba(249,115,22,.16)}
+#about .how-icon{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:#ffedd5;border:1px solid #fed7aa;font-size:28px;margin-bottom:23px;transition:transform .35s,background .35s}
+#about .how-card:hover .how-icon{transform:translateY(-3px) rotate(-5deg) scale(1.08);background:#fed7aa}
+#about .how-card h3{font:700 21px/1.25 'Space Grotesk',sans-serif;color:var(--ink);margin:0 0 12px;letter-spacing:-.4px}
+#about .how-card p{font-size:14px;line-height:1.75;color:var(--muted);margin:0}
+@keyframes aboutCardIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:800px){#about .how-grid{grid-template-columns:1fr;gap:16px}#about .how-card{min-height:0;padding:25px}}
+@media(prefers-reduced-motion:reduce){#about .how-card,#about .how-icon,#about .how-card:before{animation:none!important;transition:none!important}}
