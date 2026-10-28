@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffaf5">
+  <title>Owner Dashboard | BoxBook India</title>
+  <link rel="stylesheet" href="owner-dashboard.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="index.html" aria-label="BoxBook India home">
+      <span class="brand-mark"><svg viewBox="0 0 44 46" role="img" aria-label="BoxBook shield logo"><path d="M22 2.5 39 9v12.2c0 10.1-6.7 16.5-17 20.3C11.7 37.7 5 31.3 5 21.2V9z" fill="#F97316" stroke="#F97316" stroke-width="1.2"/><path d="M13 29 25 13.5a2.1 2.1 0 0 1 3.3 2.5L17.3 31.2Z" fill="#fff"/><circle cx="29.2" cy="29.1" r="4" fill="#fff"/></svg></span>
+      <span class="brand-name">BoxBook <em>| India</em><small>CRICKET TURF BOOKING</small></span>
+    </a>
+    <div class="side-label">OWNER WORKSPACE</div>
+    <nav class="side-nav" aria-label="Dashboard navigation">
+      <button class="nav-link active" data-view="overview"><span>▦</span> Overview</button>
+      <button class="nav-link" data-view="grounds"><span>⌂</span> My Grounds</button>
+      <button class="nav-link" data-view="bookings"><span>▤</span> Bookings <b class="nav-count" id="bookingCount">2</b></button>
+      <button class="nav-link" data-view="subscription"><span>◇</span> Subscription</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="help-card"><span class="help-icon">?</span><strong>Need help?</strong><p>Questions about managing your grounds?</p><a href="https://wa.me/918320353848" target="_blank" rel="noopener noreferrer">Contact support ↗</a></div>
+      <a class="back-link" href="index.html">← Back to website</a>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
+      <div class="breadcrumb">Owner Workspace <span>/</span> <strong id="breadcrumbTitle">Overview</strong></div>
+      <div class="profile">
+        <div class="avatar">O</div><div class="profile-copy"><strong>Demo Owner</strong><small>demo@boxbook.in</small></div><span class="demo-pill">DEMO</span>
+      </div>
+    </header>
+    <div class="content">
+      <section class="view active" id="view-overview">
+        <div class="page-heading"><div><span class="eyebrow">YOUR BUSINESS AT A GLANCE</span><h1>Owner Dashboard</h1><p>Welcome back! Here’s what’s happening with your grounds.</p></div><button class="primary-btn" data-go="grounds">＋ Add a Ground</button></div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span>Active Grounds</span><span class="stat-icon orange">⌂</span></div><strong id="statGrounds">1</strong><small><span class="tiny-dot"></span> Listed on BoxBook</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Upcoming Bookings</span><span class="stat-icon navy">▤</span></div><strong id="statBookings">2</strong><small>Bookings in this demo</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Estimated Revenue</span><span class="stat-icon peach">₹</span></div><strong id="statRevenue">₹2,400</strong><small>From sample bookings</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Subscription</span><span class="stat-icon green">◇</span></div><strong class="plan-stat">Demo Plan</strong><small><span class="status-dot"></span> Preview mode</small></article>
+        </div>
+        <div class="section-grid">
+          <article class="panel"><div class="panel-heading"><div><h2>Recent Bookings</h2><p>Keep track of your latest requests.</p></div><button class="text-btn" data-go="bookings">View all →</button></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="recentBookingRows"></tbody></table></div></article>
+          <article class="panel quick-panel"><div class="panel-heading"><div><h2>Quick Actions</h2><p>Manage your venue faster.</p></div></div><button class="quick-action" data-go="grounds"><span class="quick-icon">＋</span><span><strong>Add a new ground</strong><small>List another sports venue</small></span><b>→</b></button><button class="quick-action" data-go="bookings"><span class="quick-icon">▤</span><span><strong>Check bookings</strong><small>Review booking requests</small></span><b>→</b></button><button class="quick-action" data-go="subscription"><span class="quick-icon">◇</span><span><strong>View subscription</strong><small>See demo plan options</small></span><b>→</b></button><div class="notice"><strong>Demo dashboard</strong><p>Changes on this page are saved only in this browser. No real payments or bookings are processed.</p></div></article>
+        </div>
+      </section>
+      <section class="view" id="view-grounds">
+        <div class="page-heading"><div><span class="eyebrow">YOUR VENUES</span><h1>My Grounds</h1><p>Add and manage the grounds listed under your owner account.</p></div><button class="primary-btn" id="showGroundForm">＋ Add a Ground</button></div>
+        <div class="panel form-panel hidden" id="groundFormPanel"><div class="panel-heading"><div><h2>Add a ground</h2><p>Demo listing — saved in this browser only.</p></div><button class="icon-btn" id="cancelGroundForm" aria-label="Close form">✕</button></div><form id="groundForm" class="ground-form"><label>Ground name<input id="groundName" required maxlength="70" placeholder="e.g. Sunrise Box Cricket"></label><label>Sport type<select id="groundSport"><option>Box Cricket</option><option>Pickleball</option></select></label><label>Location<input id="groundLocation" required maxlength="100" placeholder="City or area"></label><label>Price per hour (₹)<input id="groundPrice" type="number" min="1" max="100000" required placeholder="1200"></label><label class="full">Short description<textarea id="groundDescription" rows="3" maxlength="220" placeholder="Tell players about your ground"></textarea></label><div class="form-actions full"><button type="button" class="secondary-btn" id="cancelGroundForm2">Cancel</button><button class="primary-btn" type="submit">Save Ground</button></div></form></div>
+        <div class="grounds-grid" id="groundsGrid"></div><div class="empty-state hidden" id="groundsEmpty"><span>⌂</span><h3>No grounds added yet</h3><p>Add your first venue to see it listed here.</p><button class="primary-btn" data-open-form>＋ Add a Ground</button></div>
+      </section>
+      <section class="view" id="view-bookings">
+        <div class="page-heading"><div><span class="eyebrow">RESERVATIONS</span><h1>Bookings</h1><p>Review the sample booking activity for your venue.</p></div><span class="demo-pill large">SAMPLE DATA</span></div>
+        <div class="panel"><div class="panel-heading"><div><h2>All Bookings</h2><p>Sample records for dashboard preview.</p></div><select class="filter-select" id="bookingFilter" aria-label="Filter bookings"><option value="all">All statuses</option><option value="Confirmed">Confirmed</option><option value="Pending">Pending</option></select></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="bookingRows"></tbody></table></div><p class="table-note">These are illustrative demo bookings, not real customer reservations.</p></div>
+      </section>
+      <section class="view" id="view-subscription">
+        <div class="page-heading"><div><span class="eyebrow">OWNER PLAN</span><h1>Subscription</h1><p>Preview the plan options for managing your grounds.</p></div><span class="demo-pill large">DEMO MODE</span></div>
+        <div class="subscription-banner"><div><span class="eyebrow">BOXBOOK OWNER PLANS</span><h2>Choose the plan that fits your business.</h2><p>This is a visual demo. Prices and plan activation are not connected to a payment system.</p></div><div class="banner-symbol">◇</div></div>
+        <div class="plans-grid"><article class="plan-card"><span class="plan-label">FLEXIBLE</span><h3>Monthly</h3><p>For owners who want to start month by month.</p><div class="plan-price">₹— <small>/ month</small></div><ul><li>Manage your ground listings</li><li>View booking information</li><li>Demo dashboard access</li></ul><button class="secondary-btn plan-select" data-plan="Monthly">Select Monthly</button></article><article class="plan-card featured-plan"><span class="popular-label">POPULAR</span><span class="plan-label">BEST VALUE</span><h3>Yearly</h3><p>For owners planning ahead for the year.</p><div class="plan-price">₹— <small>/ year</small></div><ul><li>Manage your ground listings</li><li>View booking information</li><li>Demo dashboard access</li></ul><button class="primary-btn plan-select" data-plan="Yearly">Select Yearly</button></article></div>
+        <div class="notice subscription-note"><strong id="planNoticeTitle">No plan selected</strong><p id="planNoticeText">Choose an option above to preview a plan selection. No payment will be taken.</p></div>
+      </section>
+      <footer class="footer"><span>© 2026 BoxBook | India</span><span>Play more. Plan less.</span></footer>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="owner-dashboard.js"></script>
+</body>
+</html>
