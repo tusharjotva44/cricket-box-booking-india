@@ -26,7 +26,7 @@
   }
   function bookingRow(b, full=false) {
     return '<tr><td><span class="booking-id">' + escapeHTML(b.id) + '</span></td>' +
-      (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small>' + escapeHTML(b.email) + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '') +
+      (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small>' + escapeHTML(b.email) + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
       '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : 'pending') + '">' + escapeHTML(b.status) + '</span></td></tr>';
   }
   function renderBookings() {
@@ -73,5 +73,20 @@
     toast(selectedPlan + ' plan selected in demo mode.');
   }));
   renderGrounds(); renderBookings();
-  window.addEventListener('storage', event => { if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); } if (event.key === STORE.bookings) renderBookings(); });
+  let knownBookingIds = new Set(sampleBookings.map(b => b.id));
+  window.addEventListener('storage', event => {
+    if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); }
+    if (event.key === STORE.bookings) {
+      const latest = bookingsForOwner();
+      const incoming = latest.filter(b => !knownBookingIds.has(b.id));
+      incoming.forEach(b => {
+        toast('New booking request from ' + b.customer + ' for ' + b.ground + '.');
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('New BoxBook booking request', {body: b.customer + ' · ' + b.ground + ' · ' + b.date + ' · ' + b.time});
+        }
+      });
+      knownBookingIds = new Set(latest.map(b => b.id));
+      renderBookings();
+    }
+  });
 })();
