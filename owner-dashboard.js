@@ -1,19 +1,15 @@
 (() => {
-  const STORE_KEY = 'boxbook_owner_dashboard_demo_grounds_v1';
+  const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1'};
+  const OWNER_EMAIL = 'demo@boxbook.in';
   const $ = (id) => document.getElementById(id);
-  const sampleBookings = [
-    {id:'BB-1042',customer:'Aarav Patel',email:'aarav@example.test',ground:'Sunrise Box Arena',date:'28 Oct 2026',time:'06:00 PM – 07:00 PM',amount:1200,status:'Confirmed'},
-    {id:'BB-1041',customer:'Mira Shah',email:'mira@example.test',ground:'Sunrise Box Arena',date:'29 Oct 2026',time:'07:00 PM – 08:00 PM',amount:1200,status:'Pending'}
-  ];
-  const baseGrounds = [{id:'sample-ground',name:'Sunrise Box Arena',sport:'Box Cricket',location:'Ahmedabad, Gujarat',price:1200,description:'A sample cricket venue with evening slots and a welcoming playing space.'}];
+  const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
+  const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
+  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:0, status:'Confirmed'}));
   let selectedPlan = '';
   let toastTimer;
-  const readGrounds = () => {
-    try { const data = JSON.parse(localStorage.getItem(STORE_KEY)); return Array.isArray(data) ? data : baseGrounds; }
-    catch { return baseGrounds; }
-  };
-  let grounds = readGrounds();
-  const saveGrounds = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(grounds)); } catch {} };
+  let grounds = groundsForOwner();
+  let sampleBookings = bookingsForOwner();
+  const saveGrounds = () => { try { const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL); localStorage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))])); } catch {} };
   const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
   const escapeHTML = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function toast(message) {
@@ -34,6 +30,7 @@
       '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : 'pending') + '">' + escapeHTML(b.status) + '</span></td></tr>';
   }
   function renderBookings() {
+    sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
     const list = sampleBookings.filter(b => filter === 'all' || b.status === filter);
     $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="6">No bookings match this filter.</td></tr>';
@@ -44,7 +41,7 @@
   }
   function renderGrounds() {
     $('statGrounds').textContent = String(grounds.length);
-    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Browser preview</small>' + (g.id !== 'sample-ground' ? '<button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button>' : '<span></span>') + '</div></div></article>').join('');
+    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></div>').join('');
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
   }
@@ -60,12 +57,12 @@
     const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), price = Number($('groundPrice').value);
     if (!name || !location || !Number.isFinite(price) || price < 1) { toast('Please check the ground details.'); return; }
     if (grounds.length >= 2) { toast('Demo limit reached: maximum 2 grounds in this preview.'); return; }
-    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,location,price,description:$('groundDescription').value.trim()});
+    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,price,description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
     saveGrounds(); renderGrounds(); $('groundForm').reset(); $('groundFormPanel').classList.add('hidden'); toast('Ground added to this browser demo.');
   });
   $('groundsGrid').addEventListener('click', event => {
     const button = event.target.closest('[data-delete]'); if (!button) return;
-    grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed.');
+    grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed from the shared listing.');
   });
   $('bookingFilter').addEventListener('change', renderBookings);
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
@@ -76,4 +73,5 @@
     toast(selectedPlan + ' plan selected in demo mode.');
   }));
   renderGrounds(); renderBookings();
+  window.addEventListener('storage', event => { if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); } if (event.key === STORE.bookings) renderBookings(); });
 })();
