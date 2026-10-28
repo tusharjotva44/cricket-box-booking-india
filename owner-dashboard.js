@@ -4,7 +4,7 @@
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
-  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:0, status:'Confirmed'}));
+  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:0, status:b.status || 'Pending'}));
   let selectedPlan = '';
   let toastTimer;
   let grounds = groundsForOwner();
@@ -27,13 +27,13 @@
   function bookingRow(b, full=false) {
     return '<tr><td><span class="booking-id">' + escapeHTML(b.id) + '</span></td>' +
       (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small>' + escapeHTML(b.email) + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
-      '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : 'pending') + '">' + escapeHTML(b.status) + '</span></td></tr>';
+      '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : b.status === 'Rejected' ? 'rejected' : 'pending') + '">' + escapeHTML(b.status) + '</span></td>' + (full ? '<td>' + (b.status === 'Pending' ? '<button type="button" class="reject-btn" data-reject="' + escapeHTML(b.id) + '">Reject</button>' : '—') + '</td>' : '') + '</tr>';
   }
   function renderBookings() {
     sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
     const list = sampleBookings.filter(b => filter === 'all' || b.status === filter);
-    $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="6">No bookings match this filter.</td></tr>';
+    $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="7">No bookings match this filter.</td></tr>';
     $('recentBookingRows').innerHTML = sampleBookings.slice(0, 2).map(b => bookingRow(b, false)).join('');
     $('statBookings').textContent = String(sampleBookings.length);
     $('bookingCount').textContent = String(sampleBookings.filter(b => b.status === 'Pending').length);
@@ -65,6 +65,18 @@
     grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed from the shared listing.');
   });
   $('bookingFilter').addEventListener('change', renderBookings);
+  $('bookingRows').addEventListener('click', event => {
+    const button = event.target.closest('[data-reject]');
+    if (!button) return;
+    const bookingId = button.dataset.reject;
+    const allBookings = readList(STORE.bookings);
+    const booking = allBookings.find(b => b.id === bookingId && b.owner === OWNER_EMAIL);
+    if (!booking || (booking.status && booking.status !== 'Pending')) return;
+    booking.status = 'Rejected';
+    try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save the rejection in this browser.'); return; }
+    renderBookings();
+    toast('Booking request rejected.');
+  });
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
     selectedPlan = button.dataset.plan;
     $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
