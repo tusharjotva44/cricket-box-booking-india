@@ -4,7 +4,7 @@
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
-  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:0, status:b.status || 'Pending'}));
+  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:0, status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = '';
   let toastTimer;
   let grounds = groundsForOwner();
@@ -24,10 +24,22 @@
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
   }
+  function timeMinutes(value) { const m = /^(\d{2}):(\d{2})$/.exec(value || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+  function rangeForBooking(b) {
+    let start=b.startTime,end=b.endTime;
+    if ((!start||!end)&&b.slot) {
+      const m=/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(b.slot);
+      if(m){let sh=Number(m[1])%12,eh=Number(m[4])%12;if(m[3].toUpperCase()==='PM')sh+=12;if(m[6].toUpperCase()==='PM')eh+=12;start=String(sh).padStart(2,'0')+':'+m[2];end=String(eh).padStart(2,'0')+':'+m[5];}
+    }
+    const sm=timeMinutes(start),em=timeMinutes(end);if(!b.date||sm===null||em===null||sm===em)return null;
+    const a=new Date(b.date+'T00:00:00');a.setMinutes(sm);const z=new Date(b.date+'T00:00:00');z.setMinutes(em);if(em<=sm)z.setDate(z.getDate()+1);
+    return {groundId:b.groundId,start:a.getTime(),end:z.getTime()};
+  }
+  function overlaps(a,b) { const x=rangeForBooking(a),y=rangeForBooking(b);return !!(x&&y&&x.groundId===y.groundId&&x.start<y.end&&x.end>y.start); }
   function bookingRow(b, full=false) {
     return '<tr><td><span class="booking-id">' + escapeHTML(b.id) + '</span></td>' +
       (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small>' + escapeHTML(b.email) + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
-      '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : b.status === 'Rejected' ? 'rejected' : 'pending') + '">' + escapeHTML(b.status) + '</span></td>' + (full ? '<td>' + (b.status === 'Pending' ? '<button type="button" class="reject-btn" data-reject="' + escapeHTML(b.id) + '">Reject</button>' : '—') + '</td>' : '') + '</tr>';
+      '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : (b.status === 'Rejected' || b.status === 'Expired') ? 'rejected' : 'pending') + '">' + escapeHTML(b.status) + '</span></td>' + (full ? '<td>' + (b.status === 'Pending' ? '<button type="button" class="approve-btn" data-approve="' + escapeHTML(b.id) + '">Approve</button> <button type="button" class="reject-btn" data-reject="' + escapeHTML(b.id) + '">Reject</button>' : '—') + '</td>' : '') + '</tr>';
   }
   function renderBookings() {
     sampleBookings = bookingsForOwner();
@@ -66,16 +78,21 @@
   });
   $('bookingFilter').addEventListener('change', renderBookings);
   $('bookingRows').addEventListener('click', event => {
-    const button = event.target.closest('[data-reject]');
-    if (!button) return;
-    const bookingId = button.dataset.reject;
+    const approveButton = event.target.closest('[data-approve]');
+    const rejectButton = event.target.closest('[data-reject]');
+    if (!approveButton && !rejectButton) return;
+    const bookingId = approveButton ? approveButton.dataset.approve : rejectButton.dataset.reject;
     const allBookings = readList(STORE.bookings);
     const booking = allBookings.find(b => b.id === bookingId && b.owner === OWNER_EMAIL);
     if (!booking || (booking.status && booking.status !== 'Pending')) return;
-    booking.status = 'Rejected';
-    try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save the rejection in this browser.'); return; }
-    renderBookings();
-    toast('Booking request rejected.');
+    if (booking.holdExpiresAt && Number(booking.holdExpiresAt) <= Date.now()) { booking.status = 'Expired'; try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch {} renderBookings(); toast('Pending hold expired. Slot is available again.'); return; }
+    if (rejectButton) { booking.status = 'Rejected'; try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save the rejection in this browser.'); return; } renderBookings(); toast('Booking request rejected. Slot released.'); return; }
+    const confirmedConflict = allBookings.some(other => other.id !== booking.id && other.groundId === booking.groundId && other.status === 'Confirmed' && overlaps(booking, other));
+    if (confirmedConflict) { toast('This time overlaps an already confirmed booking.'); return; }
+    booking.status = 'Confirmed'; booking.confirmedAt = Date.now();
+    allBookings.forEach(other => { if (other.id !== booking.id && other.owner === OWNER_EMAIL && (!other.status || other.status === 'Pending') && (!other.holdExpiresAt || Number(other.holdExpiresAt) > Date.now()) && overlaps(booking, other)) other.status = 'Rejected'; });
+    try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save approval in this browser.'); return; }
+    renderBookings(); toast('Booking approved. Overlapping pending requests were rejected so the slot cannot be confirmed twice.');
   });
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
     selectedPlan = button.dataset.plan;
