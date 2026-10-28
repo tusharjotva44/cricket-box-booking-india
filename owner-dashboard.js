@@ -69,7 +69,7 @@
     const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), price = Number($('groundPrice').value);
     if (!name || !location || !Number.isFinite(price) || price < 1) { toast('Please check the ground details.'); return; }
     if (grounds.length >= 2) { toast('Demo limit reached: maximum 2 grounds in this preview.'); return; }
-    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,price,description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
+    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,price,upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
     saveGrounds(); renderGrounds(); $('groundForm').reset(); $('groundFormPanel').classList.add('hidden'); toast('Ground added to this browser demo.');
   });
   $('groundsGrid').addEventListener('click', event => {
