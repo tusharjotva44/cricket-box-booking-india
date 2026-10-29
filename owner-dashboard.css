@@ -68,3 +68,15 @@
 .nav-link .workspace-icon svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .nav-link.active .workspace-icon{color:#000}
 .nav-link.active .workspace-icon svg{stroke-width:1.9}
+
+/* Subscription cards: compact sizing leaves room for yearly plans later. */
+.plans-grid{display:flex;justify-content:center;align-items:stretch;gap:16px;flex-wrap:wrap}
+.plans-grid .plan-card{flex:0 1 260px;max-width:280px;padding:18px}
+.plans-grid .plan-card h3{font-size:19px;margin:8px 0}
+.plans-grid .plan-card>p{font-size:11px;min-height:34px}
+.plans-grid .plan-price{font-size:27px;margin:15px 0}
+.plans-grid .plan-card ul{gap:9px;margin-bottom:18px}
+.plans-grid .plan-card li{font-size:10px}
+.plans-grid .plan-select{background:var(--orange);color:#fff;border:1px solid var(--orange)}
+.plans-grid .plan-select:hover{background:var(--orange-dark);border-color:var(--orange-dark)}
+@media(max-width:600px){.plans-grid .plan-card{flex-basis:min(100%,320px)}}
