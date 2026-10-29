@@ -66,5 +66,5 @@
 
 .nav-link .workspace-icon{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;margin-right:7px;color:#ea580c;vertical-align:middle}
 .nav-link .workspace-icon svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.nav-link.active .workspace-icon{color:#fff}
+.nav-link.active .workspace-icon{color:#000}
 .nav-link.active .workspace-icon svg{stroke-width:1.9}
