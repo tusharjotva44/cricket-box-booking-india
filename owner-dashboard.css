@@ -95,9 +95,9 @@
 
 /* Keep Quick Actions and Subscription Status as separate side-by-side cards. */
 .dashboard-section-grid{grid-template-columns:minmax(0,1fr)}
-.dashboard-side-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:18px}
+.dashboard-side-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:18px}
 .dashboard-side-cards>.panel{min-width:0}
-.dashboard-side-cards .dashboard-subscription-status{margin:0;padding:21px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:18px;border-top:0}
+.dashboard-side-cards .dashboard-subscription-status{margin:0;padding:18px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:14px;border-top:0;height:fit-content}
 .dashboard-side-cards .dashboard-subscription-status h2{font:700 16px 'Space Grotesk',sans-serif;margin:0}
 .dashboard-side-cards .dashboard-subscription-status p{font-size:11px;color:#9ca3af;margin:6px 0 0;line-height:1.6}
 .dashboard-side-cards .dashboard-subscription-status .primary-btn{margin-top:auto}
