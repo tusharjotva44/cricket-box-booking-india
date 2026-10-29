@@ -8,7 +8,7 @@ const demoGrounds = [
 ];
 const read = (key, fallback=[]) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
 const write = (key,value) => localStorage.setItem(key,JSON.stringify(value));
-let currentEmail = localStorage.getItem(STORE.session) || '';
+let currentEmail = '';
 let activeBookingGround = null;
 let activeLocationFilter = '';
 let activeBoxNameFilter = '';
@@ -49,8 +49,71 @@ function openGroundForm(){if(!ownerHasSubscription()){openModal('subscriptionMod
 $('year').textContent=new Date().getFullYear();$('dateSearch').value=new Date().toISOString().slice(0,10);
 $('searchForm').addEventListener('submit',e=>{e.preventDefault();activeLocationFilter=$('locationSearch').value.trim();activeBoxNameFilter=$('boxNameSearch').value.trim();renderGrounds();$('grounds').scrollIntoView({behavior:'smooth'})});$('sportTypeSearch').addEventListener('change',renderGrounds);$('sortPrice').addEventListener('change',renderGrounds);$('clearSearch').addEventListener('click',()=>{$('locationSearch').value='';$('boxNameSearch').value='';$('sportTypeSearch').value='';activeLocationFilter='';activeBoxNameFilter='';renderGrounds()});
 $('ownerLoginBtn').addEventListener('click',()=>openModal('ownerModal'));$('ownerCtaBtn').addEventListener('click',()=>openModal('ownerModal'));document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));document.querySelectorAll('.modal-backdrop').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)back.classList.add('hidden')}));
-$('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();currentEmail=$('ownerEmail').value.trim().toLowerCase();localStorage.setItem(STORE.session,currentEmail);const owners=read(STORE.owners);if(!owners.some(o=>o.email===currentEmail)){owners.push({email:currentEmail,subscription:false,plan:null});write(STORE.owners,owners)}closeModal('ownerModal');showDashboard();toast('Demo owner session opened.');});
-$('logoutBtn').addEventListener('click',()=>{currentEmail='';localStorage.removeItem(STORE.session);hideDashboard();toast('Logged out.');});document.querySelectorAll('.side-link').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));$('addGroundBtn').addEventListener('click',openGroundForm);$('addGroundTop').addEventListener('click',openGroundForm);$('backToGrounds').addEventListener('click',()=>showPanel('overview'));$('cancelGround').addEventListener('click',()=>showPanel('overview'));$('choosePlanBtn').addEventListener('click',()=>openModal('subscriptionModal'));$('choosePlanBtn2').addEventListener('click',()=>openModal('subscriptionModal'));
+let ownerAuthMode = 'login';
+function setOwnerAuthMode(mode) {
+  ownerAuthMode = mode;
+  $('ownerAuthSubmit').textContent = mode === 'login' ? 'Login to Dashboard →' : 'Create Account →';
+  $('ownerAuthToggle').textContent = mode === 'login' ? 'New owner? Create account' : 'Already registered? Login';
+  $('ownerAuthMessage').textContent = mode === 'signup'
+    ? 'Create an account using your email and password.'
+    : '';
+}
+$('ownerAuthToggle').addEventListener('click', () => {
+  setOwnerAuthMode(ownerAuthMode === 'login' ? 'signup' : 'login');
+});
+$('ownerLoginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('ownerEmail').value.trim().toLowerCase();
+  const password = $('ownerPassword').value;
+  const message = $('ownerAuthMessage');
+  const submit = $('ownerAuthSubmit');
+  if (!window.firebaseAuthApi || !window.firebaseAuth) {
+    message.textContent = 'Firebase is still loading. Please try again.';
+    return;
+  }
+  submit.disabled = true;
+  message.textContent = '';
+  try {
+    const result = ownerAuthMode === 'signup'
+      ? await window.firebaseAuthApi.createUserWithEmailAndPassword(window.firebaseAuth, email, password)
+      : await window.firebaseAuthApi.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+    currentEmail = (result.user.email || email).toLowerCase();
+    localStorage.setItem(STORE.session, currentEmail);
+    const owners = read(STORE.owners);
+    if (!owners.some(o => o.email === currentEmail)) {
+      owners.push({ email: currentEmail, subscription: false, plan: null });
+      write(STORE.owners, owners);
+    }
+    closeModal('ownerModal');
+    showDashboard();
+    toast(ownerAuthMode === 'signup' ? 'Account created successfully.' : 'Login successful.');
+  } catch (error) {
+    const messages = {
+      'auth/email-already-in-use': 'This email is already registered. Please log in.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/invalid-credential': 'Incorrect email or password.',
+      'auth/weak-password': 'Password must contain at least 6 characters.',
+      'auth/network-request-failed': 'Network error. Check your internet.',
+      'auth/too-many-requests': 'Too many attempts. Please try again later.'
+    };
+    message.textContent = messages[error.code] || 'Authentication failed. Please try again.';
+  } finally {
+    submit.disabled = false;
+  }
+});
+$('logoutBtn').addEventListener('click', async () => {
+  try {
+    if (window.firebaseAuthApi && window.firebaseAuth) {
+      await window.firebaseAuthApi.signOut(window.firebaseAuth);
+    }
+    currentEmail = '';
+    localStorage.removeItem(STORE.session);
+    hideDashboard();
+    toast('Logged out.');
+  } catch (error) {
+    toast('Logout failed. Please try again.');
+  }
+});document.querySelectorAll('.side-link').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));$('addGroundBtn').addEventListener('click',openGroundForm);$('addGroundTop').addEventListener('click',openGroundForm);$('backToGrounds').addEventListener('click',()=>showPanel('overview'));$('cancelGround').addEventListener('click',()=>showPanel('overview'));$('choosePlanBtn').addEventListener('click',()=>openModal('subscriptionModal'));$('choosePlanBtn2').addEventListener('click',()=>openModal('subscriptionModal'));
 document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',()=>{const owners=read(STORE.owners);const o=owners.find(x=>x.email===currentEmail);if(!o)return;o.subscription=true;o.plan=b.dataset.plan+' (Demo)';o.demoSubscription=true;write(STORE.owners,owners);closeModal('subscriptionModal');renderDashboard();toast('Demo plan activated. No payment was taken.');}));
 $('groundForm').addEventListener('submit',e=>{e.preventDefault();if(!ownerHasSubscription()){openModal('subscriptionModal');return}const mine=read(STORE.grounds).filter(g=>g.owner===currentEmail);if(mine.length>=2){toast('Maximum 2 grounds allowed per owner.');return}const slotList=$('groundSlots').value.split(',').map(s=>s.trim()).filter(Boolean);if(!slotList.length){toast('Please enter at least one time slot.');return}const item={id:'g'+Date.now(),sportType:$('groundSportType').value||'Box Cricket',name:$('groundName').value.trim(),location:$('groundLocation').value.trim(),price:Number($('groundPrice').value),image:$('groundImage').value.trim(),upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),slots:slotList,description:$('groundDescription').value.trim(),owner:currentEmail};write(STORE.grounds,[...read(STORE.grounds),item]);e.target.reset();renderDashboard();renderGrounds();showPanel('overview');toast('Ground saved in this browser.');});
 $('bookingDate').addEventListener('change',checkBookingAvailability);
@@ -59,4 +122,28 @@ $('bookingEndTime').addEventListener('change',checkBookingAvailability);
 $('confirmPaymentSubmitted').addEventListener('click',()=>{const id=$('paymentBookingId').value;const list=read(STORE.bookings);const booking=list.find(b=>b.id===id);if(!booking)return;booking.paymentStatus='Payment submitted — not verified';write(STORE.bookings,list);closeModal('paymentModal');toast('Payment marked as submitted. It is not automatically verified.');if(currentEmail===booking.owner)renderDashboard()});
 $('bookingForm').addEventListener('submit',e=>{e.preventDefault();const phone=$('customerPhone').value.trim();if(!/^[0-9]{10}$/.test(phone)){toast('Enter a valid 10-digit mobile number.');return}const date=$('bookingDate').value,startTime=$('bookingStartTime').value,endTime=$('bookingEndTime').value;if(!date||!startTime||!endTime){toast('Please select date, start time and end time.');return}if(startTime===endTime){toast('Start time and end time cannot be the same.');return}if(hasBookingConflict(activeBookingGround.id,date,startTime,endTime)){toast('Already booked this time slot. Please choose another time.');$('bookingAvailability').textContent='Already booked this time slot. Please choose another time.';return}const slot=minutesToLabel(timeToMinutes(startTime))+' - '+minutesToLabel(timeToMinutes(endTime));const createdAt=Date.now();const request={id:'b'+createdAt,groundId:activeBookingGround.id,groundName:activeBookingGround.name,owner:activeBookingGround.owner,customerName:$('customerName').value.trim(),phone,slot,startTime,endTime,date,status:'Pending',paymentStatus:'Awaiting payment',amount:Math.round(Number(activeBookingGround.price||0)*(((()=>{const a=timeToMinutes(startTime),b=timeToMinutes(endTime);return (b<=a?b+1440:b)-a})())/60)),createdAt,holdExpiresAt:createdAt+30*60*1000};write(STORE.bookings,[...read(STORE.bookings),request]);closeModal('bookingModal');e.target.reset();toast('Booking request saved. Complete payment next.');renderGrounds();if(currentEmail===request.owner){renderDashboard()}showPaymentForBooking(request)});
 window.addEventListener('storage',e=>{if(e.key===STORE.grounds){renderGrounds()}if(e.key===STORE.bookings&&currentEmail){renderDashboard()}});
-renderGrounds();if(currentEmail&&read(STORE.owners).some(o=>o.email===currentEmail))showDashboard();
+renderGrounds();
+
+let firebaseAuthListenerStarted = false;
+function connectFirebaseAuthState() {
+  if (firebaseAuthListenerStarted || !window.firebaseAuthApi || !window.firebaseAuth) return;
+  firebaseAuthListenerStarted = true;
+  window.firebaseAuthApi.onAuthStateChanged(window.firebaseAuth, user => {
+    if (user && user.email) {
+      currentEmail = user.email.toLowerCase();
+      localStorage.setItem(STORE.session, currentEmail);
+      const owners = read(STORE.owners);
+      if (!owners.some(o => o.email === currentEmail)) {
+        owners.push({ email: currentEmail, subscription: false, plan: null });
+        write(STORE.owners, owners);
+      }
+      showDashboard();
+    } else {
+      currentEmail = '';
+      localStorage.removeItem(STORE.session);
+      hideDashboard();
+    }
+  });
+}
+window.addEventListener('firebase-ready', connectFirebaseAuthState);
+connectFirebaseAuthState();
