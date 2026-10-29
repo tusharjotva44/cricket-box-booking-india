@@ -103,3 +103,14 @@
 .dashboard-side-cards .dashboard-subscription-status .primary-btn{margin-top:auto}
 @media(max-width:900px){.dashboard-side-cards{grid-template-columns:1fr}}
 @media(max-width:760px){.dashboard-side-cards{gap:13px}.dashboard-side-cards .dashboard-subscription-status{padding:15px}.dashboard-side-cards .dashboard-subscription-status .primary-btn{width:100%}}
+
+
+/* Owner dashboard subscription expiry reminder. */
+.plan-expiry-alert{display:flex;align-items:center;gap:13px;margin:0 0 22px;padding:15px 17px;background:#fff7ed;border:1px solid #fdba74;border-radius:13px;color:#9a3412;box-shadow:0 4px 14px #9a34120a}
+.plan-expiry-alert-icon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#f97316;color:#fff;font-weight:800}
+.plan-expiry-alert-copy{min-width:0;flex:1}
+.plan-expiry-alert-copy strong{display:block;font-size:13px;line-height:1.4}
+.plan-expiry-alert-copy p{margin:4px 0 0;font-size:12px;line-height:1.6;color:#9a3412}
+.plan-expiry-alert-close{flex:0 0 30px;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#9a3412;font-size:24px;line-height:1}
+.plan-expiry-alert-close:hover{background:#ffedd5}
+@media(max-width:600px){.plan-expiry-alert{align-items:flex-start;padding:13px;gap:10px}.plan-expiry-alert-copy p{font-size:11px}}
