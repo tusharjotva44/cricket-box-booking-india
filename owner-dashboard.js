@@ -145,8 +145,34 @@
       if (!button) return;
       const action = button.dataset.profileAction;
       if (action === 'profile') {
+        const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('boxbook_owner_profile_v1') || '{}') || {}; } catch { return {}; } })();
         openAccountModal('Profile', 'OWNER ACCOUNT',
-          '<div class="account-detail"><small>Account name</small><strong>Owner Account</strong></div><div class="account-detail"><small>Email address</small><strong>' + escapeHTML(OWNER_EMAIL) + '</strong></div><p class="account-modal-note">Your account details are shown here.</p>');
+          '<form id="ownerProfileForm" class="owner-profile-form">' +
+          '<label>Your name<input name="yourName" type="text" maxlength="80" autocomplete="name" value="' + escapeHTML(savedProfile.yourName || '') + '" placeholder="Enter your name"></label>' +
+          '<label>Account name<input name="accountName" type="text" maxlength="80" value="' + escapeHTML(savedProfile.accountName || 'Owner Account') + '" placeholder="Account name"></label>' +
+          '<label>Email address<input name="email" type="email" value="' + escapeHTML(OWNER_EMAIL) + '" readonly></label>' +
+          '<label>Mobile number<input name="mobile" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="' + escapeHTML(savedProfile.mobile || '') + '" placeholder="10-digit mobile number"></label>' +
+          '<p class="account-modal-note">Your name and mobile number are saved in this browser. Email is read-only because it comes from the current login.</p>' +
+          '<div class="account-modal-actions"><button type="submit">Save Profile</button></div></form>');
+        const profileForm = $('ownerProfileForm');
+        profileForm.addEventListener('submit', event => {
+          event.preventDefault();
+          const formData = new FormData(profileForm);
+          const mobile = String(formData.get('mobile') || '').trim();
+          if (mobile && !/^[0-9]{10}$/.test(mobile)) { toast('Enter a valid 10-digit mobile number.'); return; }
+          const profile = {
+            yourName: String(formData.get('yourName') || '').trim(),
+            accountName: String(formData.get('accountName') || '').trim() || 'Owner Account',
+            mobile
+          };
+          try {
+            localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify(profile));
+            const nameLabel = document.querySelector('.profile-copy strong');
+            if (nameLabel) nameLabel.textContent = profile.accountName;
+            toast('Profile saved in this browser.');
+            accountModal.classList.add('hidden');
+          } catch { toast('Could not save profile in this browser.'); }
+        });
       } else if (action === 'plan') {
         closeProfileMenu();
         showView('subscription');
