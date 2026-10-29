@@ -172,8 +172,8 @@ app.post("/api/payments/create-order", async (req, res) => {
   }
 });
 
-app.post("/api/payments/verify", (req, res) => {
-  if (!process.env.RAZORPAY_KEY_SECRET) return res.status(503).json({ error: "Payment gateway is not configured yet." });
+app.post("/api/payments/verify", async (req, res) => {
+  if (!razorpay || !process.env.RAZORPAY_KEY_SECRET) return res.status(503).json({ error: "Payment gateway is not configured yet." });
   const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
   if (![orderId, paymentId, signature].every((value) => typeof value === "string" && value)) {
     return res.status(400).json({ error: "Missing payment verification fields." });
@@ -186,21 +186,33 @@ app.post("/api/payments/verify", (req, res) => {
     return res.status(400).json({ error: "Payment signature is invalid. Booking was not confirmed." });
   }
 
-  const tx = db.transaction(() => {
-    const booking = db.prepare("SELECT id,status,hold_expires_at FROM bookings WHERE razorpay_order_id=?").get(orderId);
-    if (!booking) return { status: "missing" };
-    if (booking.status === "confirmed") return { status: "confirmed", bookingId: booking.id };
-    if (booking.status !== "pending" || booking.hold_expires_at <= Date.now()) {
-      if (booking.status === "pending") db.prepare("UPDATE bookings SET status='expired' WHERE id=?").run(booking.id);
-      return { status: "expired" };
+  try {
+    const payment = await razorpay.payments.fetch(paymentId);
+    if (payment.order_id !== orderId || payment.amount <= 0 || payment.status !== "captured") {
+      return res.status(400).json({ error: "Payment is not captured for this order. Booking was not confirmed." });
     }
-    const result = db.prepare("UPDATE bookings SET status='confirmed',razorpay_payment_id=? WHERE id=? AND status='pending'").run(paymentId, booking.id);
-    return result.changes ? { status: "confirmed", bookingId: booking.id } : { status: "conflict" };
-  });
-  const result = tx();
-  if (result.status === "confirmed") return res.json({ success: true, bookingId: result.bookingId, status: "confirmed" });
-  if (result.status === "missing") return res.status(404).json({ error: "Booking not found." });
-  return res.status(409).json({ error: "Slot hold expired or booking state changed. Contact support if payment was collected." });
+
+    const tx = db.transaction(() => {
+      const booking = db.prepare("SELECT id,status,hold_expires_at,amount_paise FROM bookings WHERE razorpay_order_id=?").get(orderId);
+      if (!booking) return { status: "missing" };
+      if (Number(payment.amount) !== Number(booking.amount_paise)) return { status: "amount_mismatch" };
+      if (booking.status === "confirmed") return { status: "confirmed", bookingId: booking.id };
+      if (booking.status !== "pending" || booking.hold_expires_at <= Date.now()) {
+        if (booking.status === "pending") db.prepare("UPDATE bookings SET status='expired' WHERE id=?").run(booking.id);
+        return { status: "expired" };
+      }
+      const result = db.prepare("UPDATE bookings SET status='confirmed',razorpay_payment_id=? WHERE id=? AND status='pending'").run(paymentId, booking.id);
+      return result.changes ? { status: "confirmed", bookingId: booking.id } : { status: "conflict" };
+    });
+    const result = tx();
+    if (result.status === "confirmed") return res.json({ success: true, bookingId: result.bookingId, status: "confirmed" });
+    if (result.status === "missing") return res.status(404).json({ error: "Booking not found." });
+    if (result.status === "amount_mismatch") return res.status(400).json({ error: "Payment amount does not match the booking." });
+    return res.status(409).json({ error: "Slot hold expired or booking state changed. Contact support if payment was collected." });
+  } catch (error) {
+    console.error("Payment verification failed:", error.message);
+    return res.status(502).json({ error: "Could not verify payment with Razorpay. Booking was not confirmed." });
+  }
 });
 
 app.get("/api/bookings/:id/status", (req, res) => {
