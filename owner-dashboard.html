@@ -29,6 +29,16 @@
     <header class="topbar">
       <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
       <div class="breadcrumb">Owner Workspace <span>/</span> <strong id="breadcrumbTitle">Overview</strong></div>
+      <div class="notification-wrap">
+        <button class="notification-trigger" id="notificationTrigger" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notificationPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+          <span class="notification-badge hidden" id="notificationBadge">0</span>
+        </button>
+        <section class="notification-panel hidden" id="notificationPanel" aria-label="Notifications">
+          <div class="notification-panel-heading"><div><strong>Notifications</strong><small id="notificationSummary">Updates from BoxBook</small></div><button type="button" id="markNotificationsRead">Mark all read</button></div>
+          <div class="notification-list" id="notificationList"><p class="notification-empty">No notifications yet.</p></div>
+        </section>
+      </div>
       <div class="profile-menu-wrap">
         <button class="profile profile-menu-trigger" id="profileMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
           <span class="avatar">O</span><span class="profile-copy"><strong>Owner Account</strong><small id="ownerEmailLabel">owner@boxbook.in</small></span><span class="profile-chevron" aria-hidden="true">⌄</span>
