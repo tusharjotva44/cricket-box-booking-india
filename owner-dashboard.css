@@ -25,3 +25,8 @@
 @media(max-width:900px){.dashboard-hero{grid-template-columns:1fr .8fr;padding:22px 20px}.hero-art{min-height:165px}.hero-cartoon{max-height:215px}.hero-ground-chip{right:-3px}}
 @media(max-width:620px){.dashboard-hero{grid-template-columns:1fr;gap:4px;padding:21px 20px}.hero-copy h2{font-size:27px;max-width:330px}.hero-art{min-height:170px;margin-top:2px}.hero-cartoon{width:min(100%,320px);max-height:205px}.hero-ground-chip{right:2%;bottom:0}.hero-spark.spark-one{left:10%;top:6%}.hero-spark.spark-two{right:8%;top:15%}}
 @media(prefers-reduced-motion:reduce){.hero-live-dot,.hero-cartoon,.hero-ball,.hero-spark{animation:none!important}.dashboard-hero,.hero-cta,.stat-card,.stat-icon,.hero-ground-chip{transition:none!important}}
+
+/* Extra depth for the existing inline cricket illustration (no external image assets) */
+.hero-cartoon{filter:drop-shadow(0 5px 3px #7c2d1210)}
+.hero-cartoon defs + ellipse{opacity:.95}
+@media(hover:hover){.dashboard-hero:hover .hero-cartoon{filter:drop-shadow(0 10px 7px #7c2d1222) saturate(1.04)}}
