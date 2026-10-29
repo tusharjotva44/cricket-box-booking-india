@@ -81,6 +81,11 @@
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
   }
+  function daysUntilExpiry(value) {
+    const expiry = new Date(value);
+    if (Number.isNaN(expiry.getTime())) return null;
+    return Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000));
+  }
   function setPlanExpiry() {
     const expiry = new Date();
     if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
@@ -97,11 +102,14 @@
       $('dashboardPlanExpiry').textContent = 'Choose a plan in Subscription to see its expiry date.';
       return;
     }
-    const expiryText = formatPlanDate(getPlanExpiry());
+    const expiryValue = getPlanExpiry();
+    const expiryText = formatPlanDate(expiryValue);
+    const daysLeft = expiryValue ? daysUntilExpiry(expiryValue) : null;
+    const expiryDetails = expiryText ? 'Expiring after ' + expiryText + ' (' + daysLeft + (daysLeft === 1 ? ' day left).' : ' days left).') : '';
     $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
-    $('planNoticeText').textContent = 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ') + (expiryText ? 'Expiring after ' + expiryText + '. ' : '') + 'No payment has been taken.';
+    $('planNoticeText').textContent = 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ') + (expiryDetails ? expiryDetails + ' ' : '') + 'No payment has been taken.';
     $('dashboardPlanName').textContent = selectedPlan;
-    $('dashboardPlanExpiry').textContent = expiryText ? 'Expiring after ' + expiryText : 'Expiry date is not set yet.';
+    $('dashboardPlanExpiry').textContent = expiryDetails || 'Expiry date is not set yet.';
     document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
   }
   function openGroundForm() {
