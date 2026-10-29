@@ -120,6 +120,7 @@
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+  $('renewPlanButton').addEventListener('click', () => showView('subscription'));
   document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.go); if (button.dataset.go === 'grounds') openGroundForm(); }));
   $('menuToggle').addEventListener('click', () => $('sidebar').classList.toggle('open'));
   $('showGroundForm').addEventListener('click', openGroundForm);
