@@ -30,17 +30,17 @@
       <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
       <div class="breadcrumb">Owner Workspace <span>/</span> <strong id="breadcrumbTitle">Overview</strong></div>
       <div class="profile">
-        <div class="avatar">O</div><div class="profile-copy"><strong>Demo Owner</strong><small>demo@boxbook.in</small></div><span class="demo-pill">DEMO</span>
+        <div class="avatar">O</div><div class="profile-copy"><strong>Owner Account</strong><small id="ownerEmailLabel">demo@boxbook.in</small></div><span class="demo-pill">DEMO</span>
       </div>
     </header>
     <div class="content">
       <section class="view active" id="view-overview">
         <div class="page-heading"><div><span class="eyebrow">YOUR BUSINESS AT A GLANCE</span><h1>Owner Dashboard</h1><p>Welcome back! Here’s what’s happening with your grounds.</p></div><button class="primary-btn" data-go="grounds">＋ Add a Ground</button></div>
         <div class="stats-grid">
-          <article class="stat-card"><div class="stat-top"><span>Active Grounds</span><span class="stat-icon orange">⌂</span></div><strong id="statGrounds">1</strong><small><span class="tiny-dot"></span> Listed on BoxBook</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Upcoming Bookings</span><span class="stat-icon navy">▤</span></div><strong id="statBookings">2</strong><small>Bookings in this demo</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Estimated Revenue</span><span class="stat-icon peach">₹</span></div><strong id="statRevenue">₹2,400</strong><small>From sample bookings</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Subscription</span><span class="stat-icon green">◇</span></div><strong class="plan-stat">Demo Plan</strong><small><span class="status-dot"></span> Preview mode</small></article>
+          <article class="stat-card"><div class="stat-top"><span>My Grounds</span><span class="stat-icon orange">⌂</span></div><strong id="statGrounds">0</strong><small><span class="tiny-dot"></span> Your listed venues</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Total Bookings</span><span class="stat-icon navy">▤</span></div><strong id="statBookings">0</strong><small>All booking requests</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Pending Requests</span><span class="stat-icon peach">◷</span></div><strong id="statPending">0</strong><small>Need your attention</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Confirmed Revenue</span><span class="stat-icon green">₹</span></div><strong id="statRevenue">₹0</strong><small>Confirmed bookings only</small></article>
         </div>
         <div class="section-grid">
           <article class="panel"><div class="panel-heading"><div><h2>Recent Bookings</h2><p>Keep track of your latest requests.</p></div><button class="text-btn" data-go="bookings">View all →</button></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="recentBookingRows"></tbody></table></div></article>
@@ -54,7 +54,7 @@
       </section>
       <section class="view" id="view-bookings">
         <div class="page-heading"><div><span class="eyebrow">RESERVATIONS</span><h1>Bookings</h1><p>Review the sample booking activity for your venue.</p></div><span class="demo-pill large">SAMPLE DATA</span></div>
-        <div class="panel"><div class="panel-heading"><div><h2>All Bookings</h2><p>Sample records for dashboard preview.</p></div><select class="filter-select" id="bookingFilter" aria-label="Filter bookings"><option value="all">All statuses</option><option value="Confirmed">Confirmed</option><option value="Pending">Pending</option><option value="Rejected">Rejected</option><option value="Expired">Expired</option></select></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="bookingRows"></tbody></table></div><p class="table-note">These are illustrative demo bookings, not real customer reservations.</p></div>
+        <div class="panel"><div class="panel-heading booking-panel-heading"><div><h2>All Bookings</h2><p>Search and filter your booking requests.</p></div><div class="booking-tools"><input class="booking-search" id="bookingSearch" type="search" placeholder="Search customer, ground or ID" aria-label="Search bookings"><input class="filter-select date-filter" id="bookingDateFilter" type="date" aria-label="Filter bookings by date"><select class="filter-select" id="bookingFilter" aria-label="Filter bookings by status"><option value="all">All statuses</option><option value="Confirmed">Confirmed</option><option value="Pending">Pending</option><option value="Rejected">Rejected</option><option value="Expired">Expired</option></select></div></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="bookingRows"></tbody></table></div><p class="table-note">Booking details shown here are saved in this browser until secure backend integration is completed.</p></div>
       </section>
       <section class="view" id="view-subscription">
         <div class="page-heading"><div><span class="eyebrow">OWNER PLAN</span><h1>Subscription</h1><p>Preview the plan options for managing your grounds.</p></div><span class="demo-pill large">DEMO MODE</span></div>
