@@ -86,6 +86,28 @@
     if (Number.isNaN(expiry.getTime())) return null;
     return Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000));
   }
+  function renderPlanExpiryAlert() {
+    const alert = $('planExpiryAlert');
+    if (!alert) return;
+    const expiryValue = getPlanExpiry();
+    const expiryDate = new Date(expiryValue);
+    const daysLeft = expiryValue ? daysUntilExpiry(expiryValue) : null;
+    const dismissedKey = 'boxbook_plan_expiry_notice_dismissed_v1';
+    let dismissed = {};
+    try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}') || {}; } catch {}
+    const noticeKey = OWNER_EMAIL + ':' + expiryValue;
+    const isExpired = expiryValue && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() <= Date.now();
+    const shouldShow = !!selectedPlan && !!expiryValue && (isExpired || (daysLeft !== null && daysLeft <= 10));
+    if (!shouldShow || dismissed[OWNER_EMAIL] === noticeKey) {
+      alert.classList.add('hidden');
+      return;
+    }
+    $('planExpiryAlertTitle').textContent = isExpired ? 'Your subscription plan has expired' : 'Your subscription plan is expiring soon';
+    $('planExpiryAlertText').textContent = isExpired
+      ? 'Your ' + selectedPlan + ' plan expired on ' + formatPlanDate(expiryValue) + '. Renew your plan to continue.'
+      : 'Your ' + selectedPlan + ' plan expires on ' + formatPlanDate(expiryValue) + ' — ' + daysLeft + (daysLeft === 1 ? ' day' : ' days') + ' left. Renew in time to avoid interruption.';
+    alert.classList.remove('hidden');
+  }
   function setPlanExpiry() {
     const expiry = new Date();
     if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
@@ -100,6 +122,7 @@
     if (!selectedPlan) {
       $('dashboardPlanName').textContent = 'No plan selected';
       $('dashboardPlanExpiry').textContent = 'Choose a plan in Subscription to see its expiry date.';
+      renderPlanExpiryAlert();
       return;
     }
     const expiryValue = getPlanExpiry();
@@ -111,6 +134,7 @@
     $('dashboardPlanName').textContent = selectedPlan;
     $('dashboardPlanExpiry').textContent = expiryDetails || 'Expiry date is not set yet.';
     document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
+    renderPlanExpiryAlert();
   }
   function openGroundForm() {
     const limit = groundLimit();
@@ -121,6 +145,15 @@
   }
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   $('renewPlanButton').addEventListener('click', () => showView('subscription'));
+  $('closePlanExpiryAlert').addEventListener('click', () => {
+    const expiryValue = getPlanExpiry();
+    const dismissedKey = 'boxbook_plan_expiry_notice_dismissed_v1';
+    let dismissed = {};
+    try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}') || {}; } catch {}
+    dismissed[OWNER_EMAIL] = OWNER_EMAIL + ':' + expiryValue;
+    try { localStorage.setItem(dismissedKey, JSON.stringify(dismissed)); } catch {}
+    $('planExpiryAlert').classList.add('hidden');
+  });
   document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.go); if (button.dataset.go === 'grounds') openGroundForm(); }));
   $('menuToggle').addEventListener('click', () => $('sidebar').classList.toggle('open'));
   $('showGroundForm').addEventListener('click', openGroundForm);
