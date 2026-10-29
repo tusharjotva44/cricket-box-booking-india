@@ -84,3 +84,11 @@
 .plans-grid .popular-label{position:static;display:inline-block;align-self:flex-start;margin-bottom:8px}
 @media(max-width:1200px){.plans-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.plans-grid .plan-card{min-height:330px}}
 @media(max-width:600px){.plans-grid{grid-template-columns:minmax(0,1fr)}.plans-grid .plan-card{padding:24px;min-height:0}.plans-grid .plan-price{font-size:29px}}
+
+/* Dashboard layout: give Recent Bookings the full row and keep renewal controls with Quick Actions. */
+.dashboard-section-grid{grid-template-columns:minmax(0,1fr)}
+.dashboard-subscription-status{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid #f3f1ef;margin-top:12px;padding-top:16px}
+.dashboard-subscription-status h2{font:700 16px 'Space Grotesk',sans-serif;margin:0}
+.dashboard-subscription-status p{font-size:11px;color:#9ca3af;margin:6px 0 0;line-height:1.6}
+.dashboard-subscription-status .primary-btn{flex-shrink:0}
+@media(max-width:600px){.dashboard-subscription-status{align-items:flex-start;flex-direction:column;gap:12px}.dashboard-subscription-status .primary-btn{width:100%}}
