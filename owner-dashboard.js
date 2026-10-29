@@ -110,7 +110,8 @@
   }
   function setPlanExpiry() {
     const expiry = new Date();
-    if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
+    if (selectedPlan.startsWith('Free Trial')) expiry.setDate(expiry.getDate() + 10);
+    else if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
     else expiry.setMonth(expiry.getMonth() + 1);
     try {
       const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
