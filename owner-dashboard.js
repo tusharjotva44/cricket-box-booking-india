@@ -112,6 +112,66 @@
     document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select ' + b.dataset.plan; });
     toast(selectedPlan + ' plan selected in demo mode.');
   }));
+  // Owner account dropdown
+  const profileMenuTrigger = $('profileMenuTrigger');
+  const profileDropdown = $('profileDropdown');
+  const accountModal = $('accountModal');
+  const accountModalTitle = $('accountModalTitle');
+  const accountModalEyebrow = $('accountModalEyebrow');
+  const accountModalBody = $('accountModalBody');
+  function closeProfileMenu() {
+    if (!profileDropdown || !profileMenuTrigger) return;
+    profileDropdown.classList.add('hidden');
+    profileMenuTrigger.setAttribute('aria-expanded', 'false');
+  }
+  function openAccountModal(title, eyebrow, body) {
+    accountModalTitle.textContent = title;
+    accountModalEyebrow.textContent = eyebrow;
+    accountModalBody.innerHTML = body;
+    accountModal.classList.remove('hidden');
+    closeProfileMenu();
+  }
+  if (profileMenuTrigger && profileDropdown) {
+    profileMenuTrigger.addEventListener('click', () => {
+      const isOpen = !profileDropdown.classList.contains('hidden');
+      profileDropdown.classList.toggle('hidden', isOpen);
+      profileMenuTrigger.setAttribute('aria-expanded', String(!isOpen));
+    });
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.profile-menu-wrap')) closeProfileMenu();
+    });
+    profileDropdown.addEventListener('click', event => {
+      const button = event.target.closest('[data-profile-action]');
+      if (!button) return;
+      const action = button.dataset.profileAction;
+      if (action === 'profile') {
+        openAccountModal('Profile', 'OWNER ACCOUNT',
+          '<div class="account-detail"><small>Account name</small><strong>Owner Account</strong></div><div class="account-detail"><small>Email address</small><strong>' + escapeHTML(OWNER_EMAIL) + '</strong></div><p class="account-modal-note">Your account details are shown here.</p>');
+      } else if (action === 'plan') {
+        closeProfileMenu();
+        showView('subscription');
+      } else if (action === 'password') {
+        openAccountModal('Password Change', 'ACCOUNT SECURITY',
+          '<p class="account-modal-note">Password changes need a secure login system. This dashboard is not connected to a secure password service yet, so your password cannot be changed here safely.</p><div class="account-modal-actions"><button type="button" id="passwordModalOk">Got it</button></div>');
+        const ok = $('passwordModalOk');
+        if (ok) ok.addEventListener('click', () => accountModal.classList.add('hidden'));
+      } else if (action === 'logout') {
+        closeProfileMenu();
+        try { localStorage.removeItem('boxbook_session_v1'); } catch {}
+        window.location.href = 'index.html';
+      }
+    });
+  }
+  if ($('accountModalClose')) $('accountModalClose').addEventListener('click', () => accountModal.classList.add('hidden'));
+  if (accountModal) accountModal.addEventListener('click', event => {
+    if (event.target === accountModal) accountModal.classList.add('hidden');
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeProfileMenu();
+      if (accountModal) accountModal.classList.add('hidden');
+    }
+  });
   if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
   renderGrounds(); renderBookings();
   let knownBookingIds = new Set(sampleBookings.map(b => b.id));
