@@ -1,5 +1,5 @@
 (() => {
-  const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1'};
+  const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1', planExpiry:'boxbook_owner_plan_expiry_v1'};
   const OWNER_EMAIL = (localStorage.getItem('boxbook_session_v1') || 'demo@boxbook.in').trim().toLowerCase();
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
@@ -74,10 +74,34 @@
       localStorage.setItem(STORE.plan, JSON.stringify(plans));
     } catch {}
   }
+  function getPlanExpiry() {
+    try { const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}'); return dates[OWNER_EMAIL] || ''; } catch { return ''; }
+  }
+  function formatPlanDate(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+  }
+  function setPlanExpiry() {
+    const expiry = new Date();
+    if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
+    else expiry.setMonth(expiry.getMonth() + 1);
+    try {
+      const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+      dates[OWNER_EMAIL] = expiry.toISOString();
+      localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
+    } catch {}
+  }
   function syncPlanPreview() {
-    if (!selectedPlan) return;
+    if (!selectedPlan) {
+      $('dashboardPlanName').textContent = 'No plan selected';
+      $('dashboardPlanExpiry').textContent = 'Choose a plan in Subscription to see its expiry date.';
+      return;
+    }
+    const expiryText = formatPlanDate(getPlanExpiry());
     $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
-    $('planNoticeText').textContent = 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ') + 'No payment has been taken.';
+    $('planNoticeText').textContent = 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ') + (expiryText ? 'Expiring after ' + expiryText + '. ' : '') + 'No payment has been taken.';
+    $('dashboardPlanName').textContent = selectedPlan;
+    $('dashboardPlanExpiry').textContent = expiryText ? 'Expiring after ' + expiryText : 'Expiry date is not set yet.';
     document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
   }
   function openGroundForm() {
@@ -129,7 +153,7 @@
   });
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
     selectedPlan = button.dataset.plan;
-    $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
+    setPlanExpiry();
     saveSelectedPlan();
     syncPlanPreview();
     toast(selectedPlan + ' plan selected for this browser demo.');
