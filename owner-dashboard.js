@@ -109,7 +109,7 @@
     selectedPlan = button.dataset.plan;
     $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
     $('planNoticeText').textContent = 'This is a demo selection only. No subscription has been activated and no payment has been taken.';
-    document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select ' + b.dataset.plan; });
+    document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
     toast(selectedPlan + ' plan selected in demo mode.');
   }));
   // Owner account dropdown
