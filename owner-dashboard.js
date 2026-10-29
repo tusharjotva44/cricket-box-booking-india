@@ -1,11 +1,11 @@
 (() => {
-  const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1'};
+  const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1'};
   const OWNER_EMAIL = (localStorage.getItem('boxbook_session_v1') || 'demo@boxbook.in').trim().toLowerCase();
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
   const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
-  let selectedPlan = '';
+  let selectedPlan = (() => { try { const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}'); return plans[OWNER_EMAIL] || ''; } catch { return ''; } })();
   let toastTimer;
   let grounds = groundsForOwner();
   let sampleBookings = bookingsForOwner();
@@ -66,7 +66,27 @@
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
   }
-  function openGroundForm() { $('groundFormPanel').classList.remove('hidden'); $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'}); }
+  function groundLimit() { return selectedPlan.includes('2 Grounds') ? 2 : selectedPlan.includes('1 Ground') ? 1 : 0; }
+  function saveSelectedPlan() {
+    try {
+      const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      plans[OWNER_EMAIL] = selectedPlan;
+      localStorage.setItem(STORE.plan, JSON.stringify(plans));
+    } catch {}
+  }
+  function syncPlanPreview() {
+    if (!selectedPlan) return;
+    $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
+    $('planNoticeText').textContent = 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ') + 'No payment has been taken.';
+    document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
+  }
+  function openGroundForm() {
+    const limit = groundLimit();
+    if (!limit) { showView('subscription'); toast('Please select a plan before adding a ground.'); return; }
+    if (grounds.length >= limit) { showView('subscription'); toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground. ' : ' grounds. ') + 'Choose a 2 Grounds plan to add another.'); return; }
+    $('groundFormPanel').classList.remove('hidden');
+    $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  }
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.go); if (button.dataset.go === 'grounds') openGroundForm(); }));
   $('menuToggle').addEventListener('click', () => $('sidebar').classList.toggle('open'));
@@ -77,7 +97,9 @@
     event.preventDefault();
     const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), price = Number($('groundPrice').value);
     if (!name || !location || !Number.isFinite(price) || price < 1) { toast('Please check the ground details.'); return; }
-    if (grounds.length >= 2) { toast('Demo limit reached: maximum 2 grounds in this preview.'); return; }
+    const limit = groundLimit();
+    if (!limit) { toast('Please select a plan before adding a ground.'); showView('subscription'); return; }
+    if (grounds.length >= limit) { toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground.' : ' grounds.') + ' Choose a 2 Grounds plan to add another.'); showView('subscription'); return; }
     grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,price,upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
     saveGrounds(); renderGrounds(); $('groundForm').reset(); $('groundFormPanel').classList.add('hidden'); toast('Ground added to this browser demo.');
   });
@@ -108,10 +130,11 @@
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
     selectedPlan = button.dataset.plan;
     $('planNoticeTitle').textContent = selectedPlan + ' plan selected for preview';
-    $('planNoticeText').textContent = 'This is a demo selection only. No subscription has been activated and no payment has been taken.';
-    document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
-    toast(selectedPlan + ' plan selected in demo mode.');
+    saveSelectedPlan();
+    syncPlanPreview();
+    toast(selectedPlan + ' plan selected for this browser demo.');
   }));
+  syncPlanPreview();
   // Owner account dropdown
   const profileMenuTrigger = $('profileMenuTrigger');
   const profileDropdown = $('profileDropdown');
