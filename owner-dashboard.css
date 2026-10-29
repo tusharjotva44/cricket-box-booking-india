@@ -56,3 +56,10 @@
 .account-modal-actions{display:flex;justify-content:flex-end;margin-top:18px}
 .account-modal-actions button{border:0;border-radius:9px;background:#f97316;color:#fff;font-weight:700;padding:10px 15px;cursor:pointer}
 @media(max-width:760px){.profile-menu-trigger{padding:4px}.profile-chevron{margin-left:0}.profile-dropdown{right:0;width:205px}.account-modal-card{padding:24px 20px}}
+
+.owner-profile-form{display:grid;gap:12px}
+.owner-profile-form label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ink)}
+.owner-profile-form input{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;font-size:13px;color:var(--ink);background:#fff;outline:none}
+.owner-profile-form input:focus{border-color:#f97316;box-shadow:0 0 0 3px #f973161c}
+.owner-profile-form input[readonly]{background:#f9fafb;color:#6b7280}
+.owner-profile-form .account-modal-note{margin:0}
