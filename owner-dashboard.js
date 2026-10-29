@@ -7,6 +7,36 @@
   const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = (() => { try { const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}'); return plans[OWNER_EMAIL] || ''; } catch { return ''; } })();
   let toastTimer;
+  const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
+  const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
+  function readAdminNotifications() {
+    try {
+      const items = JSON.parse(localStorage.getItem(NOTIFICATION_STORE) || '[]');
+      return Array.isArray(items) ? items.filter(item => item && (!item.ownerEmail || String(item.ownerEmail).trim().toLowerCase() === OWNER_EMAIL || item.ownerEmail === '*')) : [];
+    } catch { return []; }
+  }
+  function readNotificationIds() {
+    try {
+      const data = JSON.parse(localStorage.getItem(NOTIFICATION_READ_STORE) || '{}');
+      return Array.isArray(data[OWNER_EMAIL]) ? data[OWNER_EMAIL] : [];
+    } catch { return []; }
+  }
+  function renderNotifications() {
+    const list = $('notificationList');
+    if (!list) return;
+    const items = readAdminNotifications().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    const readIds = readNotificationIds();
+    const unread = items.filter(item => !readIds.includes(String(item.id || item.createdAt || item.title || 'notification'))).length;
+    $('notificationBadge').textContent = unread > 99 ? '99+' : String(unread);
+    $('notificationBadge').classList.toggle('hidden', unread === 0);
+    $('notificationSummary').textContent = unread ? unread + (unread === 1 ? ' unread update' : ' unread updates') : 'You are all caught up';
+    list.innerHTML = items.length ? items.map(item => {
+      const id = String(item.id || item.createdAt || item.title || 'notification');
+      const isRead = readIds.includes(id);
+      const date = item.createdAt ? new Date(Number(item.createdAt)).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      return '<article class="notification-item' + (isRead ? ' is-read' : ' is-unread') + '"><span class="notification-status-dot" aria-hidden="true"></span><div><strong>' + escapeHTML(item.title || 'BoxBook update') + '</strong><p>' + escapeHTML(item.message || '') + '</p>' + (date ? '<small>' + escapeHTML(date) + '</small>' : '') + '</div></article>';
+    }).join('') : '<p class="notification-empty">No notifications yet. Super Admin updates will appear here.</p>';
+  }
   let grounds = groundsForOwner();
   let sampleBookings = bookingsForOwner();
   const saveGrounds = () => { try { const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL); localStorage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))])); } catch {} };
@@ -202,6 +232,41 @@
     toast(selectedPlan + ' plan selected for this browser demo.');
   }));
   syncPlanPreview();
+  const notificationTrigger = $('notificationTrigger');
+  const notificationPanel = $('notificationPanel');
+  if (notificationTrigger && notificationPanel) {
+    notificationTrigger.addEventListener('click', () => {
+      const opening = notificationPanel.classList.contains('hidden');
+      notificationPanel.classList.toggle('hidden', !opening);
+      notificationTrigger.setAttribute('aria-expanded', String(opening));
+      closeProfileMenuIfAvailable();
+    });
+    $('markNotificationsRead').addEventListener('click', () => {
+      const ids = readAdminNotifications().map(item => String(item.id || item.createdAt || item.title || 'notification'));
+      try {
+        const all = JSON.parse(localStorage.getItem(NOTIFICATION_READ_STORE) || '{}');
+        all[OWNER_EMAIL] = Array.from(new Set([...(Array.isArray(all[OWNER_EMAIL]) ? all[OWNER_EMAIL] : []), ...ids]));
+        localStorage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(all));
+      } catch {}
+      renderNotifications();
+    });
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.notification-wrap')) {
+        notificationPanel.classList.add('hidden');
+        notificationTrigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+  function closeProfileMenuIfAvailable() {
+    const dropdown = $('profileDropdown');
+    const trigger = $('profileMenuTrigger');
+    if (dropdown && trigger) {
+      dropdown.classList.add('hidden');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  }
+  renderNotifications();
+
   // Owner account dropdown
   const profileMenuTrigger = $('profileMenuTrigger');
   const profileDropdown = $('profileDropdown');
@@ -292,6 +357,7 @@
   renderGrounds(); renderBookings();
   let knownBookingIds = new Set(sampleBookings.map(b => b.id));
   window.addEventListener('storage', event => {
+    if (event.key === NOTIFICATION_STORE) renderNotifications();
     if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); }
     if (event.key === STORE.bookings) {
       const latest = bookingsForOwner();
