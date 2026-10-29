@@ -1,6 +1,6 @@
 (() => {
   const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1'};
-  const OWNER_EMAIL = 'demo@boxbook.in';
+  const OWNER_EMAIL = (localStorage.getItem('boxbook_session_v1') || 'demo@boxbook.in').trim().toLowerCase();
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
@@ -19,7 +19,7 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
-    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Bookings',subscription:'Subscription'};
+    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',subscription:'Subscription'};
     $('breadcrumbTitle').textContent = labels[name] || 'Overview';
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
@@ -44,11 +44,20 @@
   function renderBookings() {
     sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
-    const list = sampleBookings.filter(b => filter === 'all' || b.status === filter);
-    $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="7">No bookings match this filter.</td></tr>';
-    $('recentBookingRows').innerHTML = sampleBookings.slice(0, 2).map(b => bookingRow(b, false)).join('');
+    const query = $('bookingSearch').value.trim().toLowerCase();
+    const selectedDate = $('bookingDateFilter').value;
+    const newestFirst = [...sampleBookings].sort((a,b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
+    const list = newestFirst.filter(b =>
+      (filter === 'all' || b.status === filter) &&
+      (!selectedDate || b.date === selectedDate) &&
+      (!query || [b.id,b.customer,b.email,b.ground].some(value => String(value || '').toLowerCase().includes(query)))
+    );
+    $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="7">No bookings match these filters.</td></tr>';
+    $('recentBookingRows').innerHTML = newestFirst.slice(0, 3).map(b => bookingRow(b, false)).join('') || '<tr><td colspan="5">No bookings yet. New requests will appear here.</td></tr>';
     $('statBookings').textContent = String(sampleBookings.length);
-    $('bookingCount').textContent = String(sampleBookings.filter(b => b.status === 'Pending').length);
+    const pendingCount = sampleBookings.filter(b => b.status === 'Pending').length;
+    $('statPending').textContent = String(pendingCount);
+    $('bookingCount').textContent = String(pendingCount);
     $('statRevenue').textContent = money(sampleBookings.filter(b => b.status === 'Confirmed').reduce((sum,b) => sum + b.amount, 0));
   }
   function renderGrounds() {
@@ -77,6 +86,8 @@
     grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed from the shared listing.');
   });
   $('bookingFilter').addEventListener('change', renderBookings);
+  $('bookingSearch').addEventListener('input', renderBookings);
+  $('bookingDateFilter').addEventListener('change', renderBookings);
   $('bookingRows').addEventListener('click', event => {
     const approveButton = event.target.closest('[data-approve]');
     const rejectButton = event.target.closest('[data-reject]');
@@ -101,6 +112,7 @@
     document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select ' + b.dataset.plan; });
     toast(selectedPlan + ' plan selected in demo mode.');
   }));
+  if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
   renderGrounds(); renderBookings();
   let knownBookingIds = new Set(sampleBookings.map(b => b.id));
   window.addEventListener('storage', event => {
