@@ -69,14 +69,18 @@
 .nav-link.active .workspace-icon{color:#000}
 .nav-link.active .workspace-icon svg{stroke-width:1.9}
 
-/* Subscription cards: compact sizing leaves room for yearly plans later. */
-.plans-grid{display:flex;justify-content:center;align-items:stretch;gap:16px;flex-wrap:wrap}
-.plans-grid .plan-card{flex:0 1 260px;max-width:280px;padding:18px}
-.plans-grid .plan-card h3{font-size:19px;margin:8px 0}
-.plans-grid .plan-card>p{font-size:11px;min-height:34px}
-.plans-grid .plan-price{font-size:27px;margin:15px 0}
-.plans-grid .plan-card ul{gap:9px;margin-bottom:18px}
-.plans-grid .plan-card li{font-size:10px}
-.plans-grid .plan-select{background:var(--orange);color:#fff;border:1px solid var(--orange)}
+/* Subscription plans: four balanced cards on desktop, responsive on smaller screens. */
+.plans-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:14px}
+.plans-grid .plan-card{min-width:0;padding:17px;display:flex;flex-direction:column}
+.plans-grid .plan-card h3{font-size:18px;margin:8px 0}
+.plans-grid .plan-card>p{font-size:11px;line-height:1.55;min-height:51px;margin:8px 0}
+.plans-grid .plan-price{font-size:clamp(21px,2vw,27px);margin:13px 0;white-space:nowrap}
+.plans-grid .plan-price small{font-size:10px}
+.plans-grid .plan-card ul{gap:9px;margin:0 0 18px;flex:1}
+.plans-grid .plan-card li{font-size:10px;line-height:1.45}
+.plans-grid .plan-select{width:100%;margin-top:auto;background:var(--orange);color:#fff;border:1px solid var(--orange);border-radius:9px;padding:11px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:background .2s,border-color .2s}
 .plans-grid .plan-select:hover{background:var(--orange-dark);border-color:var(--orange-dark)}
-@media(max-width:600px){.plans-grid .plan-card{flex-basis:min(100%,320px)}}
+.plans-grid .featured-plan{border:1.5px solid #fdba74}
+.plans-grid .popular-label{position:static;display:inline-block;align-self:flex-start;margin-bottom:8px}
+@media(max-width:1200px){.plans-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.plans-grid{grid-template-columns:minmax(0,1fr)}.plans-grid .plan-card{padding:20px}.plans-grid .plan-price{font-size:28px}}
