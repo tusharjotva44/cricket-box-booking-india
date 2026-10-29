@@ -92,3 +92,14 @@
 .dashboard-subscription-status p{font-size:11px;color:#9ca3af;margin:6px 0 0;line-height:1.6}
 .dashboard-subscription-status .primary-btn{flex-shrink:0}
 @media(max-width:600px){.dashboard-subscription-status{align-items:flex-start;flex-direction:column;gap:12px}.dashboard-subscription-status .primary-btn{width:100%}}
+
+/* Keep Quick Actions and Subscription Status as separate side-by-side cards. */
+.dashboard-section-grid{grid-template-columns:minmax(0,1fr)}
+.dashboard-side-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:18px}
+.dashboard-side-cards>.panel{min-width:0}
+.dashboard-side-cards .dashboard-subscription-status{margin:0;padding:21px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:18px;border-top:0}
+.dashboard-side-cards .dashboard-subscription-status h2{font:700 16px 'Space Grotesk',sans-serif;margin:0}
+.dashboard-side-cards .dashboard-subscription-status p{font-size:11px;color:#9ca3af;margin:6px 0 0;line-height:1.6}
+.dashboard-side-cards .dashboard-subscription-status .primary-btn{margin-top:auto}
+@media(max-width:900px){.dashboard-side-cards{grid-template-columns:1fr}}
+@media(max-width:760px){.dashboard-side-cards{gap:13px}.dashboard-side-cards .dashboard-subscription-status{padding:15px}.dashboard-side-cards .dashboard-subscription-status .primary-btn{width:100%}}
