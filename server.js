@@ -85,6 +85,7 @@ app.post("/api/payments/webhook", express.raw({ type: "application/json", limit:
   const updateBooking = db.prepare(`
     UPDATE bookings SET status='confirmed', razorpay_payment_id=?
     WHERE razorpay_order_id=? AND status='pending' AND hold_expires_at > ?
+      AND amount_paise=?
   `);
   const failBooking = db.prepare(`
     UPDATE bookings SET status='failed'
@@ -98,7 +99,11 @@ app.post("/api/payments/webhook", express.raw({ type: "application/json", limit:
       const payment = event.payload && event.payload.payment && event.payload.payment.entity;
       const order = event.payload && event.payload.order && event.payload.order.entity;
       const orderId = payment?.order_id || order?.id;
-      if (orderId) updateBooking.run(payment?.id || null, orderId, Date.now());
+      // Never confirm a booking from a captured event unless the captured amount
+      // matches the server-calculated booking amount.
+      if (orderId && payment && payment.status === "captured" && Number.isInteger(Number(payment.amount))) {
+        updateBooking.run(payment.id, orderId, Date.now(), Number(payment.amount));
+      }
     } else if (event.event === "payment.failed") {
       const payment = event.payload && event.payload.payment && event.payload.payment.entity;
       if (payment?.order_id) failBooking.run(payment.order_id);
