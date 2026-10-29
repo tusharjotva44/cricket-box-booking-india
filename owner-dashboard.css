@@ -30,3 +30,29 @@
 .hero-cartoon{filter:drop-shadow(0 5px 3px #7c2d1210)}
 .hero-cartoon defs + ellipse{opacity:.95}
 @media(hover:hover){.dashboard-hero:hover .hero-cartoon{filter:drop-shadow(0 10px 7px #7c2d1222) saturate(1.04)}}
+
+
+/* Owner account dropdown and account dialog */
+.profile-menu-wrap{position:relative;flex:none}
+.profile-menu-trigger{border:0;background:transparent;padding:5px 7px;border-radius:12px;cursor:pointer;text-align:left;font:inherit}
+.profile-menu-trigger:hover,.profile-menu-trigger[aria-expanded="true"]{background:#fff7ed}
+.profile-chevron{font-size:16px;color:#9ca3af;margin-left:2px}
+.profile-dropdown{position:absolute;right:0;top:calc(100% + 9px);width:218px;padding:7px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 42px #1725541c;z-index:30}
+.profile-dropdown button{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;padding:11px 12px;border-radius:9px;color:var(--ink);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.profile-dropdown button:hover{background:#fff7ed;color:#c2410c}
+.profile-dropdown button span{width:18px;text-align:center;font-size:16px}
+.profile-dropdown .profile-logout{color:#b91c1c}
+.profile-dropdown .profile-logout:hover{background:#fef2f2;color:#b91c1c}
+.profile-dropdown-divider{height:1px;background:var(--line);margin:5px 4px}
+.account-modal{position:fixed;inset:0;background:#11182780;display:grid;place-items:center;padding:20px;z-index:100}
+.account-modal.hidden{display:none}
+.account-modal-card{position:relative;width:min(100%,430px);background:#fff;border-radius:18px;padding:28px;box-shadow:0 25px 80px #11182735}
+.account-modal-card h2{font-size:24px;margin:8px 0 18px;color:var(--ink)}
+.account-modal-close{position:absolute;right:15px;top:12px;border:0;background:#f3f4f6;border-radius:9px;width:32px;height:32px;font-size:22px;cursor:pointer;color:var(--ink)}
+.account-detail{padding:13px 14px;border:1px solid var(--line);border-radius:11px;margin:10px 0}
+.account-detail small{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+.account-detail strong{font-size:13px;overflow-wrap:anywhere}
+.account-modal-note{font-size:12px;color:var(--muted);line-height:1.65;margin:12px 0 0}
+.account-modal-actions{display:flex;justify-content:flex-end;margin-top:18px}
+.account-modal-actions button{border:0;border-radius:9px;background:#f97316;color:#fff;font-weight:700;padding:10px 15px;cursor:pointer}
+@media(max-width:760px){.profile-menu-trigger{padding:4px}.profile-chevron{margin-left:0}.profile-dropdown{right:0;width:205px}.account-modal-card{padding:24px 20px}}
