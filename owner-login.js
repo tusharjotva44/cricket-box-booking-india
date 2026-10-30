@@ -10,7 +10,10 @@
   function setAuthMode(mode) {
     authMode = mode;
     $('ownerAuthSubmit').textContent = mode === 'login' ? 'Login to Dashboard →' : 'Create Account →';
-    $('ownerAuthToggle').textContent = mode === 'login' ? 'New User? Create account' : 'Already registered? Login';
+    $('ownerLoginTab').classList.toggle('active', mode === 'login');
+    $('ownerSignupTab').classList.toggle('active', mode === 'signup');
+    $('ownerLoginTab').toggleAttribute('aria-current', mode === 'login');
+    $('ownerSignupTab').toggleAttribute('aria-current', mode === 'signup');
     setMessage(mode === 'signup' ? 'Create an account using your email and a password of at least 6 characters.' : '');
   }
   function saveOwnerSession(email) {
@@ -34,7 +37,8 @@
     });
   }
 
-  $('ownerAuthToggle').addEventListener('click', () => setAuthMode(authMode === 'login' ? 'signup' : 'login'));
+  $('ownerLoginTab').addEventListener('click', () => setAuthMode('login'));
+  $('ownerSignupTab').addEventListener('click', () => setAuthMode('signup'));
   $('ownerLoginForm').addEventListener('submit', async event => {
     event.preventDefault();
     const email = $('ownerEmail').value.trim().toLowerCase();
