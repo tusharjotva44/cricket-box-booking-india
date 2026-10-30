@@ -137,7 +137,7 @@ function connectFirebaseAuthState() {
         owners.push({ email: currentEmail, subscription: false, plan: null });
         write(STORE.owners, owners);
       }
-      showDashboard();
+      // Keep the customer website visible; owners use the separate dashboard page.
     } else {
       currentEmail = '';
       localStorage.removeItem(STORE.session);
