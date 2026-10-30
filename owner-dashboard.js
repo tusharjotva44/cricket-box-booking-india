@@ -1,6 +1,8 @@
 (() => {
   const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1', planExpiry:'boxbook_owner_plan_expiry_v1'};
-  const OWNER_EMAIL = (localStorage.getItem('boxbook_session_v1') || 'demo@boxbook.in').trim().toLowerCase();
+  const savedOwnerSession = (localStorage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
+  if (!savedOwnerSession) { window.location.replace('owner-login.html'); return; }
+  const OWNER_EMAIL = savedOwnerSession;
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
