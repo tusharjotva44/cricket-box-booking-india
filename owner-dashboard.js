@@ -340,8 +340,13 @@
         if (ok) ok.addEventListener('click', () => accountModal.classList.add('hidden'));
       } else if (action === 'logout') {
         closeProfileMenu();
-        try { localStorage.removeItem('boxbook_session_v1'); } catch {}
-        window.location.href = 'index.html';
+        (async () => {
+          try {
+            if (window.firebaseAuthApi && window.firebaseAuth) await window.firebaseAuthApi.signOut(window.firebaseAuth);
+          } catch {}
+          try { localStorage.removeItem('boxbook_session_v1'); } catch {}
+          window.location.href = 'index.html';
+        })();
       }
     });
   }
