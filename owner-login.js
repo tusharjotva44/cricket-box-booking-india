@@ -49,7 +49,7 @@
   $('ownerLoginTab').addEventListener('click', () => setAuthMode('login'));
   $('ownerSignupTab').addEventListener('click', () => setAuthMode('signup'));
   $('ownerMobile').addEventListener('input', event => {
-    event.target.value = event.target.value.replace(/\\D/g, '').slice(0, 10);
+    event.target.value = event.target.value.replace(/\D/g, '').slice(0, 10);
   });
 
   $('ownerLoginForm').addEventListener('submit', async event => {
