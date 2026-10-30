@@ -342,10 +342,15 @@
         closeProfileMenu();
         (async () => {
           try {
-            if (window.firebaseAuthApi && window.firebaseAuth) await window.firebaseAuthApi.signOut(window.firebaseAuth);
-          } catch {}
-          try { localStorage.removeItem('boxbook_session_v1'); } catch {}
-          window.location.href = 'index.html';
+            if (!window.firebaseAuthApi || !window.firebaseAuth || typeof window.firebaseAuthApi.signOut !== 'function') {
+              throw new Error('Firebase logout is not ready.');
+            }
+            await window.firebaseAuthApi.signOut(window.firebaseAuth);
+            localStorage.removeItem('boxbook_session_v1');
+            window.location.replace('index.html');
+          } catch (error) {
+            toast('Logout failed. Please try again.');
+          }
         })();
       }
     });
