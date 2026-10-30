@@ -2,8 +2,6 @@
   const $ = id => document.getElementById(id);
   const STORE = {owners:'boxbook_owners_v1',session:'boxbook_session_v1'};
   let authMode = 'login';
-  let authListenerStarted = false;
-  let signupInProgress = false;
 
   function setMessage(message) {
     $('ownerAuthMessage').textContent = message || '';
@@ -38,14 +36,6 @@
     }
     window.location.replace('owner-dashboard.html');
   }
-  function connectAuthListener() {
-    if (authListenerStarted || !window.firebaseAuthApi || !window.firebaseAuth) return;
-    authListenerStarted = true;
-    window.firebaseAuthApi.onAuthStateChanged(window.firebaseAuth, user => {
-      if (user && user.email && !signupInProgress) saveOwnerSession(user.email);
-    });
-  }
-
   $('ownerLoginTab').addEventListener('click', () => setAuthMode('login'));
   $('ownerSignupTab').addEventListener('click', () => setAuthMode('signup'));
   $('ownerMobile').addEventListener('input', event => {
@@ -76,7 +66,6 @@
     setMessage(authMode === 'signup' ? 'Creating your account...' : 'Signing in...');
     try {
       if (authMode === 'signup') {
-        signupInProgress = true;
         const result = await window.firebaseAuthApi.createUserWithEmailAndPassword(window.firebaseAuth,email,password);
         await window.firebaseAuthApi.saveOwnerProfile(window.firebaseDB, result.user.uid, {
           fullName,
@@ -89,7 +78,6 @@
         saveOwnerSession(result.user.email || email);
       }
     } catch (error) {
-      signupInProgress = false;
       const messages = {
         'auth/email-already-in-use':'This email is already registered. Please log in.',
         'auth/invalid-email':'Please enter a valid email address.',
@@ -103,6 +91,4 @@
       submit.disabled = false;
     }
   });
-  window.addEventListener('firebase-ready', connectAuthListener);
-  connectAuthListener();
 })();
