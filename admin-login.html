@@ -27,6 +27,9 @@
     .admin-login-card-wrap{display:grid;place-items:center;padding:48px 54px;background:#fff}
     #ownerLoginPanel{position:static;inset:auto;display:block;width:100%;height:auto;padding:0;background:transparent;overflow:visible}
     #ownerLoginPanel .modal{width:100%;max-width:430px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+    .admin-auth-tabs{display:flex;gap:10px;margin:0 0 28px;padding:5px;border:1px solid #f1e1d5;border-radius:12px;background:#fff9f5}
+    .admin-auth-tab{flex:1;padding:12px;border:0;border-radius:9px;background:transparent;color:#737983;font-size:14px;font-weight:800;cursor:pointer}
+    .admin-auth-tab.active{background:#F97316;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,.18)}
     #ownerLoginPanel .eyebrow{display:inline-block;color:#F97316;font-size:11px;font-weight:800;letter-spacing:1.5px}
     #ownerLoginPanel .modal h2{margin:13px 0 9px;color:#20242b;font-size:32px;line-height:1.2;letter-spacing:-.8px}
     #ownerLoginPanel .muted{margin:0;color:#737983;font-size:14px;line-height:1.65}
@@ -62,6 +65,10 @@
         <div class="admin-login-card-wrap">
           <div id="ownerLoginPanel">
             <section class="modal" aria-labelledby="ownerLoginTitle">
+              <nav class="admin-auth-tabs" aria-label="Account access">
+                <button class="admin-auth-tab active" id="ownerLoginTab" type="button" aria-current="page">Login</button>
+                <button class="admin-auth-tab" id="ownerSignupTab" type="button">Sign up</button>
+              </nav>
               <span class="eyebrow">BOX BOOK INDIA · ADMIN PORTAL</span>
               <h2 id="ownerLoginTitle">Welcome back.</h2>
               <p class="muted">Sign in to manage your ground, bookings and subscription, or create a new owner account.</p>
@@ -70,7 +77,6 @@
                 <label>Password<input id="ownerPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required minlength="6"></label>
                 <button class="primary full" id="ownerAuthSubmit" type="submit">Sign In <span aria-hidden="true">→</span></button>
               </form>
-              <button class="outline full" id="ownerAuthToggle" type="button">New User? Create account</button>
               <p id="ownerAuthMessage" class="fineprint" aria-live="polite"></p>
             </section>
           </div>
