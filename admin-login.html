@@ -27,6 +27,8 @@
     .admin-login-card-wrap{display:grid;place-items:center;padding:48px 54px;background:#fff}
     #ownerLoginPanel{position:static;inset:auto;display:block;width:100%;height:auto;padding:0;background:transparent;overflow:visible}
     #ownerLoginPanel .modal{width:100%;max-width:430px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+    #ownerSignupFields{display:grid;gap:19px}
+    #ownerSignupFields[hidden],#ownerConfirmField[hidden]{display:none}
     .admin-auth-tabs{display:flex;gap:10px;margin:0 0 28px;padding:5px;border:1px solid #f1e1d5;border-radius:12px;background:#fff9f5}
     .admin-auth-tab{flex:1;padding:12px;border:0;border-radius:9px;background:transparent;color:#737983;font-size:14px;font-weight:800;cursor:pointer}
     .admin-auth-tab.active{background:#F97316;color:#fff;box-shadow:0 4px 12px rgba(249,115,22,.18)}
@@ -73,8 +75,13 @@
               <h2 id="ownerLoginTitle">Welcome back.</h2>
               <p class="muted">Sign in to manage your ground, bookings and subscription, or create a new owner account.</p>
               <form id="ownerLoginForm">
+                <div id="ownerSignupFields" hidden>
+                  <label>Your Name<input id="ownerFullName" type="text" placeholder="Enter your full name" autocomplete="name" maxlength="100"></label>
+                  <label>Mobile Number<input id="ownerMobile" type="tel" inputmode="numeric" placeholder="10-digit mobile number" autocomplete="tel-national" maxlength="10" pattern="[0-9]{10}"></label>
+                </div>
                 <label>Email<input id="ownerEmail" type="email" placeholder="owner@example.com" autocomplete="email" required></label>
                 <label>Password<input id="ownerPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required minlength="6"></label>
+                <div id="ownerConfirmField" hidden><label>Confirm Password<input id="ownerConfirmPassword" type="password" placeholder="Re-enter your password" autocomplete="new-password" minlength="6"></label></div>
                 <button class="primary full" id="ownerAuthSubmit" type="submit">Sign In <span aria-hidden="true">→</span></button>
               </form>
               <p id="ownerAuthMessage" class="fineprint" aria-live="polite"></p>
