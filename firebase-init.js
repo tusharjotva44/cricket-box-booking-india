@@ -5,6 +5,11 @@ import {
   signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+import {
+  doc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 window.firebaseApp = app;
 window.firebaseAuth = auth;
@@ -13,7 +18,11 @@ window.firebaseAuthApi = {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  saveOwnerProfile: (database, uid, profile) => setDoc(doc(database, "owners", uid), {
+    ...profile,
+    createdAt: serverTimestamp()
+  })
 };
 
 console.log("Firebase initialized successfully.");
