@@ -70,7 +70,7 @@
   function overlaps(a,b) { const x=rangeForBooking(a),y=rangeForBooking(b);return !!(x&&y&&x.groundId===y.groundId&&x.start<y.end&&x.end>y.start); }
   function bookingRow(b, full=false) {
     return '<tr><td><span class="booking-id">' + escapeHTML(b.id) + '</span></td>' +
-      (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small>' + escapeHTML(b.email) + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
+      (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small class="booking-phone">Mobile: ' + escapeHTML(b.email || 'Not provided') + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
       '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : (b.status === 'Rejected' || b.status === 'Expired') ? 'rejected' : 'pending') + '">' + escapeHTML(b.status) + '</span>' + (b.paymentStatus ? '<br><small>' + escapeHTML(b.paymentStatus) + '</small>' : '') + '</td>' + (full ? '<td>' + (b.status === 'Pending' ? '<button type="button" class="approve-btn" data-approve="' + escapeHTML(b.id) + '">Approve</button> <button type="button" class="reject-btn" data-reject="' + escapeHTML(b.id) + '">Reject</button>' : '—') + '</td>' : '') + '</tr>';
   }
   function renderBookings() {
