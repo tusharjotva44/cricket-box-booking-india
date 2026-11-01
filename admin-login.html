@@ -42,6 +42,20 @@
     #ownerLoginPanel .modal input::placeholder{color:#a0a5ad}
     #ownerForgotPassword{justify-self:end;margin-top:-10px;padding:0;border:0;background:transparent;color:#d95c0b;font-size:12px;font-weight:700;cursor:pointer}
     #ownerForgotPassword[hidden]{display:none}
+    #ownerResetModal[hidden]{display:none}
+    #ownerResetModal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(24,28,35,.58)}
+    .owner-reset-card{position:relative;width:100%;max-width:420px;padding:30px;border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.22)}
+    .owner-reset-card h3{margin:0 0 9px;color:#20242b;font-size:24px}
+    .owner-reset-card p{margin:0 0 22px;color:#737983;font-size:14px;line-height:1.6}
+    .owner-reset-card label{display:grid;gap:9px;margin-bottom:17px;color:#343942;font-size:13px;font-weight:700}
+    .owner-reset-card input{width:100%;box-sizing:border-box;padding:14px 15px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none}
+    .owner-reset-card input:focus{border-color:#F97316;box-shadow:0 0 0 3px rgba(249,115,22,.12)}
+    .owner-reset-actions{display:flex;gap:10px}
+    .owner-reset-actions button{flex:1;padding:13px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer}
+    #ownerResetSubmit{border:0;background:#F97316;color:#fff}
+    #ownerResetSubmit:hover{background:#ea650d}
+    #ownerResetClose{border:1px solid #f3c6a6;background:#fff;color:#d95c0b}
+    #ownerResetMessage{min-height:18px;margin:14px 0 0;color:#737983;font-size:12px}
     #ownerLoginPanel .modal .primary{width:100%;padding:16px;border:0;border-radius:11px;background:#F97316;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(249,115,22,.2)}
     #ownerLoginPanel .modal .primary:hover{background:#ea650d}
     #ownerLoginPanel .modal .outline{width:100%;margin-top:13px;padding:14px;border:1px solid #f3c6a6;border-radius:11px;background:#fff;color:#d95c0b;font-size:13px;font-weight:700;cursor:pointer}
@@ -94,6 +108,22 @@
       </div>
     </div>
   </main>
+  <div id="ownerResetModal" hidden role="dialog" aria-modal="true" aria-labelledby="ownerResetTitle">
+    <section class="owner-reset-card">
+      <h3 id="ownerResetTitle">Forgot Password?</h3>
+      <p>Enter your registered email address. We will send you a password reset link.</p>
+      <form id="ownerResetForm">
+        <label for="ownerResetEmail">Enter your email
+          <input id="ownerResetEmail" type="email" placeholder="owner@example.com" autocomplete="email" required>
+        </label>
+        <div class="owner-reset-actions">
+          <button id="ownerResetClose" type="button">Cancel</button>
+          <button id="ownerResetSubmit" type="submit">Send Reset Link</button>
+        </div>
+      </form>
+      <p id="ownerResetMessage" aria-live="polite"></p>
+    </section>
+  </div>
   <script type="module" src="firebase-init.js"></script>
   <script src="owner-login.js"></script>
 </body>
