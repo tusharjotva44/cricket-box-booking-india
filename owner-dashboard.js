@@ -101,6 +101,7 @@
     const previous = allConfirmed.filter(b => b.date >= dateKey(previousStart) && b.date < dateKey(previousEnd));
     const total = confirmed.reduce((sum,b) => sum + Number(b.amount || 0), 0);
     const previousTotal = previous.reduce((sum,b) => sum + Number(b.amount || 0), 0);
+    renderPaymentReceivedReport();
     $('reportRevenue').textContent = money(total);
     $('reportBookings').textContent = String(confirmed.length);
     $('reportAverage').textContent = money(confirmed.length ? Math.round(total / confirmed.length) : 0);
@@ -146,6 +147,45 @@
       ? sortedBookings.map(b => '<tr><td>' + escapeHTML(b.id) + '</td><td>' + escapeHTML(b.customer) + '</td><td>' + escapeHTML(b.ground) + '</td><td>' + escapeHTML(b.date) + '</td><td>' + money(b.amount) + '</td></tr>').join('')
       : '<tr><td colspan="5">No confirmed bookings for this period.</td></tr>';
   }
+  function paymentIsReceived(paymentStatus) {
+    const status = String(paymentStatus || '').trim().toLowerCase();
+    return ['paid', 'received', 'payment received', 'success', 'successful', 'completed'].some(value => status === value || status.includes(value));
+  }
+
+  function paymentReceivedBookings() {
+    return bookingsForOwner().filter(booking => paymentIsReceived(booking.paymentStatus))
+      .sort((a,b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
+  }
+
+  function renderPaymentReceivedReport() {
+    const paidBookings = paymentReceivedBookings();
+    const total = paidBookings.reduce((sum, booking) => sum + Number(booking.amount || 0), 0);
+    $('paymentReceivedCount').textContent = String(paidBookings.length);
+    $('paymentReceivedTotal').textContent = money(total);
+    $('paymentReceivedRows').innerHTML = paidBookings.length
+      ? paidBookings.map(booking => '<tr><td>' + escapeHTML(booking.id) + '</td><td>' + escapeHTML(booking.customer) + '</td><td>' + escapeHTML(booking.email || '—') + '</td><td>' + escapeHTML(booking.ground) + '</td><td>' + escapeHTML(booking.date) + '<br><small>' + escapeHTML(booking.time) + '</small></td><td>' + money(booking.amount) + '</td><td>' + escapeHTML(booking.paymentStatus) + '</td></tr>').join('')
+      : '<tr><td colspan="7">No received payments found.</td></tr>';
+  }
+
+  function downloadPaymentReceivedCSV() {
+    const paidBookings = paymentReceivedBookings();
+    if (!paidBookings.length) { toast('No received payments available to download.'); return; }
+    const columns = ['Booking ID','Customer','Phone','Ground','Booking Date','Time Slot','Amount','Payment Status'];
+    const rows = paidBookings.map(booking => [booking.id,booking.customer,booking.email,booking.ground,booking.date,booking.time,booking.amount,booking.paymentStatus]);
+    const csvCell = value => '"' + String(value ?? '').replace(/"/g,'""') + '"';
+    const csv = '\uFEFF' + [columns,...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'box-book-india-payment-received-report-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast('Payment report CSV downloaded.');
+  }
+
   function renderBookings() {
     sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
@@ -382,6 +422,7 @@
     toast('Booking confirmed and added to your bookings.');
   });
   $('revenuePeriod').addEventListener('change', renderRevenueReport);
+  $('downloadPaymentReport').addEventListener('click', downloadPaymentReceivedCSV);
   $('bookingFilter').addEventListener('change', renderBookings);
   $('bookingSearch').addEventListener('input', renderBookings);
   $('bookingDateFilter').addEventListener('change', renderBookings);
