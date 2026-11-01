@@ -94,9 +94,12 @@
   }
   function renderOwnerName() {
     const label = $('ownerGroundName');
+    const avatar = document.querySelector('.profile-menu-trigger .avatar');
     let profile = {};
     try { profile = JSON.parse(localStorage.getItem('boxbook_owner_profile_v1') || '{}') || {}; } catch {}
-    if (label) label.textContent = profile.yourName || profile.fullName || 'Owner Account';
+    const ownerName = String(profile.yourName || profile.fullName || '').trim();
+    if (label) label.textContent = ownerName || 'Owner Account';
+    if (avatar) avatar.textContent = ownerName ? Array.from(ownerName)[0].toUpperCase() : 'O';
   }
   function renderGrounds() {
     $('statGrounds').textContent = String(grounds.length);
