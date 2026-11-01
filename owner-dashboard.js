@@ -559,10 +559,48 @@
     toast(selectedPlan + ' plan selected for this browser demo.');
   }));
   syncPlanPreview();
+  let bookingAlertAudioContext = null;
+  function enableBookingAlerts() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        if (!bookingAlertAudioContext) bookingAlertAudioContext = new AudioContextClass();
+        if (bookingAlertAudioContext.state === 'suspended') bookingAlertAudioContext.resume();
+      }
+    } catch {}
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') toast('Browser booking notifications enabled.');
+        else toast('Browser notifications are blocked. You can allow them in site settings.');
+      }).catch(() => {});
+    } else if (!('Notification' in window)) {
+      toast('This browser does not support desktop notifications.');
+    }
+  }
+  function playBookingAlertSound() {
+    if (!bookingAlertAudioContext || bookingAlertAudioContext.state !== 'running') return;
+    try {
+      const now = bookingAlertAudioContext.currentTime;
+      [0, 0.28].forEach(offset => {
+        const oscillator = bookingAlertAudioContext.createOscillator();
+        const gain = bookingAlertAudioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, now + offset);
+        gain.gain.setValueAtTime(0.0001, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + offset + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.18);
+        oscillator.connect(gain);
+        gain.connect(bookingAlertAudioContext.destination);
+        oscillator.start(now + offset);
+        oscillator.stop(now + offset + 0.19);
+      });
+    } catch {}
+  }
   const notificationTrigger = $('notificationTrigger');
   const notificationPanel = $('notificationPanel');
   if (notificationTrigger && notificationPanel) {
     notificationTrigger.addEventListener('click', () => {
+      enableBookingAlerts();
       const opening = notificationPanel.classList.contains('hidden');
       notificationPanel.classList.toggle('hidden', !opening);
       notificationTrigger.setAttribute('aria-expanded', String(opening));
@@ -761,8 +799,9 @@
       const incoming = latest.filter(b => !knownBookingIds.has(b.id));
       incoming.forEach(b => {
         toast('New booking request from ' + b.customer + ' for ' + b.ground + '.');
+        playBookingAlertSound();
         if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('New BoxBook booking request', {body: b.customer + ' · ' + b.ground + ' · ' + b.date + ' · ' + b.time});
+          new Notification('New BoxBook booking request', {body: b.customer + ' · ' + b.ground + ' · ' + b.date + ' · ' + b.time, tag: String(b.id || 'boxbook-booking')});
         }
       });
       knownBookingIds = new Set(latest.map(b => b.id));
