@@ -219,3 +219,10 @@
 .revenue-booking-breakdown{margin-top:24px}
 .revenue-report-panel{margin-bottom:22px}
 @media(max-width:620px){.revenue-insights-grid{grid-template-columns:1fr}.revenue-chart-section{padding:13px}.revenue-chart{gap:5px}}
+
+.payment-received-report{margin-top:26px;padding-top:20px;border-top:1px solid #eee7df}
+.payment-report-heading{align-items:center;gap:14px;margin-bottom:16px}
+.payment-report-heading .primary-btn{white-space:nowrap}
+.payment-report-summary{margin-bottom:16px}
+.payment-report-summary .revenue-summary-card{min-height:84px}
+@media(max-width:620px){.payment-report-heading{align-items:flex-start;flex-direction:column}.payment-report-heading .primary-btn{width:100%}}
