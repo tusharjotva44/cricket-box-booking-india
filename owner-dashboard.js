@@ -101,7 +101,6 @@
     const previous = allConfirmed.filter(b => b.date >= dateKey(previousStart) && b.date < dateKey(previousEnd));
     const total = confirmed.reduce((sum,b) => sum + Number(b.amount || 0), 0);
     const previousTotal = previous.reduce((sum,b) => sum + Number(b.amount || 0), 0);
-    renderPaymentReceivedReport();
     $('reportRevenue').textContent = money(total);
     $('reportBookings').textContent = String(confirmed.length);
     $('reportAverage').textContent = money(confirmed.length ? Math.round(total / confirmed.length) : 0);
@@ -155,16 +154,6 @@
   function paymentReceivedBookings() {
     return bookingsForOwner().filter(booking => paymentIsReceived(booking.paymentStatus))
       .sort((a,b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
-  }
-
-  function renderPaymentReceivedReport() {
-    const paidBookings = paymentReceivedBookings();
-    const total = paidBookings.reduce((sum, booking) => sum + Number(booking.amount || 0), 0);
-    $('paymentReceivedCount').textContent = String(paidBookings.length);
-    $('paymentReceivedTotal').textContent = money(total);
-    $('paymentReceivedRows').innerHTML = paidBookings.length
-      ? paidBookings.map(booking => '<tr><td>' + escapeHTML(booking.id) + '</td><td>' + escapeHTML(booking.customer) + '</td><td>' + escapeHTML(booking.email || '—') + '</td><td>' + escapeHTML(booking.ground) + '</td><td>' + escapeHTML(booking.date) + '<br><small>' + escapeHTML(booking.time) + '</small></td><td>' + money(booking.amount) + '</td><td>' + escapeHTML(booking.paymentStatus) + '</td></tr>').join('')
-      : '<tr><td colspan="7">No received payments found.</td></tr>';
   }
 
   function downloadPaymentReceivedCSV() {
