@@ -40,6 +40,8 @@
     #ownerLoginPanel .modal input{width:100%;box-sizing:border-box;padding:15px 16px;border:1px solid #e5e7eb;border-radius:11px;background:#fff;color:#20242b;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
     #ownerLoginPanel .modal input:focus{border-color:#F97316;box-shadow:0 0 0 3px rgba(249,115,22,.12)}
     #ownerLoginPanel .modal input::placeholder{color:#a0a5ad}
+    #ownerForgotPassword{justify-self:end;margin-top:-10px;padding:0;border:0;background:transparent;color:#d95c0b;font-size:12px;font-weight:700;cursor:pointer}
+    #ownerForgotPassword[hidden]{display:none}
     #ownerLoginPanel .modal .primary{width:100%;padding:16px;border:0;border-radius:11px;background:#F97316;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(249,115,22,.2)}
     #ownerLoginPanel .modal .primary:hover{background:#ea650d}
     #ownerLoginPanel .modal .outline{width:100%;margin-top:13px;padding:14px;border:1px solid #f3c6a6;border-radius:11px;background:#fff;color:#d95c0b;font-size:13px;font-weight:700;cursor:pointer}
@@ -81,6 +83,7 @@
                 </div>
                 <label>Email<input id="ownerEmail" type="email" placeholder="owner@example.com" autocomplete="email" required></label>
                 <label>Password<input id="ownerPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required minlength="6"></label>
+                <button id="ownerForgotPassword" type="button">Forgot Password?</button>
                 <div id="ownerConfirmField" hidden><label>Confirm Password<input id="ownerConfirmPassword" type="password" placeholder="Re-enter your password" autocomplete="new-password" minlength="6"></label></div>
                 <button class="primary full" id="ownerAuthSubmit" type="submit">Sign In <span aria-hidden="true">→</span></button>
               </form>
