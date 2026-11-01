@@ -123,6 +123,7 @@
           mobile,
           email: result.user.email || email
         });
+        localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify({yourName:fullName, mobile, email:result.user.email || email}));
         saveOwnerSession(result.user.email || email);
       } else {
         const result = await window.firebaseAuthApi.signInWithEmailAndPassword(window.firebaseAuth,email,password);
