@@ -52,7 +52,7 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
-    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',calendar:'Booking Calendar',revenue:'Revenue Report',subscription:'Subscription'};
+    const labels = {overview:'Overview',grounds:'My Grounds',availability:'Ground Availability',bookings:'Booking Control Center',calendar:'Booking Calendar',revenue:'Revenue Report',subscription:'Subscription'};
     $('breadcrumbTitle').textContent = labels[name] || 'Overview';
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
@@ -236,6 +236,7 @@
   }
   function renderGrounds() {
     $('statGrounds').textContent = String(grounds.length);
+    if ($('availabilityGroundSelect')) renderAvailabilityGroundOptions();
     renderOwnerName();
     $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>☎ ' + escapeHTML(g.mobile || g.phone || 'Mobile not provided') + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><div class="ground-action-buttons"><button class="secondary-btn" type="button" data-edit-ground="' + escapeHTML(g.id) + '">Edit</button><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></div></article>').join('');
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
@@ -319,6 +320,47 @@
     $('groundFormPanel').classList.remove('hidden');
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
   }
+  const availabilityDays = [{key:'monday',label:'Monday'},{key:'tuesday',label:'Tuesday'},{key:'wednesday',label:'Wednesday'},{key:'thursday',label:'Thursday'},{key:'friday',label:'Friday'},{key:'saturday',label:'Saturday'},{key:'sunday',label:'Sunday'}];
+  let availabilityGroundId = '';
+  function defaultGroundAvailability() { return Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'08:00',end:'03:00'}])); }
+  function renderAvailabilityGroundOptions() {
+    const select = $('availabilityGroundSelect'), previous = availabilityGroundId;
+    select.innerHTML = '<option value="">Select your ground</option>' + grounds.map(g => '<option value="' + escapeHTML(g.id) + '">' + escapeHTML(g.name) + '</option>').join('');
+    availabilityGroundId = grounds.some(g => g.id === previous) ? previous : (grounds[0] ? grounds[0].id : '');
+    select.value = availabilityGroundId; renderAvailabilityEditor();
+  }
+  function renderAvailabilityEditor() {
+    const ground = grounds.find(g => g.id === availabilityGroundId), editor = $('availabilityEditor'), actions = $('availabilityActions');
+    if (!ground) { editor.innerHTML = '<p class="availability-empty">' + (grounds.length ? 'Select a ground to set its weekly schedule.' : 'Add a ground first to manage its availability.') + '</p>'; actions.classList.add('hidden'); return; }
+    const schedule = {...defaultGroundAvailability(),...(ground.availability || {})};
+    editor.innerHTML = '<div class="availability-ground-summary"><strong>' + escapeHTML(ground.name) + '</strong><span>' + escapeHTML(ground.sport) + ' · ' + escapeHTML(ground.location) + '</span></div><div class="availability-week">' + availabilityDays.map(day => {
+      const item = schedule[day.key] || {open:false,start:'08:00',end:'03:00'};
+      return '<div class="availability-day-row" data-availability-day="' + day.key + '"><label class="availability-day-toggle"><input type="checkbox" data-availability-open ' + (item.open ? 'checked' : '') + '><span>' + day.label + '</span></label><label class="availability-time-field">From<input type="time" data-availability-start value="' + escapeHTML(item.start || '08:00') + '" ' + (!item.open?'disabled':'') + '></label><label class="availability-time-field">Until<input type="time" data-availability-end value="' + escapeHTML(item.end || '03:00') + '" ' + (!item.open?'disabled':'') + '></label><span class="availability-closed-label">' + (item.open?'Open':'Closed') + '</span></div>';
+    }).join('') + '</div><p class="availability-note">Switch off a day to close the ground. Overnight hours are supported, for example 8:00 AM to 3:00 AM.</p>';
+    actions.classList.remove('hidden');
+  }
+  $('availabilityGroundSelect').addEventListener('change', () => { availabilityGroundId = $('availabilityGroundSelect').value; renderAvailabilityEditor(); });
+  $('availabilityEditor').addEventListener('change', event => {
+    const row = event.target.closest('[data-availability-day]');
+    if (!row || !event.target.matches('[data-availability-open]')) return;
+    const open = event.target.checked;
+    row.querySelector('[data-availability-start]').disabled = !open;
+    row.querySelector('[data-availability-end]').disabled = !open;
+    row.querySelector('.availability-closed-label').textContent = open ? 'Open' : 'Closed';
+  });
+  $('saveAvailabilityButton').addEventListener('click', () => {
+    const ground = grounds.find(g => g.id === availabilityGroundId);
+    if (!ground) { toast('Please select a ground.'); return; }
+    const schedule = {}; let valid = true;
+    document.querySelectorAll('[data-availability-day]').forEach(row => {
+      const key = row.dataset.availabilityDay, open = row.querySelector('[data-availability-open]').checked;
+      const start = row.querySelector('[data-availability-start]').value, end = row.querySelector('[data-availability-end]').value;
+      if (open && (!start || !end || start === end)) valid = false;
+      schedule[key] = {open,start,end};
+    });
+    if (!valid) { toast('For each open day, choose different start and end times.'); return; }
+    ground.availability = schedule; saveGrounds(); toast('Ground availability saved.'); renderAvailabilityEditor();
+  });
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   $('calendarPrev').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()-1, 1); renderBookingCalendar(); });
   $('calendarNext').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()+1, 1); renderBookingCalendar(); });
