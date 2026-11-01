@@ -51,7 +51,7 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
-    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',subscription:'Subscription'};
+    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',revenue:'Revenue Report',subscription:'Subscription'};
     $('breadcrumbTitle').textContent = labels[name] || 'Overview';
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
@@ -77,23 +77,30 @@
     const period = $('revenuePeriod').value;
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let start, end;
+    let start, end, previousStart, previousEnd;
     if (period === 'daily') {
-      start = today;
-      end = new Date(today); end.setDate(end.getDate() + 1);
+      start = today; end = new Date(today); end.setDate(end.getDate() + 1);
+      previousStart = new Date(start); previousStart.setDate(previousStart.getDate() - 1);
+      previousEnd = new Date(start);
     } else if (period === 'weekly') {
       start = new Date(today);
-      const dayOffset = (start.getDay() + 6) % 7;
-      start.setDate(start.getDate() - dayOffset);
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
       end = new Date(start); end.setDate(end.getDate() + 7);
+      previousStart = new Date(start); previousStart.setDate(previousStart.getDate() - 7);
+      previousEnd = new Date(start);
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      previousEnd = new Date(start);
     }
-    const startKey = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
-    const endKey = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
-    const confirmed = bookingsForOwner().filter(b => b.status === 'Confirmed' && b.date >= startKey && b.date < endKey);
+    const dateKey = date => date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+    const startKey = dateKey(start), endKey = dateKey(end);
+    const allConfirmed = bookingsForOwner().filter(b => b.status === 'Confirmed');
+    const confirmed = allConfirmed.filter(b => b.date >= startKey && b.date < endKey);
+    const previous = allConfirmed.filter(b => b.date >= dateKey(previousStart) && b.date < dateKey(previousEnd));
     const total = confirmed.reduce((sum,b) => sum + Number(b.amount || 0), 0);
+    const previousTotal = previous.reduce((sum,b) => sum + Number(b.amount || 0), 0);
     $('reportRevenue').textContent = money(total);
     $('reportBookings').textContent = String(confirmed.length);
     $('reportAverage').textContent = money(confirmed.length ? Math.round(total / confirmed.length) : 0);
@@ -104,9 +111,40 @@
       item.count += 1; item.total += Number(b.amount || 0); byGround.set(key,item);
     });
     const rows = Array.from(byGround.entries()).sort((a,b) => b[1].total - a[1].total);
+    $('reportTopGround').textContent = rows.length ? rows[0][0] : '—';
+    $('reportTopGroundAmount').textContent = rows.length ? money(rows[0][1].total) + ' earnings' : 'No earnings yet';
+    const growth = previousTotal === 0 ? (total > 0 ? 100 : 0) : ((total - previousTotal) / previousTotal) * 100;
+    $('reportGrowth').textContent = (growth > 0 ? '+' : '') + growth.toFixed(1) + '%';
+    $('reportGrowth').classList.toggle('is-positive', growth > 0);
+    $('reportGrowth').classList.toggle('is-negative', growth < 0);
+    $('reportGrowthCaption').textContent = 'Previous period: ' + money(previousTotal);
+    $('revenueTrendCaption').textContent = period === 'daily' ? 'Hourly booking earnings today' : period === 'weekly' ? 'Daily earnings this week' : 'Daily earnings this month';
+    const buckets = [];
+    if (period === 'daily') {
+      for (let hour=0; hour<24; hour+=3) buckets.push({label:String(hour).padStart(2,'0')+':00',start:new Date(start.getTime()+hour*3600000),end:new Date(start.getTime()+(hour+3)*3600000)});
+    } else {
+      const cursor = new Date(start);
+      while (cursor < end) {
+        const bucketStart = new Date(cursor), bucketEnd = new Date(cursor);
+        bucketEnd.setDate(bucketEnd.getDate() + (period === 'weekly' ? 1 : 1));
+        buckets.push({label:period === 'weekly' ? bucketStart.toLocaleDateString('en-IN',{weekday:'short'}) : String(bucketStart.getDate()),start:bucketStart,end:bucketEnd});
+        cursor.setDate(cursor.getDate()+1);
+      }
+    }
+    const bucketValues = buckets.map(bucket => {
+      const key = dateKey(bucket.start), nextKey = dateKey(bucket.end);
+      const amount = confirmed.filter(b => b.date >= key && b.date < nextKey && (period !== 'daily' || Number(String(b.time || '').match(/(\d{1,2})/)?.[1] || 0) >= Number(bucket.label.slice(0,2)) && Number(String(b.time || '').match(/(\d{1,2})/)?.[1] || 0) < Number(bucket.label.slice(0,2))+3)).reduce((sum,b) => sum + Number(b.amount || 0),0);
+      return {...bucket,amount};
+    });
+    const maxValue = Math.max(1,...bucketValues.map(x=>x.amount));
+    $('revenueTrendChart').innerHTML = bucketValues.map(bucket => '<div class="revenue-chart-column"><div class="revenue-chart-value">' + (bucket.amount ? money(bucket.amount) : '—') + '</div><div class="revenue-chart-track"><span style="height:' + Math.max(bucket.amount ? 5 : 0, bucket.amount/maxValue*100) + '%"></span></div><small>' + escapeHTML(bucket.label) + '</small></div>').join('');
     $('revenueGroundRows').innerHTML = rows.length
       ? rows.map(([name,item]) => '<tr><td>' + escapeHTML(name) + '</td><td>' + item.count + '</td><td>' + money(item.total) + '</td></tr>').join('')
       : '<tr><td colspan="3">No confirmed earnings for this period.</td></tr>';
+    const sortedBookings = [...confirmed].sort((a,b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
+    $('revenueBookingRows').innerHTML = sortedBookings.length
+      ? sortedBookings.map(b => '<tr><td>' + escapeHTML(b.id) + '</td><td>' + escapeHTML(b.customer) + '</td><td>' + escapeHTML(b.ground) + '</td><td>' + escapeHTML(b.date) + '</td><td>' + money(b.amount) + '</td></tr>').join('')
+      : '<tr><td colspan="5">No confirmed bookings for this period.</td></tr>';
   }
   function renderBookings() {
     sampleBookings = bookingsForOwner();
