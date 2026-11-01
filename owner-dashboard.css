@@ -258,3 +258,11 @@
 /* Ground card edit and remove actions */
 .ground-action-buttons{display:flex;align-items:center;gap:7px}
 .ground-action-buttons .secondary-btn,.ground-action-buttons .delete-btn{min-height:32px;padding:7px 10px;font-size:10px}
+
+
+/* Slightly larger text for My Grounds card details only */
+.ground-card h3{font-size:17px}
+.ground-card p{font-size:13px}
+.ground-card .sport-tag{font-size:9px}
+.ground-card .ground-meta strong{font-size:14px}
+.ground-card .ground-meta small{font-size:11px}
