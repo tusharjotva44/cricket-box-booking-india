@@ -187,3 +187,16 @@
 /* Dashboard action buttons: white by default, orange on hover */
 .page-heading-actions .primary-btn,.page-heading-actions .secondary-btn{background:#fff;color:#c2410c;border:1px solid #f97316;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .15s ease}
 .page-heading-actions .primary-btn:hover,.page-heading-actions .secondary-btn:hover{background:#f97316;color:#fff;border-color:#f97316}
+
+
+/* Revenue & Earnings Report */
+.revenue-report-panel{margin:0 0 20px;padding:20px}
+.revenue-report-heading{align-items:center}
+.revenue-period-label{display:grid;gap:5px;min-width:135px;color:var(--muted);font-size:10px;font-weight:700}
+.revenue-period-label select{width:100%;min-width:135px}
+.revenue-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0 20px}
+.revenue-summary-card{display:grid;gap:8px;padding:16px;border:1px solid #f1eee9;border-radius:12px;background:#fffaf5}
+.revenue-summary-card span{font-size:11px;color:var(--muted)}
+.revenue-summary-card strong{font:700 23px 'Space Grotesk',sans-serif;color:var(--ink);overflow-wrap:anywhere}
+.revenue-ground-breakdown h3{margin:0 0 12px;font:700 14px 'Space Grotesk',sans-serif;color:var(--ink)}
+@media(max-width:620px){.revenue-report-panel{padding:15px}.revenue-report-heading{align-items:flex-start;flex-direction:column}.revenue-period-label,.revenue-period-label select{width:100%}.revenue-summary-grid{grid-template-columns:1fr;gap:9px}.revenue-summary-card{padding:13px}.revenue-summary-card strong{font-size:21px}}
