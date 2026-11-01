@@ -2,6 +2,7 @@ import { app, auth, db } from "./firebase-config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
@@ -17,6 +18,7 @@ window.firebaseDB = db;
 window.firebaseAuthApi = {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   saveOwnerProfile: (database, uid, profile) => setDoc(doc(database, "owners", uid), {
