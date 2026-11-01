@@ -118,6 +118,20 @@
           <article class="stat-card"><div class="stat-top"><span>Pending Requests</span><span class="stat-icon peach">◷</span></div><strong id="statPending">0</strong><small>Need your attention</small></article>
           <article class="stat-card"><div class="stat-top"><span>Confirmed Revenue</span><span class="stat-icon green">₹</span></div><strong id="statRevenue">₹0</strong><small>Confirmed bookings only</small></article>
         </div>
+        <section class="panel revenue-report-panel" aria-labelledby="revenueReportTitle">
+          <div class="panel-heading revenue-report-heading">
+            <div><h2 id="revenueReportTitle">Revenue &amp; Earnings Report</h2><p>Confirmed bookings only · Based on booking date</p></div>
+            <label class="revenue-period-label" for="revenuePeriod">Report period
+              <select id="revenuePeriod" class="filter-select"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option></select>
+            </label>
+          </div>
+          <div class="revenue-summary-grid">
+            <article class="revenue-summary-card"><span>Total earnings</span><strong id="reportRevenue">₹0</strong></article>
+            <article class="revenue-summary-card"><span>Confirmed bookings</span><strong id="reportBookings">0</strong></article>
+            <article class="revenue-summary-card"><span>Average booking value</span><strong id="reportAverage">₹0</strong></article>
+          </div>
+          <div class="revenue-ground-breakdown"><h3>Earnings by ground</h3><div class="table-wrap"><table><thead><tr><th>GROUND</th><th>CONFIRMED BOOKINGS</th><th>EARNINGS</th></tr></thead><tbody id="revenueGroundRows"><tr><td colspan="3">No confirmed earnings for this period.</td></tr></tbody></table></div></div>
+        </section>
         <div class="section-grid dashboard-section-grid">
           <article class="panel recent-bookings-panel"><div class="panel-heading"><div><h2>Recent Bookings</h2><p>Keep track of your latest requests.</p></div><button class="text-btn" data-go="bookings">View all →</button></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="recentBookingRows"></tbody></table></div></article>
           <div class="dashboard-side-cards">
