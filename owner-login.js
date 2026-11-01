@@ -76,6 +76,7 @@
       await window.firebaseAuthApi.sendPasswordResetEmail(window.firebaseAuth, email);
       $('ownerResetMessage').textContent = 'If an account exists for this email, a password reset link has been sent. Please check your inbox and spam folder.';
       $('ownerResetEmail').value = '';
+      window.setTimeout(closeResetModal, 5000);
     } catch (error) {
       const messages = {
         'auth/invalid-email':'Please enter a valid email address.',
@@ -85,7 +86,7 @@
       $('ownerResetMessage').textContent = messages[error.code] || 'Could not send the reset link. Please try again.';
     } finally {
       submit.disabled = false;
-      submit.textContent = 'Send Reset Link';
+      submit.textContent = 'Forget Password';
     }
   });
   $('ownerMobile').addEventListener('input', event => {
