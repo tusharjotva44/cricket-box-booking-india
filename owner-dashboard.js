@@ -73,6 +73,41 @@
       (full ? '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong><small class="booking-phone">' + escapeHTML(b.email || 'Not provided') + '</small></div></td><td>' + escapeHTML(b.ground) + '</td>' : '<td><div class="customer-cell"><strong>' + escapeHTML(b.customer) + '</strong></div></td>') +
       '<td>' + escapeHTML(b.date) + '<br><small>' + escapeHTML(b.time) + '</small></td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status === 'Confirmed' ? 'confirmed' : (b.status === 'Rejected' || b.status === 'Expired') ? 'rejected' : 'pending') + '">' + escapeHTML(b.status) + '</span>' + (b.paymentStatus ? '<br><small>' + escapeHTML(b.paymentStatus) + '</small>' : '') + '</td>' + (full ? '<td>' + (b.status === 'Pending' ? '<button type="button" class="approve-btn" data-approve="' + escapeHTML(b.id) + '">Approve</button> <button type="button" class="reject-btn" data-reject="' + escapeHTML(b.id) + '">Reject</button>' : '—') + '</td>' : '') + '</tr>';
   }
+  function renderRevenueReport() {
+    const period = $('revenuePeriod').value;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start, end;
+    if (period === 'daily') {
+      start = today;
+      end = new Date(today); end.setDate(end.getDate() + 1);
+    } else if (period === 'weekly') {
+      start = new Date(today);
+      const dayOffset = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - dayOffset);
+      end = new Date(start); end.setDate(end.getDate() + 7);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+    const startKey = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
+    const endKey = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
+    const confirmed = bookingsForOwner().filter(b => b.status === 'Confirmed' && b.date >= startKey && b.date < endKey);
+    const total = confirmed.reduce((sum,b) => sum + Number(b.amount || 0), 0);
+    $('reportRevenue').textContent = money(total);
+    $('reportBookings').textContent = String(confirmed.length);
+    $('reportAverage').textContent = money(confirmed.length ? Math.round(total / confirmed.length) : 0);
+    const byGround = new Map();
+    confirmed.forEach(b => {
+      const key = b.ground || 'Ground';
+      const item = byGround.get(key) || {count:0,total:0};
+      item.count += 1; item.total += Number(b.amount || 0); byGround.set(key,item);
+    });
+    const rows = Array.from(byGround.entries()).sort((a,b) => b[1].total - a[1].total);
+    $('revenueGroundRows').innerHTML = rows.length
+      ? rows.map(([name,item]) => '<tr><td>' + escapeHTML(name) + '</td><td>' + item.count + '</td><td>' + money(item.total) + '</td></tr>').join('')
+      : '<tr><td colspan="3">No confirmed earnings for this period.</td></tr>';
+  }
   function renderBookings() {
     sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
@@ -91,6 +126,7 @@
     $('statPending').textContent = String(pendingCount);
     $('bookingCount').textContent = String(pendingCount);
     $('statRevenue').textContent = money(sampleBookings.filter(b => b.status === 'Confirmed').reduce((sum,b) => sum + b.amount, 0));
+    renderRevenueReport();
   }
   function renderOwnerName() {
     const label = $('ownerGroundName');
@@ -307,6 +343,7 @@
     renderBookings();
     toast('Booking confirmed and added to your bookings.');
   });
+  $('revenuePeriod').addEventListener('change', renderRevenueReport);
   $('bookingFilter').addEventListener('change', renderBookings);
   $('bookingSearch').addEventListener('input', renderBookings);
   $('bookingDateFilter').addEventListener('change', renderBookings);
