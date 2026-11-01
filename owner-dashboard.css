@@ -253,3 +253,8 @@
 .calendar-day.is-empty{border:0;background:transparent;pointer-events:none}
 .booking-calendar-details{margin-bottom:20px}
 @media(max-width:620px){.booking-calendar-panel{padding:13px}.booking-calendar-grid{gap:4px}.calendar-day{min-height:67px;padding:7px 4px;border-radius:8px;gap:5px}.calendar-weekday{font-size:9px}.calendar-day-number{font-size:11px}.calendar-day-count{font-size:8px}.booking-calendar-toolbar{align-items:flex-start;flex-direction:column}.booking-calendar-nav{width:100%}.booking-calendar-nav button{flex:1}}
+
+
+/* Ground card edit and remove actions */
+.ground-action-buttons{display:flex;align-items:center;gap:7px}
+.ground-action-buttons .secondary-btn,.ground-action-buttons .delete-btn{min-height:32px;padding:7px 10px;font-size:10px}
