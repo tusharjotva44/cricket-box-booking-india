@@ -92,8 +92,13 @@
     $('bookingCount').textContent = String(pendingCount);
     $('statRevenue').textContent = money(sampleBookings.filter(b => b.status === 'Confirmed').reduce((sum,b) => sum + b.amount, 0));
   }
+  function renderOwnerGroundName() {
+    const label = $('ownerGroundName');
+    if (label) label.textContent = grounds[0]?.name || 'Cricket Box Name';
+  }
   function renderGrounds() {
     $('statGrounds').textContent = String(grounds.length);
+    renderOwnerGroundName();
     $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></article>').join('');
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
@@ -324,8 +329,7 @@
           };
           try {
             localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify(profile));
-            const nameLabel = document.querySelector('.profile-copy strong');
-            if (nameLabel) nameLabel.textContent = profile.accountName;
+            renderOwnerGroundName();
             toast('Profile saved in this browser.');
             accountModal.classList.add('hidden');
           } catch { toast('Could not save profile in this browser.'); }
