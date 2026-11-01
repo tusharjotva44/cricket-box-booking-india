@@ -200,3 +200,22 @@
 .revenue-summary-card strong{font:700 23px 'Space Grotesk',sans-serif;color:var(--ink);overflow-wrap:anywhere}
 .revenue-ground-breakdown h3{margin:0 0 12px;font:700 14px 'Space Grotesk',sans-serif;color:var(--ink)}
 @media(max-width:620px){.revenue-report-panel{padding:15px}.revenue-report-heading{align-items:flex-start;flex-direction:column}.revenue-period-label,.revenue-period-label select{width:100%}.revenue-summary-grid{grid-template-columns:1fr;gap:9px}.revenue-summary-card{padding:13px}.revenue-summary-card strong{font-size:21px}}
+
+/* Separate Revenue Report page analytics */
+.revenue-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 22px}
+.revenue-insight-card{display:grid;gap:8px;padding:16px;border:1px solid #f1eee9;border-radius:12px;background:#fff}
+.revenue-insight-card>span,.revenue-insight-card small{font-size:11px;color:var(--muted)}
+.revenue-insight-card>strong{font:700 21px 'Space Grotesk',sans-serif;color:var(--ink);overflow-wrap:anywhere}
+.revenue-insight-card>strong.is-positive{color:#15803d}.revenue-insight-card>strong.is-negative{color:#dc2626}
+.revenue-chart-section{margin:0 0 24px;padding:18px;border:1px solid #f1eee9;border-radius:13px;background:#fff}
+.revenue-chart-heading h3{margin:0;font:700 14px 'Space Grotesk',sans-serif;color:var(--ink)}
+.revenue-chart-heading p{margin:5px 0 0;font-size:10px;color:var(--muted)}
+.revenue-chart{display:flex;align-items:flex-end;gap:7px;min-height:190px;padding:20px 4px 0;overflow-x:auto}
+.revenue-chart-column{display:flex;flex:1 0 24px;min-width:24px;height:165px;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px}
+.revenue-chart-value{max-width:100%;font-size:8px;color:#78716c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.revenue-chart-track{display:flex;align-items:flex-end;justify-content:center;width:100%;height:115px;border-radius:6px 6px 2px 2px;background:#fff7ed;overflow:hidden}
+.revenue-chart-track span{display:block;width:min(70%,28px);min-height:0;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#fb923c,#f97316)}
+.revenue-chart-column small{font-size:9px;color:#78716c}
+.revenue-booking-breakdown{margin-top:24px}
+.revenue-report-panel{margin-bottom:22px}
+@media(max-width:620px){.revenue-insights-grid{grid-template-columns:1fr}.revenue-chart-section{padding:13px}.revenue-chart{gap:5px}}
