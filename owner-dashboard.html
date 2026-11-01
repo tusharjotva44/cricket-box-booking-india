@@ -148,6 +148,11 @@
           <div class="revenue-chart-section"><div class="revenue-chart-heading"><div><h3>Revenue trend</h3><p id="revenueTrendCaption">Earnings across this period</p></div></div><div class="revenue-chart" id="revenueTrendChart" aria-label="Revenue trend chart"><p class="revenue-chart-empty">No confirmed earnings for this period.</p></div></div>
           <div class="revenue-ground-breakdown"><h3>Earnings by ground</h3><div class="table-wrap"><table><thead><tr><th>GROUND</th><th>CONFIRMED BOOKINGS</th><th>EARNINGS</th></tr></thead><tbody id="revenueGroundRows"><tr><td colspan="3">No confirmed earnings for this period.</td></tr></tbody></table></div></div>
           <div class="revenue-ground-breakdown revenue-booking-breakdown"><h3>Booking-wise earnings</h3><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE</th><th>AMOUNT</th></tr></thead><tbody id="revenueBookingRows"><tr><td colspan="5">No confirmed bookings for this period.</td></tr></tbody></table></div></div>
+          <div class="revenue-ground-breakdown payment-received-report">
+            <div class="panel-heading payment-report-heading"><div><h3>Payment Received Report</h3><p>All bookings with payment marked as received, across every date.</p></div><button type="button" class="primary-btn" id="downloadPaymentReport">↓ Download CSV</button></div>
+            <div class="revenue-summary-grid payment-report-summary"><article class="revenue-summary-card"><span>Payments received</span><strong id="paymentReceivedCount">0</strong></article><article class="revenue-summary-card"><span>Total amount received</span><strong id="paymentReceivedTotal">₹0</strong></article></div>
+            <div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>PHONE</th><th>GROUND</th><th>DATE & TIME</th><th>AMOUNT</th><th>PAYMENT STATUS</th></tr></thead><tbody id="paymentReceivedRows"><tr><td colspan="7">No received payments found.</td></tr></tbody></table></div>
+          </div>
         </section>
       </section>
       <section class="view" id="view-grounds">
