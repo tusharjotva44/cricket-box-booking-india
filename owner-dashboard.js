@@ -266,6 +266,7 @@
     $('ownerBookingFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
   }
   $('showOwnerBookingForm').addEventListener('click', openOwnerBookingForm);
+  $('dashboardNewBookingButton').addEventListener('click', () => { showView('bookings'); openOwnerBookingForm(); });
   ['cancelOwnerBookingForm','cancelOwnerBookingForm2'].forEach(id => $(id).addEventListener('click', () => $('ownerBookingFormPanel').classList.add('hidden')));
   $('ownerBookingStart').addEventListener('change', () => { updateOwnerBookingEndOptions(); updateOwnerBookingAmount(); });
   ['ownerBookingGround','ownerBookingEnd'].forEach(id => $(id).addEventListener('change', updateOwnerBookingAmount));
