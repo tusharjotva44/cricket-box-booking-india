@@ -183,3 +183,7 @@
 /* Dashboard heading actions */
 .page-heading-actions{display:flex;align-items:center;gap:10px;flex:none}
 @media(max-width:760px){.page-heading-actions{display:grid;grid-template-columns:1fr;width:100%}.page-heading-actions button{width:100%}}
+
+/* Dashboard action buttons: white by default, orange on hover */
+.page-heading-actions .primary-btn,.page-heading-actions .secondary-btn{background:#fff;color:#c2410c;border:1px solid #f97316;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .15s ease}
+.page-heading-actions .primary-btn:hover,.page-heading-actions .secondary-btn:hover{background:#f97316;color:#fff;border-color:#f97316}
