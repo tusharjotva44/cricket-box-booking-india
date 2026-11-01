@@ -101,7 +101,7 @@
   function renderGrounds() {
     $('statGrounds').textContent = String(grounds.length);
     renderOwnerName();
-    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></article>').join('');
+    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>☎ ' + escapeHTML(g.mobile || g.phone || 'Mobile not provided') + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></article>').join('');
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
   }
@@ -201,12 +201,12 @@
   ['cancelGroundForm','cancelGroundForm2'].forEach(id => $(id).addEventListener('click', () => $('groundFormPanel').classList.add('hidden')));
   $('groundForm').addEventListener('submit', event => {
     event.preventDefault();
-    const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), price = Number($('groundPrice').value);
-    if (!name || !location || !Number.isFinite(price) || price < 1) { toast('Please check the ground details.'); return; }
+    const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), mobile = $('groundMobile').value.trim(), price = Number($('groundPrice').value);
+    if (!name || !location || !/^[0-9]{10}$/.test(mobile) || !Number.isFinite(price) || price < 1) { toast('Enter valid ground details and a 10-digit mobile number.'); return; }
     const limit = groundLimit();
     if (!limit) { toast('Please select a plan before adding a ground.'); showView('subscription'); return; }
     if (grounds.length >= limit) { toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground.' : ' grounds.') + ' Choose a 2 Grounds plan to add another.'); showView('subscription'); return; }
-    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,price,upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
+    grounds.push({id:'ground-' + Date.now(),name,sport:$('groundSport').value,sportType:$('groundSport').value,location,mobile,phone:mobile,price,upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),description:$('groundDescription').value.trim(),owner:OWNER_EMAIL,slots:[]});
     saveGrounds(); renderGrounds(); $('groundForm').reset(); $('groundFormPanel').classList.add('hidden'); toast('Ground added to this browser demo.');
   });
   $('groundsGrid').addEventListener('click', event => {
