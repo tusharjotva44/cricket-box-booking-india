@@ -226,3 +226,30 @@
 .revenue-period-actions{display:flex;align-items:flex-end;gap:10px}
 .revenue-period-actions .primary-btn{white-space:nowrap;min-height:38px}
 @media(max-width:620px){.revenue-period-actions{width:100%;align-items:stretch;flex-direction:row;flex-wrap:wrap}.revenue-period-actions .revenue-period-label{flex:1;min-width:130px}.revenue-period-actions .primary-btn{flex:0 0 auto}}
+
+/* Booking Calendar page */
+.booking-calendar-panel{margin-bottom:20px}
+.booking-calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.booking-calendar-toolbar h2{margin:0;font:700 18px 'Space Grotesk',sans-serif;color:var(--ink)}
+.booking-calendar-toolbar p{margin:5px 0 0;font-size:11px;color:var(--muted)}
+.booking-calendar-nav{display:flex;gap:7px}
+.booking-calendar-nav button{min-width:38px;min-height:36px;padding:8px 12px}
+.booking-calendar-legend{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0 12px;color:var(--muted);font-size:10px}
+.booking-calendar-legend span{display:flex;align-items:center;gap:6px}
+.calendar-dot,.calendar-day-dots i{display:inline-block;width:8px;height:8px;border-radius:50%}
+.calendar-dot.confirmed,.calendar-day-dots .confirmed{background:#16a34a}
+.calendar-dot.pending,.calendar-day-dots .pending{background:#f97316}
+.calendar-dot.other,.calendar-day-dots .other{background:#94a3b8}
+.booking-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.calendar-weekday{text-align:center;padding:8px 2px;color:#64748b;font-size:10px;font-weight:700}
+.calendar-day{min-width:0;min-height:84px;padding:9px 7px;border:1px solid #eee9e4;border-radius:10px;background:#fff;text-align:left;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.calendar-day:hover{border-color:#fdba74;background:#fffaf5}
+.calendar-day.is-selected{border:1.5px solid #f97316;background:#fff7ed;box-shadow:0 0 0 2px #f9731610}
+.calendar-day.is-today .calendar-day-number{color:#ea580c;font-weight:800}
+.calendar-day-number{font-size:13px;font-weight:700}
+.calendar-day-count{font-size:9px;line-height:1.35;color:#64748b}
+.calendar-day-dots{display:flex;gap:4px}
+.calendar-day-empty{font-size:10px;color:#d6d3d1}
+.calendar-day.is-empty{border:0;background:transparent;pointer-events:none}
+.booking-calendar-details{margin-bottom:20px}
+@media(max-width:620px){.booking-calendar-panel{padding:13px}.booking-calendar-grid{gap:4px}.calendar-day{min-height:67px;padding:7px 4px;border-radius:8px;gap:5px}.calendar-weekday{font-size:9px}.calendar-day-number{font-size:11px}.calendar-day-count{font-size:8px}.booking-calendar-toolbar{align-items:flex-start;flex-direction:column}.booking-calendar-nav{width:100%}.booking-calendar-nav button{flex:1}}
