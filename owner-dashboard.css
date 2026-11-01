@@ -162,3 +162,17 @@
 .support-action small{font-size:9px;line-height:1.3;color:#8b929e;font-weight:500;overflow-wrap:anywhere}
 .support-arrow{font-size:12px;color:#c2410c}
 .support-whatsapp .support-action-icon{background:#fff1e6;color:#c2410c}
+
+
+/* Contact Support disclosure button and WhatsApp brand icon */
+.support-disclosure{padding:0;overflow:hidden}
+.support-toggle{display:flex;align-items:center;gap:10px;min-height:48px;padding:9px 12px;list-style:none;cursor:pointer;color:var(--ink);font:700 12px 'Space Grotesk',sans-serif}
+.support-toggle::-webkit-details-marker{display:none}
+.support-toggle-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:9px;background:#f97316;color:#fff;font-size:15px}
+.support-toggle-chevron{margin-left:auto;color:#9a3412;font-size:17px;transition:transform .18s ease}
+.support-disclosure[open] .support-toggle{border-bottom:1px solid #fed7aa}
+.support-disclosure[open] .support-toggle-chevron{transform:rotate(180deg)}
+.support-disclosure .support-actions{padding:10px 9px 11px}
+.support-action-icon.whatsapp-brand-icon{background:#e8f8ee;color:#16a34a}
+.whatsapp-brand-icon svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.whatsapp-brand-icon svg path:last-child{fill:currentColor;stroke:none}
