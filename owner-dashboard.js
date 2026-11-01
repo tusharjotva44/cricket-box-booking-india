@@ -213,6 +213,96 @@
     const button = event.target.closest('[data-delete]'); if (!button) return;
     grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed from the shared listing.');
   });
+  function timeLabel(value) {
+    const [hour, minute] = value.split(':').map(Number);
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+    return (hour % 12 || 12) + ':' + String(minute).padStart(2, '0') + ' ' + suffix;
+  }
+  function populateOwnerBookingGrounds() {
+    const select = $('ownerBookingGround');
+    select.innerHTML = '<option value="">Select your ground</option>' + grounds.map(g => '<option value="' + escapeHTML(g.id) + '">' + escapeHTML(g.name) + ' · ' + escapeHTML(g.sport) + '</option>').join('');
+  }
+  function populateOwnerBookingTimes() {
+    const start = $('ownerBookingStart'), end = $('ownerBookingEnd');
+    const options = [];
+    for (let minute = 8 * 60; minute <= 27 * 60; minute += 30) {
+      const normalized = minute % 1440;
+      const value = String(Math.floor(normalized / 60)).padStart(2, '0') + ':' + String(normalized % 60).padStart(2, '0');
+      options.push({value, label:timeLabel(value)});
+    }
+    start.innerHTML = '<option value="">Select start time</option>' + options.filter(x => Number(x.value.slice(0,2)) >= 8 || Number(x.value.slice(0,2)) < 3).map(x => '<option value="' + x.value + '">' + x.label + '</option>').join('');
+    end.innerHTML = '<option value="">Select end time</option>';
+  }
+  function updateOwnerBookingEndOptions() {
+    const startValue = $('ownerBookingStart').value;
+    const end = $('ownerBookingEnd');
+    const startMinutes = timeMinutes(startValue);
+    if (startMinutes === null) { end.innerHTML = '<option value="">Select end time</option>'; $('ownerBookingAmount').value = ''; return; }
+    const options = [];
+    for (let duration = 30; duration <= 8 * 60; duration += 30) {
+      const absolute = startMinutes + duration;
+      if (absolute > 27 * 60) break;
+      const value = String(Math.floor((absolute % 1440) / 60)).padStart(2, '0') + ':' + String(absolute % 60).padStart(2, '0');
+      options.push('<option value="' + value + '">' + timeLabel(value) + '</option>');
+    }
+    end.innerHTML = '<option value="">Select end time</option>' + options.join('');
+    $('ownerBookingAmount').value = '';
+  }
+  function updateOwnerBookingAmount() {
+    const ground = grounds.find(g => g.id === $('ownerBookingGround').value);
+    const start = timeMinutes($('ownerBookingStart').value), end = timeMinutes($('ownerBookingEnd').value);
+    if (!ground || start === null || end === null) { $('ownerBookingAmount').value = ''; return; }
+    const duration = end > start ? end - start : end + 1440 - start;
+    $('ownerBookingAmount').value = Math.round(Number(ground.price || 0) * duration / 60);
+  }
+  function openOwnerBookingForm() {
+    if (!grounds.length) { showView('grounds'); toast('Please add a ground before creating a booking.'); return; }
+    $('ownerBookingForm').reset();
+    populateOwnerBookingGrounds();
+    populateOwnerBookingTimes();
+    $('ownerBookingDate').min = new Date().toISOString().slice(0, 10);
+    $('ownerBookingDate').value = $('ownerBookingDate').min;
+    $('ownerBookingFormPanel').classList.remove('hidden');
+    $('ownerBookingFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  $('showOwnerBookingForm').addEventListener('click', openOwnerBookingForm);
+  ['cancelOwnerBookingForm','cancelOwnerBookingForm2'].forEach(id => $(id).addEventListener('click', () => $('ownerBookingFormPanel').classList.add('hidden')));
+  $('ownerBookingStart').addEventListener('change', () => { updateOwnerBookingEndOptions(); updateOwnerBookingAmount(); });
+  ['ownerBookingGround','ownerBookingEnd'].forEach(id => $(id).addEventListener('change', updateOwnerBookingAmount));
+  $('ownerBookingForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const ground = grounds.find(g => g.id === $('ownerBookingGround').value);
+    const customerName = $('ownerBookingCustomer').value.trim();
+    const phone = $('ownerBookingPhone').value.trim();
+    const date = $('ownerBookingDate').value;
+    const startTime = $('ownerBookingStart').value;
+    const endTime = $('ownerBookingEnd').value;
+    if (!ground) { toast('Please select one of your grounds.'); return; }
+    if (!customerName) { toast('Enter the customer name.'); return; }
+    if (!/^[0-9]{10}$/.test(phone)) { toast('Enter a valid 10-digit mobile number.'); return; }
+    if (!date || date < new Date().toISOString().slice(0, 10)) { toast('Choose today or a future date.'); return; }
+    const start = timeMinutes(startTime), finish = timeMinutes(endTime);
+    if (start === null || finish === null || (finish <= start && !(finish + 1440 > start))) { toast('Choose a valid start and end time.'); return; }
+    const duration = finish > start ? finish - start : finish + 1440 - start;
+    if (duration > 8 * 60) { toast('A booking can be up to 8 hours.'); return; }
+    const slot = timeLabel(startTime) + ' - ' + timeLabel(endTime);
+    const booking = {id:'OWN-' + Date.now(), groundId:ground.id, groundName:ground.name, customerName, phone, date, slot, startTime, endTime, amount:Math.round(Number(ground.price || 0) * duration / 60), owner:OWNER_EMAIL, status:'Confirmed', paymentStatus:'Pay at venue', bookingSource:'Owner dashboard', createdAt:Date.now()};
+    const allBookings = readList(STORE.bookings);
+    if (allBookings.some(existing => existing.groundId === ground.id && existing.date === date && existing.status !== 'Rejected' && existing.status !== 'Expired' && existing.status !== 'Cancelled' && overlaps(booking, existing))) {
+      toast('This time overlaps an existing booking. Choose another slot.');
+      return;
+    }
+    try {
+      allBookings.push(booking);
+      localStorage.setItem(STORE.bookings, JSON.stringify(allBookings));
+    } catch {
+      toast('Could not save this booking in this browser.');
+      return;
+    }
+    $('ownerBookingFormPanel').classList.add('hidden');
+    renderBookings();
+    toast('Booking confirmed and added to your bookings.');
+  });
   $('bookingFilter').addEventListener('change', renderBookings);
   $('bookingSearch').addEventListener('input', renderBookings);
   $('bookingDateFilter').addEventListener('change', renderBookings);
