@@ -39,38 +39,53 @@
   }
   $('ownerLoginTab').addEventListener('click', () => setAuthMode('login'));
   $('ownerSignupTab').addEventListener('click', () => setAuthMode('signup'));
-  $('ownerForgotPassword').addEventListener('click', async () => {
-    const email = $('ownerEmail').value.trim().toLowerCase();
+  const resetModal = $('ownerResetModal');
+  function closeResetModal() {
+    resetModal.hidden = true;
+    $('ownerResetMessage').textContent = '';
+  }
+  $('ownerForgotPassword').addEventListener('click', () => {
+    $('ownerResetEmail').value = $('ownerEmail').value.trim();
+    $('ownerResetMessage').textContent = '';
+    resetModal.hidden = false;
+    $('ownerResetEmail').focus();
+  });
+  $('ownerResetClose').addEventListener('click', closeResetModal);
+  resetModal.addEventListener('click', event => {
+    if (event.target === resetModal) closeResetModal();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !resetModal.hidden) closeResetModal();
+  });
+  $('ownerResetForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const email = $('ownerResetEmail').value.trim().toLowerCase();
+    const submit = $('ownerResetSubmit');
     if (!email) {
-      setMessage('Please enter your email address first.');
-      $('ownerEmail').focus();
-      return;
-    }
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-      setMessage('Please enter a valid email address.');
-      $('ownerEmail').focus();
+      $('ownerResetMessage').textContent = 'Please enter your email address.';
       return;
     }
     if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseAuthApi.sendPasswordResetEmail) {
-      setMessage('Password reset service is still loading. Please try again.');
+      $('ownerResetMessage').textContent = 'Password reset service is loading. Please try again.';
       return;
     }
-    const button = $('ownerForgotPassword');
-    button.disabled = true;
-    setMessage('Sending password reset link...');
+    submit.disabled = true;
+    submit.textContent = 'Sending...';
+    $('ownerResetMessage').textContent = 'Sending password reset link...';
     try {
       await window.firebaseAuthApi.sendPasswordResetEmail(window.firebaseAuth, email);
-      setMessage('Password reset link sent. Please check your email inbox.');
+      $('ownerResetMessage').textContent = 'If an account exists for this email, a password reset link has been sent. Please check your inbox and spam folder.';
+      $('ownerResetEmail').value = '';
     } catch (error) {
       const messages = {
         'auth/invalid-email':'Please enter a valid email address.',
-        'auth/user-not-found':'No account found with this email address.',
         'auth/too-many-requests':'Too many attempts. Please try again later.',
         'auth/network-request-failed':'Network error. Check your internet connection.'
       };
-      setMessage(messages[error.code] || 'Could not send reset link. Please try again.');
+      $('ownerResetMessage').textContent = messages[error.code] || 'Could not send the reset link. Please try again.';
     } finally {
-      button.disabled = false;
+      submit.disabled = false;
+      submit.textContent = 'Send Reset Link';
     }
   });
   $('ownerMobile').addEventListener('input', event => {
