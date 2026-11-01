@@ -462,7 +462,7 @@
           const api = window.firebaseAuthApi;
           const user = auth && auth.currentUser;
           if (!user || !user.email || !api || typeof api.reauthenticateWithCredential !== 'function' ||
-              typeof api.EmailAuthProvider !== 'object' || typeof api.updatePassword !== 'function') {
+              typeof api.EmailAuthProvider !== 'function' || typeof api.updatePassword !== 'function') {
             passwordMessage.textContent = 'Your secure login is not ready. Please sign out and sign in again, then retry.';
             return;
           }
