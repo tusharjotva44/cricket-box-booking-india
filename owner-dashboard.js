@@ -430,10 +430,71 @@
         closeProfileMenu();
         showView('subscription');
       } else if (action === 'password') {
-        openAccountModal('Password Change', 'ACCOUNT SECURITY',
-          '<p class="account-modal-note">Password changes need a secure login system. This dashboard is not connected to a secure password service yet, so your password cannot be changed here safely.</p><div class="account-modal-actions"><button type="button" id="passwordModalOk">Got it</button></div>');
-        const ok = $('passwordModalOk');
-        if (ok) ok.addEventListener('click', () => accountModal.classList.add('hidden'));
+        openAccountModal('Change Password', 'ACCOUNT SECURITY',
+          '<form id="passwordChangeForm" class="owner-profile-form">' +
+          '<label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label>' +
+          '<label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="6" required></label>' +
+          '<label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required></label>' +
+          '<p class="account-modal-note" id="passwordChangeMessage" role="status">Use at least 6 characters for your new password.</p>' +
+          '<div class="account-modal-actions"><button type="submit" id="passwordChangeSubmit">Update Password</button></div></form>');
+        const passwordForm = $('passwordChangeForm');
+        const passwordMessage = $('passwordChangeMessage');
+        const passwordSubmit = $('passwordChangeSubmit');
+        passwordForm.addEventListener('submit', async event => {
+          event.preventDefault();
+          const formData = new FormData(passwordForm);
+          const currentPassword = String(formData.get('currentPassword') || '');
+          const newPassword = String(formData.get('newPassword') || '');
+          const confirmPassword = String(formData.get('confirmPassword') || '');
+          if (newPassword.length < 6) {
+            passwordMessage.textContent = 'New password must be at least 6 characters.';
+            return;
+          }
+          if (newPassword !== confirmPassword) {
+            passwordMessage.textContent = 'New password and confirmation do not match.';
+            return;
+          }
+          if (currentPassword === newPassword) {
+            passwordMessage.textContent = 'Choose a new password different from your current password.';
+            return;
+          }
+          const auth = window.firebaseAuth;
+          const api = window.firebaseAuthApi;
+          const user = auth && auth.currentUser;
+          if (!user || !user.email || !api || typeof api.reauthenticateWithCredential !== 'function' ||
+              typeof api.EmailAuthProvider !== 'object' || typeof api.updatePassword !== 'function') {
+            passwordMessage.textContent = 'Your secure login is not ready. Please sign out and sign in again, then retry.';
+            return;
+          }
+          passwordSubmit.disabled = true;
+          passwordSubmit.textContent = 'Updating...';
+          passwordMessage.textContent = 'Verifying your current password...';
+          try {
+            const credential = api.EmailAuthProvider.credential(user.email, currentPassword);
+            await api.reauthenticateWithCredential(user, credential);
+            await api.updatePassword(user, newPassword);
+            passwordMessage.textContent = 'Password updated successfully.';
+            passwordMessage.style.color = '#15803d';
+            passwordForm.reset();
+            passwordSubmit.textContent = 'Updated';
+            setTimeout(() => accountModal.classList.add('hidden'), 1100);
+          } catch (error) {
+            const code = error && error.code;
+            if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+              passwordMessage.textContent = 'Current password is incorrect. Please try again.';
+            } else if (code === 'auth/weak-password') {
+              passwordMessage.textContent = 'Choose a stronger password with at least 6 characters.';
+            } else if (code === 'auth/requires-recent-login') {
+              passwordMessage.textContent = 'For security, sign out and sign in again before changing your password.';
+            } else if (code === 'auth/network-request-failed') {
+              passwordMessage.textContent = 'Network error. Check your internet connection and try again.';
+            } else {
+              passwordMessage.textContent = 'Password could not be updated. Please try again.';
+            }
+            passwordSubmit.disabled = false;
+            passwordSubmit.textContent = 'Update Password';
+          }
+        });
       } else if (action === 'logout') {
         closeProfileMenu();
         (async () => {
