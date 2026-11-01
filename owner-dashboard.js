@@ -51,7 +51,7 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
-    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',revenue:'Revenue Report',subscription:'Subscription'};
+    const labels = {overview:'Overview',grounds:'My Grounds',bookings:'Booking Control Center',calendar:'Booking Calendar',revenue:'Revenue Report',subscription:'Subscription'};
     $('breadcrumbTitle').textContent = labels[name] || 'Overview';
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
@@ -175,6 +175,34 @@
     toast('Payment report CSV downloaded.');
   }
 
+  let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let calendarSelectedDate = new Date().toISOString().slice(0,10);
+  function renderBookingCalendar() {
+    const grid = $('bookingCalendarGrid');
+    if (!grid) return;
+    const year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
+    $('calendarMonthTitle').textContent = calendarMonth.toLocaleDateString('en-IN', {month:'long', year:'numeric'});
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const bookings = bookingsForOwner();
+    const cells = weekdays.map(day => '<div class="calendar-weekday">' + day + '</div>');
+    for (let i=0;i<firstDay;i++) cells.push('<div class="calendar-day is-empty" aria-hidden="true"></div>');
+    for (let day=1;day<=daysInMonth;day++) {
+      const date = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      const dayBookings = bookings.filter(b => b.date === date);
+      const confirmed = dayBookings.filter(b => b.status === 'Confirmed').length;
+      const pending = dayBookings.filter(b => b.status === 'Pending').length;
+      const other = dayBookings.length - confirmed - pending;
+      cells.push('<button type="button" class="calendar-day' + (date===calendarSelectedDate?' is-selected':'') + (date===new Date().toISOString().slice(0,10)?' is-today':'') + '" data-calendar-date="' + date + '" aria-pressed="' + (date===calendarSelectedDate) + '"><span class="calendar-day-number">' + day + '</span>' + (dayBookings.length ? '<span class="calendar-day-count">' + dayBookings.length + ' booking' + (dayBookings.length===1?'':'s') + '</span><span class="calendar-day-dots">' + (confirmed?'<i class="confirmed"></i>':'') + (pending?'<i class="pending"></i>':'') + (other?'<i class="other"></i>':'') + '</span>' : '<span class="calendar-day-empty">—</span>') + '</button>');
+    }
+    grid.innerHTML = cells.join('');
+    const selected = bookings.filter(b => b.date === calendarSelectedDate).sort((a,b) => String(a.time).localeCompare(String(b.time)));
+    const selectedDate = new Date(calendarSelectedDate + 'T00:00:00');
+    $('calendarSelectedTitle').textContent = selectedDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    $('calendarSelectedSummary').textContent = selected.length + (selected.length===1?' booking':' bookings') + ' on this date';
+    $('calendarBookingRows').innerHTML = selected.length ? selected.map(b => '<tr><td><span class="booking-id">' + escapeHTML(b.id) + '</span></td><td>' + escapeHTML(b.customer) + '</td><td>' + escapeHTML(b.ground) + '</td><td>' + escapeHTML(b.time) + '</td><td>' + money(b.amount) + '</td><td><span class="status ' + (b.status==='Confirmed'?'confirmed':(b.status==='Rejected'||b.status==='Expired')?'rejected':'pending') + '">' + escapeHTML(b.status) + '</span></td></tr>').join('') : '<tr><td colspan="6">No bookings for this date.</td></tr>';
+  }
   function renderBookings() {
     sampleBookings = bookingsForOwner();
     const filter = $('bookingFilter').value;
@@ -194,6 +222,7 @@
     $('bookingCount').textContent = String(pendingCount);
     $('statRevenue').textContent = money(sampleBookings.filter(b => b.status === 'Confirmed').reduce((sum,b) => sum + b.amount, 0));
     renderRevenueReport();
+    renderBookingCalendar();
   }
   function renderOwnerName() {
     const label = $('ownerGroundName');
@@ -290,6 +319,15 @@
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+  $('calendarPrev').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()-1, 1); renderBookingCalendar(); });
+  $('calendarNext').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()+1, 1); renderBookingCalendar(); });
+  $('calendarToday').addEventListener('click', () => { const today = new Date(); calendarMonth = new Date(today.getFullYear(),today.getMonth(),1); calendarSelectedDate = today.toISOString().slice(0,10); renderBookingCalendar(); });
+  $('bookingCalendarGrid').addEventListener('click', event => {
+    const day = event.target.closest('[data-calendar-date]');
+    if (!day) return;
+    calendarSelectedDate = day.dataset.calendarDate;
+    renderBookingCalendar();
+  });
   $('renewPlanButton').addEventListener('click', () => showView('subscription'));
   $('closePlanExpiryAlert').addEventListener('click', () => {
     const expiryValue = getPlanExpiry();
