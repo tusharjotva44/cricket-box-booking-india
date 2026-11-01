@@ -179,3 +179,7 @@
 
 /* Center the Contact Support chevron with its label */
 .support-toggle-chevron{display:grid;place-items:center;align-self:center;line-height:1;width:18px;height:18px;flex:0 0 18px}
+
+/* Dashboard heading actions */
+.page-heading-actions{display:flex;align-items:center;gap:10px;flex:none}
+@media(max-width:760px){.page-heading-actions{display:grid;grid-template-columns:1fr;width:100%}.page-heading-actions button{width:100%}}
