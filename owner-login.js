@@ -16,6 +16,7 @@
     $('ownerSignupTab').toggleAttribute('aria-current', signup);
     $('ownerSignupFields').hidden = !signup;
     $('ownerConfirmField').hidden = !signup;
+    $('ownerForgotPassword').hidden = signup;
     $('ownerFullName').required = signup;
     $('ownerMobile').required = signup;
     $('ownerConfirmPassword').required = signup;
@@ -38,6 +39,40 @@
   }
   $('ownerLoginTab').addEventListener('click', () => setAuthMode('login'));
   $('ownerSignupTab').addEventListener('click', () => setAuthMode('signup'));
+  $('ownerForgotPassword').addEventListener('click', async () => {
+    const email = $('ownerEmail').value.trim().toLowerCase();
+    if (!email) {
+      setMessage('Please enter your email address first.');
+      $('ownerEmail').focus();
+      return;
+    }
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      setMessage('Please enter a valid email address.');
+      $('ownerEmail').focus();
+      return;
+    }
+    if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseAuthApi.sendPasswordResetEmail) {
+      setMessage('Password reset service is still loading. Please try again.');
+      return;
+    }
+    const button = $('ownerForgotPassword');
+    button.disabled = true;
+    setMessage('Sending password reset link...');
+    try {
+      await window.firebaseAuthApi.sendPasswordResetEmail(window.firebaseAuth, email);
+      setMessage('Password reset link sent. Please check your email inbox.');
+    } catch (error) {
+      const messages = {
+        'auth/invalid-email':'Please enter a valid email address.',
+        'auth/user-not-found':'No account found with this email address.',
+        'auth/too-many-requests':'Too many attempts. Please try again later.',
+        'auth/network-request-failed':'Network error. Check your internet connection.'
+      };
+      setMessage(messages[error.code] || 'Could not send reset link. Please try again.');
+    } finally {
+      button.disabled = false;
+    }
+  });
   $('ownerMobile').addEventListener('input', event => {
     event.target.value = event.target.value.replace(/\D/g, '').slice(0, 10);
   });
