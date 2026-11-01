@@ -266,3 +266,23 @@
 .ground-card .sport-tag{font-size:9px}
 .ground-card .ground-meta strong{font-size:14px}
 .ground-card .ground-meta small{font-size:11px}
+
+/* Ground availability management */
+.availability-panel{padding:22px}
+.availability-ground-picker{display:grid;gap:7px;max-width:420px;margin-bottom:20px}
+.availability-ground-picker label,.availability-time-field{font-size:11px;font-weight:700;color:var(--ink)}
+.availability-ground-picker select,.availability-time-field input{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;color:var(--ink);font:inherit;font-size:12px}
+.availability-ground-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;margin-bottom:12px;border:1px solid #fed7aa;border-radius:11px;background:#fffaf5}
+.availability-ground-summary strong{font:700 14px 'Space Grotesk',sans-serif;color:var(--ink)}
+.availability-ground-summary span{font-size:10px;color:var(--muted);text-align:right}
+.availability-week{display:grid;gap:8px}
+.availability-day-row{display:grid;grid-template-columns:minmax(105px,1fr) minmax(120px,.8fr) minmax(120px,.8fr) 58px;align-items:center;gap:12px;padding:11px 12px;border:1px solid #f1eee9;border-radius:10px;background:#fff}
+.availability-day-toggle{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:var(--ink)}
+.availability-day-toggle input{width:16px;height:16px;accent-color:#f97316}
+.availability-time-field{display:grid;gap:5px}
+.availability-time-field input:disabled{background:#f8fafc;color:#9ca3af}
+.availability-closed-label{font-size:10px;font-weight:700;color:#15803d;text-align:center}
+.availability-day-row:has([data-availability-open]:not(:checked)) .availability-closed-label{color:#b91c1c}
+.availability-note,.availability-empty{font-size:11px;line-height:1.65;color:var(--muted);margin:14px 0 0}
+.availability-actions{display:flex;justify-content:flex-end;margin-top:18px}
+@media(max-width:650px){.availability-panel{padding:14px}.availability-day-row{grid-template-columns:1fr 1fr;gap:10px}.availability-day-toggle{grid-column:1/-1}.availability-closed-label{text-align:left}.availability-ground-summary{align-items:flex-start;flex-direction:column}.availability-ground-summary span{text-align:left}}
