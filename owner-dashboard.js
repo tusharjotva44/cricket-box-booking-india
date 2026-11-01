@@ -443,7 +443,7 @@
             }
             await window.firebaseAuthApi.signOut(window.firebaseAuth);
             localStorage.removeItem('boxbook_session_v1');
-            window.location.replace('index.html');
+            window.location.replace('admin-login.html');
           } catch (error) {
             toast('Logout failed. Please try again.');
           }
