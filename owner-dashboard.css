@@ -139,3 +139,9 @@
 .notification-item small{font-size:9px;color:#9ca3af}
 .notification-empty{padding:24px 18px;margin:0;text-align:center;font-size:11px;line-height:1.7;color:var(--muted)}
 @media(max-width:760px){.notification-wrap{margin-left:auto;margin-right:0}.notification-trigger{width:37px;height:37px}.notification-panel{right:-45px;top:calc(100% + 12px)}.profile-menu-wrap{margin-left:10px}}
+
+
+/* Improve All Bookings heading and customer mobile visibility */
+#view-bookings .booking-panel-heading h2{font-size:21px}
+#view-bookings .customer-cell .booking-phone{display:block;margin-top:6px;font-size:13px;font-weight:700;line-height:1.4;color:#334155;letter-spacing:.2px}
+@media(max-width:760px){#view-bookings .booking-panel-heading h2{font-size:19px}#view-bookings .customer-cell .booking-phone{font-size:13px}}
