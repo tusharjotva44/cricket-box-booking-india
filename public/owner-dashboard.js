@@ -467,9 +467,10 @@
     const limit = groundLimit();
     if (!limit) { toast('Please select a plan before adding a ground.'); showView('subscription'); return; }
     if (grounds.length >= limit) { toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground.' : ' grounds.') + ' Choose a 2 Grounds plan to add another.'); showView('subscription'); return; }
-    grounds.push({id:'ground-' + Date.now(),...updatedFields,owner:OWNER_EMAIL,slots:[]});
+    const newGround = {id:'ground-' + Date.now(),...updatedFields,owner:OWNER_EMAIL,slots:[]};
+    grounds.push(newGround);
     try { await saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground added and shared with all visitors.'); }
-    catch (error) { grounds = grounds.filter(g => g.id !== 'ground-' + Date.now()); toast('Ground could not be synced. Please try again.'); }
+    catch (error) { grounds = grounds.filter(g => g.id !== newGround.id); renderGrounds(); toast('Ground could not be synced. Please try again.'); }
   });
   $('groundsGrid').addEventListener('click', async event => {
     const editButton = event.target.closest('[data-edit-ground]');
