@@ -1,0 +1,149 @@
+const $ = (id) => document.getElementById(id);
+const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', owners:'boxbook_owners_v1', session:'boxbook_session_v1'};
+const demoGrounds = [
+ {id:'demo1',sportType:'Box Cricket',name:'Greenfield Cricket Arena',location:'Ahmedabad, Gujarat',price:1200,description:'Well-maintained turf, floodlights and space for your team.',image:'',slots:['06:00 AM','07:00 AM','08:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true},
+ {id:'demo2',sportType:'Box Cricket',name:'PowerPlay Box Cricket',location:'Surat, Gujarat',price:1500,description:'A lively box cricket venue for friends and weekend matches.',image:'',slots:['07:00 AM','08:00 AM','09:00 AM','05:00 PM','06:00 PM','09:00 PM'],owner:'demo-owner',demo:true},
+ {id:'demo3',sportType:'Box Cricket',name:'The Cricket Yard',location:'Vadodara, Gujarat',price:1000,description:'Convenient local turf with flexible evening slots.',image:'',slots:['06:00 AM','08:00 AM','04:00 PM','06:00 PM','07:00 PM'],owner:'demo-owner',demo:true},
+ {id:'demo4',sportType:'Pickleball',name:'Demo Pickleball Court',location:'Ahmedabad, Gujarat',price:800,description:'Test pickleball court listing for previewing sport filters and slot booking.',image:'',slots:['08:00 AM','09:00 AM','10:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true}
+];
+const read = (key, fallback=[]) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
+const write = (key,value) => localStorage.setItem(key,JSON.stringify(value));
+let currentEmail = '';
+let activeBookingGround = null;
+let activeLocationFilter = '';
+let activeBoxNameFilter = '';
+let toastTimer;
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function grounds(){return [...demoGrounds,...read(STORE.grounds).map(g=>({...g,location:g.location||[g.area,g.city].filter(Boolean).join(', ')||g.city||'',name:g.name||g.groundName||'Cricket Ground'}))];}
+function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
+function openModal(id){$(id).classList.remove('hidden')}
+function closeModal(id){$(id).classList.add('hidden')}
+function showPaymentForBooking(request){
+ const ground=grounds().find(g=>g.id===request.groundId)||activeBookingGround;
+ $('paymentGroundName').textContent=request.groundName;
+ const start=timeToMinutes(request.startTime), rawEnd=timeToMinutes(request.endTime); const end=rawEnd===null||start===null?rawEnd:(rawEnd<=start?rawEnd+1440:rawEnd); const amount=Math.round(Number(ground?.price||0)*((end!==null&&start!==null)?(end-start)/60:1)); request.amount=amount; $('paymentAmount').textContent='₹'+amount.toLocaleString('en-IN');
+ $('paymentUpiId').textContent=ground?.upiId||'Owner has not added a UPI ID yet.';
+ const qr=$('paymentQrImage');
+ if(ground?.qrImageUrl){qr.src=ground.qrImageUrl;qr.classList.remove('hidden')}else{qr.removeAttribute('src');qr.classList.add('hidden')}
+ const upiButton=$('payWithUpi');
+ if(ground?.upiId){upiButton.href='upi://pay?pa='+encodeURIComponent(ground.upiId)+'&pn='+encodeURIComponent(request.groundName)+'&am='+encodeURIComponent(amount)+'&cu=INR&tn='+encodeURIComponent('Booking '+request.id);upiButton.classList.remove('hidden')}else{upiButton.removeAttribute('href');upiButton.classList.add('hidden')}
+ $('paymentBookingId').value=request.id;
+ openModal('paymentModal');
+}
+function showDashboard(){ $('dashboard').classList.remove('hidden'); $('dashEmail').textContent=currentEmail; renderDashboard(); showPanel('overview'); }
+function hideDashboard(){ $('dashboard').classList.add('hidden'); }
+function showPanel(id){document.querySelectorAll('.dash-panel').forEach(p=>p.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.side-link').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));}
+function renderGrounds(){const locationQuery=activeLocationFilter.toLowerCase(),boxNameQuery=activeBoxNameFilter.toLowerCase(),sportQuery=$('sportTypeSearch').value;let list=grounds().filter(g=>(!sportQuery||(g.sportType||g.sport||'Box Cricket')===sportQuery)&&(!locationQuery||String(g.location||'').toLowerCase().includes(locationQuery))&&(!boxNameQuery||String(g.name||'').toLowerCase().includes(boxNameQuery)));const sort=$('sortPrice').value;if(sort==='low')list.sort((a,b)=>a.price-b.price);if(sort==='high')list.sort((a,b)=>b.price-a.price);$('groundGrid').innerHTML=list.map(g=>`<article class="ground-card"><div class="ground-image">${g.image?`<img src="${esc(g.image)}" alt="${esc(g.name)}" onerror="this.remove()">`:`<div class="image-placeholder">🏏</div>`}<span class="tag">${esc(g.sportType||g.sport||'Box Cricket').toUpperCase()}</span></div><div class="ground-body"><h3>${esc(g.name)}</h3><div class="ground-location">📍 ${esc(g.location)}</div>${g.mobile||g.phone?'<div class="ground-location">☎ '+esc(g.mobile||g.phone)+'</div>':''}<p class="ground-desc">${esc(g.description||'Cricket box available for hourly booking.')}</p><div class="ground-bottom"><div class="price"><strong>₹${Number(g.price).toLocaleString('en-IN')}</strong> <small>/ hour</small></div><button class="book-btn" data-book="${esc(g.id)}">View Slots →</button></div></div></article>`).join('');$('emptyState').classList.toggle('hidden',list.length>0);$('groundGrid').classList.toggle('hidden',list.length===0);document.querySelectorAll('[data-book]').forEach(b=>b.addEventListener('click',()=>openBooking(b.dataset.book)));}
+function timeToMinutes(value){const m=/^(\d{2}):(\d{2})$/.exec(value||'');return m?Number(m[1])*60+Number(m[2]):null}
+function minutesToLabel(value){const h=Math.floor(value/60)%24,m=value%60,ampm=h>=12?'PM':'AM',hour=h%12||12;return String(hour).padStart(2,'0')+':'+String(m).padStart(2,'0')+' '+ampm}
+function timeOptions(){let html='<option value="">Select time</option>';for(let t=480;t<=1800;t+=30){const minuteOfDay=t%1440,h=String(Math.floor(minuteOfDay/60)).padStart(2,'0'),m=String(minuteOfDay%60).padStart(2,'0');html+='<option value="'+h+':'+m+'">'+minutesToLabel(t)+'</option>'}return html}
+function bookingRange(date,start,end){const startM=timeToMinutes(start),endM=timeToMinutes(end);if(!date||startM===null||endM===null||startM===endM)return null;const startAt=new Date(date+'T00:00:00');startAt.setMinutes(startM);const endAt=new Date(date+'T00:00:00');endAt.setMinutes(endM);if(endM<=startM)endAt.setDate(endAt.getDate()+1);return {start:startAt.getTime(),end:endAt.getTime()}}
+function existingBookingRange(b){if(b.startTime&&b.endTime)return bookingRange(b.date,b.startTime,b.endTime);if(b.slot){const match=/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(b.slot);if(match){let h=Number(match[1])%12;if(match[3].toUpperCase()==='PM')h+=12;const start=String(h).padStart(2,'0')+':'+match[2];let endMinutes=h*60+Number(match[2])+60;const end=String(Math.floor((endMinutes%1440)/60)).padStart(2,'0')+':'+String(endMinutes%60).padStart(2,'0');return bookingRange(b.date,start,end)}}return null}
+function hasBookingConflict(groundId,date,start,end){const wanted=bookingRange(date,start,end);if(!wanted)return false;return read(STORE.bookings).some(b=>{if(b.groundId!==groundId||b.status==='Rejected'||b.status==='Expired')return false;if((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())return false;const old=existingBookingRange(b);return old&&wanted.start<old.end&&wanted.end>old.start})}
+function openBooking(id){activeBookingGround=grounds().find(g=>g.id===id);if(!activeBookingGround)return;$('bookingTitle').textContent=activeBookingGround.name;$('bookingMeta').textContent=activeBookingGround.location+' · ₹'+activeBookingGround.price+' per hour';$('bookingDate').value=$('dateSearch').value||new Date().toISOString().slice(0,10);$('bookingDate').min=new Date().toISOString().slice(0,10);$('bookingStartTime').innerHTML=timeOptions();$('bookingEndTime').innerHTML=timeOptions();$('bookingStartTime').value='';$('bookingEndTime').value='';$('bookingAvailability').textContent='Select date and start/end time to check availability.';openModal('bookingModal')}
+function checkBookingAvailability(){const date=$('bookingDate').value,start=$('bookingStartTime').value,end=$('bookingEndTime').value;const status=$('bookingAvailability');if(!date||!start||!end){status.textContent='Select date, start time and end time.';return}if(start===end){status.textContent='Start time and end time cannot be the same.';return}if(hasBookingConflict(activeBookingGround.id,date,start,end)){status.textContent='Already booked this time slot. Please choose another time.';return}status.textContent='Available — you can book this time.'}
+function renderDashboard(){const mine=read(STORE.grounds).filter(g=>g.owner===currentEmail);const allBookings=read(STORE.bookings).filter(b=>b.owner===currentEmail);const owners=read(STORE.owners);const owner=owners.find(o=>o.email===currentEmail);const active=!!owner?.subscription;$('metricGrounds').textContent=`${mine.length} / 2`;$('metricBookings').textContent=allBookings.length;$('metricSub').textContent=active?'Active (Demo)':'Inactive';$('subscriptionStatus').textContent=active?`${owner.plan} demo subscription active`:'No active subscription';const html=mine.length?mine.map(g=>`<article class="owner-ground"><div class="mini-image">🏏</div><div><h4>${esc(g.name)}</h4><p>${esc(g.sportType||g.sport||'Box Cricket')} · ${esc(g.location)} · ₹${g.price}/hour</p></div><span class="spacer"></span><button class="outline" data-delete-ground="${esc(g.id)}">Remove</button></article>`).join(''):'<p class="muted">You have not added a ground yet. Activate a demo plan to try the listing form.</p>';$('ownerGroundList').innerHTML=html;$('ownerGroundList2').innerHTML=html;document.querySelectorAll('[data-delete-ground]').forEach(b=>b.addEventListener('click',()=>deleteGround(b.dataset.deleteGround)));$('ownerBookings').innerHTML=allBookings.length?allBookings.map(b=>`<article class="booking-row"><h4>${esc(b.groundName)}</h4><p>Customer: ${esc(b.customerName)} · Phone: ${esc(b.phone)}</p><p>Slot: ${esc(b.slot)} · Date: ${esc(b.date)}</p><p>Status: ${esc(b.status||'Pending')}${b.paymentStatus?' · Payment: '+esc(b.paymentStatus):''}</p></article>`).join(''):'<p class="muted">No booking requests yet.</p>';}
+function deleteGround(id){write(STORE.grounds,read(STORE.grounds).filter(g=>g.id!==id));renderDashboard();renderGrounds();toast('Ground removed from this browser.')}
+function ownerHasSubscription(){return !!read(STORE.owners).find(o=>o.email===currentEmail)?.subscription}
+function openGroundForm(){if(!ownerHasSubscription()){openModal('subscriptionModal');toast('Choose a demo plan before adding a ground.');return}const count=read(STORE.grounds).filter(g=>g.owner===currentEmail).length;if(count>=2){toast('You can add a maximum of 2 grounds.');return}showPanel('groundFormPanel')}
+$('year').textContent=new Date().getFullYear();$('dateSearch').value=new Date().toISOString().slice(0,10);
+$('searchForm').addEventListener('submit',e=>{e.preventDefault();activeLocationFilter=$('locationSearch').value.trim();activeBoxNameFilter=$('boxNameSearch').value.trim();renderGrounds();$('grounds').scrollIntoView({behavior:'smooth'})});$('sportTypeSearch').addEventListener('change',renderGrounds);$('sortPrice').addEventListener('change',renderGrounds);$('clearSearch').addEventListener('click',()=>{$('locationSearch').value='';$('boxNameSearch').value='';$('sportTypeSearch').value='';activeLocationFilter='';activeBoxNameFilter='';renderGrounds()});
+$('ownerLoginBtn').addEventListener('click',()=>{window.location.href='admin-login.html'});$('ownerCtaBtn').addEventListener('click',()=>{window.location.href='admin-login.html'});document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));document.querySelectorAll('.modal-backdrop').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)back.classList.add('hidden')}));
+let ownerAuthMode = 'login';
+function setOwnerAuthMode(mode) {
+  ownerAuthMode = mode;
+  $('ownerAuthSubmit').textContent = mode === 'login' ? 'Login to Dashboard →' : 'Create Account →';
+  $('ownerAuthToggle').textContent = mode === 'login' ? 'New owner? Create account' : 'Already registered? Login';
+  $('ownerAuthMessage').textContent = mode === 'signup'
+    ? 'Create an account using your email and password.'
+    : '';
+}
+$('ownerAuthToggle').addEventListener('click', () => {
+  setOwnerAuthMode(ownerAuthMode === 'login' ? 'signup' : 'login');
+});
+$('ownerLoginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('ownerEmail').value.trim().toLowerCase();
+  const password = $('ownerPassword').value;
+  const message = $('ownerAuthMessage');
+  const submit = $('ownerAuthSubmit');
+  if (!window.firebaseAuthApi || !window.firebaseAuth) {
+    message.textContent = 'Firebase is still loading. Please try again.';
+    return;
+  }
+  submit.disabled = true;
+  message.textContent = '';
+  try {
+    const result = ownerAuthMode === 'signup'
+      ? await window.firebaseAuthApi.createUserWithEmailAndPassword(window.firebaseAuth, email, password)
+      : await window.firebaseAuthApi.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+    currentEmail = (result.user.email || email).toLowerCase();
+    localStorage.setItem(STORE.session, currentEmail);
+    const owners = read(STORE.owners);
+    if (!owners.some(o => o.email === currentEmail)) {
+      owners.push({ email: currentEmail, subscription: false, plan: null });
+      write(STORE.owners, owners);
+    }
+    closeModal('ownerModal');
+    showDashboard();
+    toast(ownerAuthMode === 'signup' ? 'Account created successfully.' : 'Login successful.');
+  } catch (error) {
+    const messages = {
+      'auth/email-already-in-use': 'This email is already registered. Please log in.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/invalid-credential': 'Incorrect email or password.',
+      'auth/weak-password': 'Password must contain at least 6 characters.',
+      'auth/network-request-failed': 'Network error. Check your internet.',
+      'auth/too-many-requests': 'Too many attempts. Please try again later.'
+    };
+    message.textContent = messages[error.code] || 'Authentication failed. Please try again.';
+  } finally {
+    submit.disabled = false;
+  }
+});
+$('logoutBtn').addEventListener('click', async () => {
+  try {
+    if (window.firebaseAuthApi && window.firebaseAuth) {
+      await window.firebaseAuthApi.signOut(window.firebaseAuth);
+    }
+    currentEmail = '';
+    localStorage.removeItem(STORE.session);
+    hideDashboard();
+    toast('Logged out.');
+  } catch (error) {
+    toast('Logout failed. Please try again.');
+  }
+});document.querySelectorAll('.side-link').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));$('addGroundBtn').addEventListener('click',openGroundForm);$('addGroundTop').addEventListener('click',openGroundForm);$('backToGrounds').addEventListener('click',()=>showPanel('overview'));$('cancelGround').addEventListener('click',()=>showPanel('overview'));$('choosePlanBtn').addEventListener('click',()=>openModal('subscriptionModal'));$('choosePlanBtn2').addEventListener('click',()=>openModal('subscriptionModal'));
+document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',()=>{const owners=read(STORE.owners);const o=owners.find(x=>x.email===currentEmail);if(!o)return;o.subscription=true;o.plan=b.dataset.plan+' (Demo)';o.demoSubscription=true;write(STORE.owners,owners);closeModal('subscriptionModal');renderDashboard();toast('Demo plan activated. No payment was taken.');}));
+$('groundForm').addEventListener('submit',e=>{e.preventDefault();if(!ownerHasSubscription()){openModal('subscriptionModal');return}const mine=read(STORE.grounds).filter(g=>g.owner===currentEmail);if(mine.length>=2){toast('Maximum 2 grounds allowed per owner.');return}const slotList=$('groundSlots').value.split(',').map(s=>s.trim()).filter(Boolean);if(!slotList.length){toast('Please enter at least one time slot.');return}const item={id:'g'+Date.now(),sportType:$('groundSportType').value||'Box Cricket',name:$('groundName').value.trim(),location:$('groundLocation').value.trim(),price:Number($('groundPrice').value),image:$('groundImage').value.trim(),upiId:$('groundUpiId').value.trim(),qrImageUrl:$('groundQrImageUrl').value.trim(),slots:slotList,description:$('groundDescription').value.trim(),owner:currentEmail};write(STORE.grounds,[...read(STORE.grounds),item]);e.target.reset();renderDashboard();renderGrounds();showPanel('overview');toast('Ground saved in this browser.');});
+$('bookingDate').addEventListener('change',checkBookingAvailability);
+$('bookingStartTime').addEventListener('change',checkBookingAvailability);
+$('bookingEndTime').addEventListener('change',checkBookingAvailability);
+$('confirmPaymentSubmitted').addEventListener('click',()=>{const id=$('paymentBookingId').value;const list=read(STORE.bookings);const booking=list.find(b=>b.id===id);if(!booking)return;booking.paymentStatus='Payment submitted — not verified';write(STORE.bookings,list);closeModal('paymentModal');toast('Payment marked as submitted. It is not automatically verified.');if(currentEmail===booking.owner)renderDashboard()});
+$('bookingForm').addEventListener('submit',e=>{e.preventDefault();const phone=$('customerPhone').value.trim();if(!/^[0-9]{10}$/.test(phone)){toast('Enter a valid 10-digit mobile number.');return}const date=$('bookingDate').value,startTime=$('bookingStartTime').value,endTime=$('bookingEndTime').value;if(!date||!startTime||!endTime){toast('Please select date, start time and end time.');return}if(startTime===endTime){toast('Start time and end time cannot be the same.');return}if(hasBookingConflict(activeBookingGround.id,date,startTime,endTime)){toast('Already booked this time slot. Please choose another time.');$('bookingAvailability').textContent='Already booked this time slot. Please choose another time.';return}const slot=minutesToLabel(timeToMinutes(startTime))+' - '+minutesToLabel(timeToMinutes(endTime));const createdAt=Date.now();const request={id:'b'+createdAt,groundId:activeBookingGround.id,groundName:activeBookingGround.name,owner:activeBookingGround.owner,customerName:$('customerName').value.trim(),phone,slot,startTime,endTime,date,status:'Pending',paymentStatus:'Awaiting payment',amount:Math.round(Number(activeBookingGround.price||0)*(((()=>{const a=timeToMinutes(startTime),b=timeToMinutes(endTime);return (b<=a?b+1440:b)-a})())/60)),createdAt,holdExpiresAt:createdAt+30*60*1000};write(STORE.bookings,[...read(STORE.bookings),request]);closeModal('bookingModal');e.target.reset();toast('Booking request saved. Complete payment next.');renderGrounds();if(currentEmail===request.owner){renderDashboard()}showPaymentForBooking(request)});
+window.addEventListener('storage',e=>{if(e.key===STORE.grounds){renderGrounds()}if(e.key===STORE.bookings&&currentEmail){renderDashboard()}});
+renderGrounds();
+
+let firebaseAuthListenerStarted = false;
+function connectFirebaseAuthState() {
+  if (firebaseAuthListenerStarted || !window.firebaseAuthApi || !window.firebaseAuth) return;
+  firebaseAuthListenerStarted = true;
+  window.firebaseAuthApi.onAuthStateChanged(window.firebaseAuth, user => {
+    if (user && user.email) {
+      currentEmail = user.email.toLowerCase();
+      localStorage.setItem(STORE.session, currentEmail);
+      const owners = read(STORE.owners);
+      if (!owners.some(o => o.email === currentEmail)) {
+        owners.push({ email: currentEmail, subscription: false, plan: null });
+        write(STORE.owners, owners);
+      }
+      // Keep the customer website visible; owners use the separate dashboard page.
+    } else {
+      currentEmail = '';
+      localStorage.removeItem(STORE.session);
+      hideDashboard();
+    }
+  });
+}
+window.addEventListener('firebase-ready', connectFirebaseAuthState);
+connectFirebaseAuthState();
