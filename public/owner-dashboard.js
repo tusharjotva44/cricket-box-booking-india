@@ -225,36 +225,36 @@
     renderRevenueReport();
     renderBookingCalendar();
   }
-  function renderOwnerName() {
   async function getOwnerFirebaseContext() {
-    if (!window.firebaseAuthApi || !window.firebaseAuth) {
-      await new Promise(resolve => {
-        window.addEventListener('firebase-ready', resolve, { once: true });
+    if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseDB) {
+      await new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(() => reject(new Error('Firebase is taking too long to load. Please refresh and try again.')), 10000);
+        window.addEventListener('firebase-ready', () => {
+          window.clearTimeout(timeout);
+          resolve();
+        }, { once: true });
       });
     }
 
     const api = window.firebaseAuthApi;
     const auth = window.firebaseAuth;
+    if (!api || !auth || !window.firebaseDB) throw new Error('Firebase is not ready.');
 
     const user = await new Promise((resolve, reject) => {
       let unsubscribe = () => {};
-      unsubscribe = api.onAuthStateChanged(
-        auth,
-        currentUser => {
-          unsubscribe();
-          resolve(currentUser);
-        },
-        reject
-      );
+      unsubscribe = api.onAuthStateChanged(auth, currentUser => {
+        unsubscribe();
+        resolve(currentUser);
+      }, reject);
     });
 
-    if (!user || user.email.toLowerCase() !== OWNER_EMAIL) {
+    if (!user || !user.email || user.email.toLowerCase() !== OWNER_EMAIL) {
       throw new Error('Owner authentication required.');
     }
-
     return { user, api, db: window.firebaseDB };
   }
 
+  function renderOwnerName() {
     const label = $('ownerGroundName');
     const avatar = document.querySelector('.profile-menu-trigger .avatar');
     let profile = {};
@@ -693,35 +693,76 @@
       const button = event.target.closest('[data-profile-action]');
       if (!button) return;
       const action = button.dataset.profileAction;
-      if (action === 'profile') 
-  async function getOwnerFirebaseContext() {
-    if (!window.firebaseAuthApi || !window.firebaseAuth) {
-      await new Promise(resolve => {
-        window.addEventListener('firebase-ready', resolve, { once: true });
-      });
-    }
+      if (action === 'profile') {
+        closeProfileMenu();
+        (async () => {
+          try {
+            const { user, api, db } = await getOwnerFirebaseContext();
+            const savedProfile = await api.getOwnerProfile(db, user.uid) || {};
+            let cachedProfile = {};
+            try { cachedProfile = JSON.parse(localStorage.getItem('boxbook_owner_profile_v1') || '{}') || {}; } catch {}
+            const fullName = String(savedProfile.fullName || savedProfile.yourName || cachedProfile.yourName || cachedProfile.fullName || '');
+            const mobile = String(savedProfile.mobile || cachedProfile.mobile || '');
+            const email = user.email || OWNER_EMAIL;
 
-    const api = window.firebaseAuthApi;
-    const auth = window.firebaseAuth;
+            openAccountModal('My Profile', 'OWNER ACCOUNT',
+              '<form id="ownerProfileForm" class="owner-profile-form">' +
+              '<label>Full name<input name="fullName" type="text" maxlength="70" required value="' + escapeHTML(fullName) + '"></label>' +
+              '<label>Mobile number<input name="mobile" type="tel" inputmode="numeric" maxlength="10" minlength="10" pattern="[0-9]{10}" required value="' + escapeHTML(mobile) + '"></label>' +
+              '<label>Email address<input name="email" type="email" readonly value="' + escapeHTML(email) + '"></label>' +
+              '<p class="account-modal-note" id="ownerProfileMessage" role="status">Your profile details are connected to your account.</p>' +
+              '<div class="account-modal-actions"><button type="submit" id="ownerProfileSave">Save Changes</button></div></form>');
 
-    const user = await new Promise((resolve, reject) => {
-      let unsubscribe = () => {};
-      unsubscribe = api.onAuthStateChanged(
-        auth,
-        currentUser => {
-          unsubscribe();
-          resolve(currentUser);
-        },
-        reject
-      );
-    });
-
-    if (!user || user.email.toLowerCase() !== OWNER_EMAIL) {
-      throw new Error('Owner authentication required.');
-    }
-
-    return { user, api, db: window.firebaseDB };
-  } else if (action === 'plan') {
+            const profileForm = $('ownerProfileForm');
+            const profileMessage = $('ownerProfileMessage');
+            const profileSave = $('ownerProfileSave');
+            profileForm.querySelector('[name="mobile"]').addEventListener('input', event => {
+              event.target.value = event.target.value.replace(/\\D/g, '').slice(0, 10);
+            });
+            profileForm.addEventListener('submit', async submitEvent => {
+              submitEvent.preventDefault();
+              const formData = new FormData(profileForm);
+              const updatedName = String(formData.get('fullName') || '').trim();
+              const updatedMobile = String(formData.get('mobile') || '').trim();
+              if (!updatedName) {
+                profileMessage.textContent = 'Please enter your full name.';
+                return;
+              }
+              if (!/^[0-9]{10}$/.test(updatedMobile)) {
+                profileMessage.textContent = 'Please enter a valid 10-digit mobile number.';
+                return;
+              }
+              profileSave.disabled = true;
+              profileSave.textContent = 'Saving...';
+              profileMessage.textContent = 'Saving your profile...';
+              try {
+                const profileData = { fullName: updatedName, mobile: updatedMobile, email };
+                if (Object.keys(savedProfile).length) {
+                  await api.updateOwnerProfile(db, user.uid, profileData);
+                } else {
+                  await api.saveOwnerProfile(db, user.uid, profileData);
+                }
+                localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify({
+                  yourName: updatedName,
+                  fullName: updatedName,
+                  mobile: updatedMobile,
+                  email
+                }));
+                profileMessage.textContent = 'Profile updated successfully.';
+                profileMessage.style.color = '#15803d';
+                renderOwnerName();
+                profileSave.textContent = 'Saved';
+              } catch (error) {
+                profileMessage.textContent = 'Profile could not be saved. Please check your connection and try again.';
+                profileSave.disabled = false;
+                profileSave.textContent = 'Save Changes';
+              }
+            });
+          } catch (error) {
+            toast(error && error.message ? error.message : 'Could not load your profile. Please try again.');
+          }
+        })();
+      } else if (action === 'plan') {
         closeProfileMenu();
         showView('subscription');
       } else if (action === 'password') {
