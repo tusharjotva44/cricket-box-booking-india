@@ -118,10 +118,16 @@
     try {
       if (authMode === 'signup') {
         const result = await window.firebaseAuthApi.createUserWithEmailAndPassword(window.firebaseAuth,email,password);
+        const trialStartedAt = new Date().toISOString();
+        const trialExpiresAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
         await window.firebaseAuthApi.saveOwnerProfile(window.firebaseDB, result.user.uid, {
           fullName,
           mobile,
-          email: result.user.email || email
+          email: result.user.email || email,
+          planName: 'Free Trial - 1 Ground',
+          subscriptionStatus: 'trial',
+          trialStartedAt,
+          trialExpiresAt
         });
         localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify({yourName:fullName, mobile, email:result.user.email || email}));
         saveOwnerSession(result.user.email || email);
