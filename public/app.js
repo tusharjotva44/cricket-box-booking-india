@@ -1,11 +1,5 @@
 const $ = (id) => document.getElementById(id);
 const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', owners:'boxbook_owners_v1', session:'boxbook_session_v1'};
-const demoGrounds = [
- {id:'demo1',sportType:'Box Cricket',name:'Greenfield Cricket Arena',location:'Ahmedabad, Gujarat',price:1200,description:'Well-maintained turf, floodlights and space for your team.',image:'',slots:['06:00 AM','07:00 AM','08:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo2',sportType:'Box Cricket',name:'PowerPlay Box Cricket',location:'Surat, Gujarat',price:1500,description:'A lively box cricket venue for friends and weekend matches.',image:'',slots:['07:00 AM','08:00 AM','09:00 AM','05:00 PM','06:00 PM','09:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo3',sportType:'Box Cricket',name:'The Cricket Yard',location:'Vadodara, Gujarat',price:1000,description:'Convenient local turf with flexible evening slots.',image:'',slots:['06:00 AM','08:00 AM','04:00 PM','06:00 PM','07:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo4',sportType:'Pickleball',name:'Demo Pickleball Court',location:'Ahmedabad, Gujarat',price:800,description:'Test pickleball court listing for previewing sport filters and slot booking.',image:'',slots:['08:00 AM','09:00 AM','10:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true}
-];
 const read = (key, fallback=[]) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
 const write = (key,value) => localStorage.setItem(key,JSON.stringify(value));
 let currentEmail = '';
@@ -14,7 +8,8 @@ let activeLocationFilter = '';
 let activeBoxNameFilter = '';
 let toastTimer;
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function grounds(){return [...demoGrounds,...read(STORE.grounds).map(g=>({...g,location:g.location||[g.area,g.city].filter(Boolean).join(', ')||g.city||'',name:g.name||g.groundName||'Cricket Ground'}))];}
+let sharedGrounds = [];
+function grounds(){return sharedGrounds.map(g=>({...g,location:g.location||[g.area,g.city].filter(Boolean).join(', ')||g.city||'',name:g.name||g.groundName||'Sports Ground'}));}
 function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
 function openModal(id){$(id).classList.remove('hidden')}
 function closeModal(id){$(id).classList.add('hidden')}
@@ -123,6 +118,17 @@ $('confirmPaymentSubmitted').addEventListener('click',()=>{const id=$('paymentBo
 $('bookingForm').addEventListener('submit',e=>{e.preventDefault();const phone=$('customerPhone').value.trim();if(!/^[0-9]{10}$/.test(phone)){toast('Enter a valid 10-digit mobile number.');return}const date=$('bookingDate').value,startTime=$('bookingStartTime').value,endTime=$('bookingEndTime').value;if(!date||!startTime||!endTime){toast('Please select date, start time and end time.');return}if(startTime===endTime){toast('Start time and end time cannot be the same.');return}if(hasBookingConflict(activeBookingGround.id,date,startTime,endTime)){toast('Already booked this time slot. Please choose another time.');$('bookingAvailability').textContent='Already booked this time slot. Please choose another time.';return}const slot=minutesToLabel(timeToMinutes(startTime))+' - '+minutesToLabel(timeToMinutes(endTime));const createdAt=Date.now();const request={id:'b'+createdAt,groundId:activeBookingGround.id,groundName:activeBookingGround.name,owner:activeBookingGround.owner,customerName:$('customerName').value.trim(),phone,slot,startTime,endTime,date,status:'Pending',paymentStatus:'Awaiting payment',amount:Math.round(Number(activeBookingGround.price||0)*(((()=>{const a=timeToMinutes(startTime),b=timeToMinutes(endTime);return (b<=a?b+1440:b)-a})())/60)),createdAt,holdExpiresAt:createdAt+30*60*1000};write(STORE.bookings,[...read(STORE.bookings),request]);closeModal('bookingModal');e.target.reset();toast('Booking request saved. Complete payment next.');renderGrounds();if(currentEmail===request.owner){renderDashboard()}showPaymentForBooking(request)});
 window.addEventListener('storage',e=>{if(e.key===STORE.grounds){renderGrounds()}if(e.key===STORE.bookings&&currentEmail){renderDashboard()}});
 renderGrounds();
+
+function connectSharedGrounds() {
+  if (!window.firebaseAuthApi || !window.firebaseDB || window.sharedGroundsUnsubscribe) return;
+  window.sharedGroundsUnsubscribe = window.firebaseAuthApi.watchPublicGrounds(
+    window.firebaseDB,
+    list => { sharedGrounds = list; renderGrounds(); },
+    error => { console.error('Could not load shared grounds:', error); toast('Ground listings could not be loaded. Please refresh.'); }
+  );
+}
+window.addEventListener('firebase-ready', connectSharedGrounds);
+connectSharedGrounds();
 
 let firebaseAuthListenerStarted = false;
 function connectFirebaseAuthState() {
