@@ -717,7 +717,7 @@
             const profileMessage = $('ownerProfileMessage');
             const profileSave = $('ownerProfileSave');
             profileForm.querySelector('[name="mobile"]').addEventListener('input', event => {
-              event.target.value = event.target.value.replace(/\\D/g, '').slice(0, 10);
+              event.target.value = event.target.value.replace(/\D/g, '').slice(0, 10);
             });
             profileForm.addEventListener('submit', async submitEvent => {
               submitEvent.preventDefault();
