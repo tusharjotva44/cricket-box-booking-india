@@ -602,6 +602,10 @@
     renderBookings(); toast('Booking approved. Overlapping pending requests were rejected so the slot cannot be confirmed twice.');
   });
   document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
+    if (button.dataset.plan.startsWith('Free Trial')) {
+      toast('Free Trial activates automatically when you sign up.');
+      return;
+    }
     selectedPlan = button.dataset.plan;
     setPlanExpiry();
     saveSelectedPlan();
