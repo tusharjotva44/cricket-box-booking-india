@@ -42,7 +42,14 @@
   let grounds = groundsForOwner();
   let editingGroundId = null;
   let sampleBookings = bookingsForOwner();
-  const saveGrounds = () => { try { const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL); localStorage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))])); } catch {} };
+  const saveGrounds = async () => {
+    const { user, api, db } = await getOwnerFirebaseContext();
+    await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
+    try {
+      const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL);
+      localStorage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))]));
+    } catch {}
+  };
   const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
   const escapeHTML = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function toast(message) {
@@ -267,7 +274,7 @@
     $('statGrounds').textContent = String(grounds.length);
     if ($('availabilityGroundSelect')) renderAvailabilityGroundOptions();
     renderOwnerName();
-    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>☎ ' + escapeHTML(g.mobile || g.phone || 'Mobile not provided') + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">DEMO LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Shared browser demo</small><div class="ground-action-buttons"><button class="secondary-btn" type="button" data-edit-ground="' + escapeHTML(g.id) + '">Edit</button><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></div></article>').join('');
+    $('groundsGrid').innerHTML = grounds.map(g => '<article class="ground-card"><div class="ground-art">⌂</div><div class="ground-card-body"><span class="sport-tag">' + escapeHTML(g.sport.toUpperCase()) + '</span><h3 style="margin-top:11px">' + escapeHTML(g.name) + '</h3><p>⌖ ' + escapeHTML(g.location) + '<br>☎ ' + escapeHTML(g.mobile || g.phone || 'Mobile not provided') + '<br>' + escapeHTML(g.description || 'Sports ground available for booking.') + '</p><div class="ground-meta"><strong>' + money(g.price) + ' <small>/ hour</small></strong><span class="demo-pill">LIVE LISTING</span></div><div class="ground-actions"><small style="color:#9ca3af;font-size:10px">Visible to all visitors</small><div class="ground-action-buttons"><button class="secondary-btn" type="button" data-edit-ground="' + escapeHTML(g.id) + '">Edit</button><button class="delete-btn" data-delete="' + escapeHTML(g.id) + '">Remove</button></div></div></div></article>').join('');
     $('groundsEmpty').classList.toggle('hidden', grounds.length > 0);
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
   }
@@ -391,7 +398,8 @@
       schedule[key] = {open,start,end};
     });
     if (!valid) { toast('For each open day, choose different start and end times.'); return; }
-    ground.availability = schedule; saveGrounds(); toast('Ground availability saved.'); renderAvailabilityEditor();
+    ground.availability = schedule;
+    saveGrounds().then(() => { toast('Ground availability saved.'); renderAvailabilityEditor(); }).catch(() => toast('Could not save availability. Please try again.'));
   });
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   $('calendarPrev').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()-1, 1); renderBookingCalendar(); });
@@ -443,7 +451,7 @@
     $('groundFormPanel').classList.remove('hidden');
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
   }
-  $('groundForm').addEventListener('submit', event => {
+  $('groundForm').addEventListener('submit', async event => {
     event.preventDefault();
     const name = $('groundName').value.trim(), location = $('groundLocation').value.trim(), mobile = $('groundMobile').value.trim(), price = Number($('groundPrice').value);
     if (!name || !location || !/^[0-9]{10}$/.test(mobile) || !Number.isFinite(price) || price < 1) { toast('Enter valid ground details and a 10-digit mobile number.'); return; }
@@ -452,20 +460,25 @@
       const index = grounds.findIndex(g => g.id === editingGroundId);
       if (index < 0) { toast('Ground could not be found.'); resetGroundForm(); return; }
       grounds[index] = {...grounds[index],...updatedFields};
-      saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground details updated.');
+      try { await saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground details updated and synced.'); }
+      catch (error) { toast('Ground update failed. Check your connection and try again.'); }
       return;
     }
     const limit = groundLimit();
     if (!limit) { toast('Please select a plan before adding a ground.'); showView('subscription'); return; }
     if (grounds.length >= limit) { toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground.' : ' grounds.') + ' Choose a 2 Grounds plan to add another.'); showView('subscription'); return; }
     grounds.push({id:'ground-' + Date.now(),...updatedFields,owner:OWNER_EMAIL,slots:[]});
-    saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground added to this browser demo.');
+    try { await saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground added and shared with all visitors.'); }
+    catch (error) { grounds = grounds.filter(g => g.id !== 'ground-' + Date.now()); toast('Ground could not be synced. Please try again.'); }
   });
-  $('groundsGrid').addEventListener('click', event => {
+  $('groundsGrid').addEventListener('click', async event => {
     const editButton = event.target.closest('[data-edit-ground]');
     if (editButton) { editGround(editButton.dataset.editGround); return; }
     const button = event.target.closest('[data-delete]'); if (!button) return;
-    grounds = grounds.filter(g => g.id !== button.dataset.delete); saveGrounds(); renderGrounds(); toast('Demo ground removed from the shared listing.');
+    const previous = grounds;
+    grounds = grounds.filter(g => g.id !== button.dataset.delete);
+    try { await saveGrounds(); renderGrounds(); toast('Ground removed from the live listing.'); }
+    catch (error) { grounds = previous; renderGrounds(); toast('Could not remove ground. Please try again.'); }
   });
   function timeLabel(value) {
     const [hour, minute] = value.split(':').map(Number);
@@ -860,6 +873,21 @@
   });
   if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
   renderGrounds(); renderBookings();
+  (async () => {
+    try {
+      const { user, api, db } = await getOwnerFirebaseContext();
+      const remoteGrounds = await api.getOwnerGrounds(db, user.uid);
+      if (remoteGrounds.length) {
+        grounds = remoteGrounds.map(g => ({...g, sport:g.sport || g.sportType || 'Box Cricket', location:g.location || '', price:Number(g.price || 0)}));
+      } else if (grounds.length) {
+        await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
+      }
+      renderGrounds();
+    } catch (error) {
+      console.error('Ground sync failed:', error);
+      toast('Ground sync failed. Please refresh or check Firebase permissions.');
+    }
+  })();
   let knownBookingIds = new Set(sampleBookings.map(b => b.id));
   window.addEventListener('storage', event => {
     if (event.key === NOTIFICATION_STORE) renderNotifications();
