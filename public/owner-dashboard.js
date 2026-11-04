@@ -381,10 +381,10 @@
     const isTrial = selectedPlan.startsWith('Free Trial');
     const isExpired = !!expiryValue && new Date(expiryValue).getTime() <= Date.now();
     const expiryDetails = expiryText ? (isExpired ? 'Expired on ' + expiryText + '.' : 'Expires on ' + expiryText + ' (' + daysLeft + (daysLeft === 1 ? ' day left).' : ' days left).')) : '';
-    $('planNoticeTitle').textContent = isExpired ? selectedPlan + ' — Expired' : selectedPlan + (isTrial ? ' — Active' : ' plan selected for preview');
+    $('planNoticeTitle').textContent = isExpired ? selectedPlan + ' — Expired' : selectedPlan + ' — Active';
     $('planNoticeText').textContent = isExpired
-      ? 'Your 10-day free trial has expired. Choose a paid plan to continue adding grounds.'
-      : (isTrial ? 'Your free trial is active for 10 days. ' : 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ')) + (expiryDetails ? expiryDetails : 'No expiry date is set.');
+      ? 'Your 10-day free trial has expired. Paid plan selection is temporarily unavailable.'
+      : 'Your free trial is active for 10 days. ' + (expiryDetails || 'No expiry date is set.');
     $('dashboardPlanName').textContent = selectedPlan + (isExpired ? ' (Expired)' : isTrial ? ' (Active)' : '');
     $('dashboardPlanExpiry').textContent = expiryDetails || 'Expiry date is not set yet.';
     document.querySelectorAll('.plan-select').forEach(b => {
