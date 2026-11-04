@@ -3,6 +3,7 @@
   const savedOwnerSession = (localStorage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
   if (!savedOwnerSession) { window.location.replace('admin-login.html'); return; }
   const OWNER_EMAIL = savedOwnerSession;
+  let ownerProfile = {};
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
@@ -258,15 +259,23 @@
     if (!user || !user.email || user.email.toLowerCase() !== OWNER_EMAIL) {
       throw new Error('Owner authentication required.');
     }
+    if (!user || !user.email) {
+      localStorage.removeItem('boxbook_session_v1');
+      window.location.replace('admin-login.html');
+      throw new Error('Please sign in to your owner account.');
+    }
+    if (String(user.email).trim().toLowerCase() !== OWNER_EMAIL) {
+      localStorage.removeItem('boxbook_session_v1');
+      window.location.replace('admin-login.html');
+      throw new Error('Signed-in account does not match this owner session.');
+    }
     return { user, api, db: window.firebaseDB };
   }
 
   function renderOwnerName() {
     const label = $('ownerGroundName');
     const avatar = document.querySelector('.profile-menu-trigger .avatar');
-    let profile = {};
-    try { profile = JSON.parse(localStorage.getItem('boxbook_owner_profile_v1') || '{}') || {}; } catch {}
-    const ownerName = String(profile.yourName || profile.fullName || '').trim();
+    const ownerName = String(ownerProfile.fullName || ownerProfile.yourName || '').trim();
     if (label) label.textContent = ownerName || 'Owner Account';
     if (avatar) avatar.textContent = ownerName ? Array.from(ownerName)[0].toUpperCase() : 'O';
   }
@@ -741,12 +750,12 @@
         (async () => {
           try {
             const { user, api, db } = await getOwnerFirebaseContext();
-            const savedProfile = await api.getOwnerProfile(db, user.uid) || {};
-            let cachedProfile = {};
-            try { cachedProfile = JSON.parse(localStorage.getItem('boxbook_owner_profile_v1') || '{}') || {}; } catch {}
-            const fullName = String(savedProfile.fullName || savedProfile.yourName || cachedProfile.yourName || cachedProfile.fullName || '');
-            const mobile = String(savedProfile.mobile || cachedProfile.mobile || '');
-            const email = user.email || OWNER_EMAIL;
+            const remoteProfile = await api.getOwnerProfile(db, user.uid);
+            const email = String(user.email || OWNER_EMAIL).trim().toLowerCase();
+            const savedProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === email) ? remoteProfile : {};
+            const hasSavedProfile = !!remoteProfile;
+            const fullName = String(savedProfile.fullName || savedProfile.yourName || '');
+            const mobile = String(savedProfile.mobile || '');
 
             openAccountModal('My Profile', 'OWNER ACCOUNT',
               '<form id="ownerProfileForm" class="owner-profile-form">' +
@@ -780,17 +789,12 @@
               profileMessage.textContent = 'Saving your profile...';
               try {
                 const profileData = { fullName: updatedName, mobile: updatedMobile, email };
-                if (Object.keys(savedProfile).length) {
+                if (hasSavedProfile) {
                   await api.updateOwnerProfile(db, user.uid, profileData);
                 } else {
                   await api.saveOwnerProfile(db, user.uid, profileData);
                 }
-                localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify({
-                  yourName: updatedName,
-                  fullName: updatedName,
-                  mobile: updatedMobile,
-                  email
-                }));
+                ownerProfile = profileData;
                 profileMessage.textContent = 'Profile updated successfully.';
                 profileMessage.style.color = '#15803d';
                 renderOwnerName();
@@ -906,6 +910,10 @@
   (async () => {
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
+      const remoteProfile = await api.getOwnerProfile(db, user.uid);
+      const signedInEmail = String(user.email || OWNER_EMAIL).trim().toLowerCase();
+      ownerProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === signedInEmail) ? remoteProfile : {};
+      renderOwnerName();
       const remoteGrounds = await api.getOwnerGrounds(db, user.uid);
       if (remoteGrounds.length) {
         grounds = remoteGrounds.map(g => ({...g, sport:g.sport || g.sportType || 'Box Cricket', location:g.location || '', price:Number(g.price || 0)}));
