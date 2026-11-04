@@ -356,9 +356,22 @@
     } catch {}
   }
   function syncPlanPreview() {
+    if (selectedPlan && !selectedPlan.startsWith('Free Trial')) {
+      selectedPlan = '';
+      try {
+        const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+        delete plans[OWNER_EMAIL];
+        localStorage.setItem(STORE.plan, JSON.stringify(plans));
+        const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+        delete dates[OWNER_EMAIL];
+        localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
+      } catch {}
+    }
     if (!selectedPlan) {
       $('dashboardPlanName').textContent = 'No plan selected';
-      $('dashboardPlanExpiry').textContent = 'Choose a plan in Subscription to see its expiry date.';
+      $('dashboardPlanExpiry').textContent = 'Paid plan selection is temporarily unavailable. Free Trial activates automatically on signup.';
+      $('planNoticeTitle').textContent = 'Paid plans coming soon';
+      $('planNoticeText').textContent = 'Paid plan selection and preview are disabled until the payment system is ready. Free Trial activates automatically when you create an owner account.';
       renderPlanExpiryAlert();
       return;
     }
@@ -383,7 +396,7 @@
   }
   function openGroundForm() {
     const limit = groundLimit();
-    if (!limit) { showView('subscription'); toast('Please select a plan before adding a ground.'); return; }
+    if (!limit) { showView('subscription'); toast('Paid plan selection is temporarily unavailable. Free Trial activates automatically on signup.'); return; }
     if (grounds.length >= limit) { showView('subscription'); toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground. ' : ' grounds. ') + 'Choose a 2 Grounds plan to add another.'); return; }
     $('groundFormPanel').classList.remove('hidden');
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
