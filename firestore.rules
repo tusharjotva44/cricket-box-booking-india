@@ -5,7 +5,15 @@ service cloud.firestore {
       allow read: if request.auth != null
         && (request.auth.uid == ownerId || request.auth.token.superAdmin == true);
       allow create: if request.auth != null && request.auth.uid == ownerId;
-      allow update, delete: if request.auth != null && request.auth.token.superAdmin == true;
+      allow update: if request.auth != null
+        && (
+          request.auth.token.superAdmin == true
+          || (
+            request.auth.uid == ownerId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'updatedAt'])
+          )
+        );
+      allow delete: if request.auth != null && request.auth.token.superAdmin == true;
     }
 
     match /grounds/{groundId} {
