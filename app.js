@@ -1,11 +1,5 @@
 const $ = (id) => document.getElementById(id);
 const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', owners:'boxbook_owners_v1', session:'boxbook_session_v1'};
-const demoGrounds = [
- {id:'demo1',sportType:'Box Cricket',name:'Greenfield Cricket Arena',location:'Ahmedabad, Gujarat',price:1200,description:'Well-maintained turf, floodlights and space for your team.',image:'',slots:['06:00 AM','07:00 AM','08:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo2',sportType:'Box Cricket',name:'PowerPlay Box Cricket',location:'Surat, Gujarat',price:1500,description:'A lively box cricket venue for friends and weekend matches.',image:'',slots:['07:00 AM','08:00 AM','09:00 AM','05:00 PM','06:00 PM','09:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo3',sportType:'Box Cricket',name:'The Cricket Yard',location:'Vadodara, Gujarat',price:1000,description:'Convenient local turf with flexible evening slots.',image:'',slots:['06:00 AM','08:00 AM','04:00 PM','06:00 PM','07:00 PM'],owner:'demo-owner',demo:true},
- {id:'demo4',sportType:'Pickleball',name:'Demo Pickleball Court',location:'Ahmedabad, Gujarat',price:800,description:'Test pickleball court listing for previewing sport filters and slot booking.',image:'',slots:['08:00 AM','09:00 AM','10:00 AM','06:00 PM','07:00 PM','08:00 PM'],owner:'demo-owner',demo:true}
-];
 const read = (key, fallback=[]) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
 const write = (key,value) => localStorage.setItem(key,JSON.stringify(value));
 let currentEmail = '';
@@ -14,7 +8,7 @@ let activeLocationFilter = '';
 let activeBoxNameFilter = '';
 let toastTimer;
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function grounds(){return [...demoGrounds,...read(STORE.grounds).map(g=>({...g,location:g.location||[g.area,g.city].filter(Boolean).join(', ')||g.city||'',name:g.name||g.groundName||'Cricket Ground'}))];}
+function grounds(){return read(STORE.grounds).map(g=>({...g,location:g.location||[g.area,g.city].filter(Boolean).join(', ')||g.city||'',name:g.name||g.groundName||'Cricket Ground'}));}
 function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
 function openModal(id){$(id).classList.remove('hidden')}
 function closeModal(id){$(id).classList.add('hidden')}
