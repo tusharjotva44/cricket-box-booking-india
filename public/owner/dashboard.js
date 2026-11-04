@@ -788,7 +788,8 @@
             openAccountModal('My Profile', 'OWNER ACCOUNT',
               '<form id="ownerProfileForm" class="owner-profile-form">' +
               '<label>Full name<input name="fullName" type="text" maxlength="70" required value="' + escapeHTML(fullName) + '"></label>' +
-              '<label>Mobile number<input name="mobile" type="tel" inputmode="numeric" maxlength="10" minlength="10" pattern="[0-9]{10}" required value="' + escapeHTML(mobile) + '"></label>' +
+              '<label>Mobile number<input name="mobile" type="tel" inputmode="numeric" value="' + escapeHTML(mobile) + '" readonly aria-readonly="true"></label>' +
+              '<p class="account-modal-note">Only Super Admin can change this mobile number.</p>' +
               '<label>Email address<input name="email" type="email" readonly value="' + escapeHTML(email) + '"></label>' +
               '<p class="account-modal-note" id="ownerProfileMessage" role="status">Your profile details are connected to your account.</p>' +
               '<div class="account-modal-actions"><button type="submit" id="ownerProfileSave">Save Changes</button></div></form>');
@@ -796,33 +797,26 @@
             const profileForm = $('ownerProfileForm');
             const profileMessage = $('ownerProfileMessage');
             const profileSave = $('ownerProfileSave');
-            profileForm.querySelector('[name="mobile"]').addEventListener('input', event => {
-              event.target.value = event.target.value.replace(/\D/g, '').slice(0, 10);
-            });
             profileForm.addEventListener('submit', async submitEvent => {
               submitEvent.preventDefault();
               const formData = new FormData(profileForm);
               const updatedName = String(formData.get('fullName') || '').trim();
-              const updatedMobile = String(formData.get('mobile') || '').trim();
               if (!updatedName) {
                 profileMessage.textContent = 'Please enter your full name.';
-                return;
-              }
-              if (!/^[0-9]{10}$/.test(updatedMobile)) {
-                profileMessage.textContent = 'Please enter a valid 10-digit mobile number.';
                 return;
               }
               profileSave.disabled = true;
               profileSave.textContent = 'Saving...';
               profileMessage.textContent = 'Saving your profile...';
               try {
-                const profileData = { fullName: updatedName, mobile: updatedMobile, email };
-                if (hasSavedProfile) {
-                  await api.updateOwnerProfile(db, user.uid, profileData);
-                } else {
-                  await api.saveOwnerProfile(db, user.uid, profileData);
+                if (!hasSavedProfile) {
+                  profileMessage.textContent = 'Mobile number can only be added or changed by Super Admin. Please contact Super Admin.';
+                  profileSave.disabled = false;
+                  profileSave.textContent = 'Save Changes';
+                  return;
                 }
-                ownerProfile = profileData;
+                await api.updateOwnerProfile(db, user.uid, { fullName: updatedName, email });
+                ownerProfile = { ...savedProfile, fullName: updatedName, email };
                 profileMessage.textContent = 'Profile updated successfully.';
                 profileMessage.style.color = '#15803d';
                 renderOwnerName();
