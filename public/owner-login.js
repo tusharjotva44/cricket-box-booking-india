@@ -129,7 +129,7 @@
           trialStartedAt,
           trialExpiresAt
         });
-        localStorage.setItem('boxbook_owner_profile_v1', JSON.stringify({yourName:fullName, mobile, email:result.user.email || email}));
+        // Owner profile is stored in Firestore by Firebase UID; do not use a shared browser profile cache.
         saveOwnerSession(result.user.email || email);
       } else {
         const result = await window.firebaseAuthApi.signInWithEmailAndPassword(window.firebaseAuth,email,password);
