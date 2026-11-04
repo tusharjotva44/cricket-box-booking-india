@@ -155,3 +155,45 @@ function connectFirebaseAuthState() {
 }
 window.addEventListener('firebase-ready', connectFirebaseAuthState);
 connectFirebaseAuthState();
+
+
+const contactForm = $('contactForm');
+if (contactForm) {
+  const contactPhone = $('contactPhone');
+  const contactSubmit = contactForm.querySelector('.contact-submit');
+  const contactNote = contactForm.querySelector('.contact-form-note');
+  if (contactSubmit) {
+    contactSubmit.type = 'submit';
+    contactSubmit.disabled = false;
+    contactSubmit.textContent = 'Send Message on WhatsApp →';
+  }
+  if (contactNote) contactNote.textContent = 'Your message will open in WhatsApp so you can review and send it.';
+  ['contactName', 'contactPhone', 'contactSubject', 'contactMessage'].forEach(id => {
+    const field = $(id);
+    if (field) field.required = true;
+  });
+  if (contactPhone) {
+    contactPhone.pattern = '[0-9]{10}';
+    contactPhone.addEventListener('input', () => {
+      contactPhone.value = contactPhone.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+  }
+  contactForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const phone = contactPhone.value.trim();
+    if (!/^[0-9]{10}$/.test(phone)) {
+      toast('Enter a valid 10-digit mobile number.');
+      contactPhone.focus();
+      return;
+    }
+    const message = [
+      'Hello Box Book India,',
+      '',
+      'Name: ' + $('contactName').value.trim(),
+      'Mobile: ' + phone,
+      'Subject: ' + $('contactSubject').value,
+      'Message: ' + $('contactMessage').value.trim()
+    ].join('\\n');
+    window.open('https://wa.me/919687264932?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+  });
+}
