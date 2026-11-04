@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffaf5">
+  <title>Owner Dashboard | BoxBook India</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="dashboard.html" aria-label="Refresh owner dashboard">
+      <span class="brand-mark"><svg viewBox="0 0 44 46" role="img" aria-label="BoxBook shield logo"><path d="M22 2.5 39 9v12.2c0 10.1-6.7 16.5-17 20.3C11.7 37.7 5 31.3 5 21.2V9z" fill="#F97316" stroke="#F97316" stroke-width="1.2"/><path d="M13 29 25 13.5a2.1 2.1 0 0 1 3.3 2.5L17.3 31.2Z" fill="#fff"/><circle cx="29.2" cy="29.1" r="4" fill="#fff"/></svg></span>
+      <span class="brand-name">BoxBook <em>| India</em><small>CRICKET TURF BOOKING</small></span>
+    </a>
+    <div class="side-label">OWNER WORKSPACE</div>
+    <nav class="side-nav" aria-label="Dashboard navigation">
+      <button class="nav-link active" data-view="overview"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span> Overview</button>
+      <button class="nav-link" data-view="grounds"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V5l9-3 9 3v16M3 10h18M8 10v11M16 10v11M1.5 21h21"/></svg></span> My Grounds</button>
+      <button class="nav-link" data-view="availability"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Ground Availability</button>
+      <button class="nav-link" data-view="bookings"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M7 3v4M17 3v4M3 10h18M8 14l2.5 2.5L16 12"/></svg></span> Bookings <b class="nav-count" id="bookingCount">2</b></button>
+      <button class="nav-link" data-view="calendar"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18M8 13h2M14 13h2M8 17h2M14 17h2"/></svg></span> Booking Calendar</button>
+      <button class="nav-link" data-view="revenue"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 15l4-4 3 3 6-7"/><path d="M16 7h4v4"/></svg></span> Revenue Report</button>
+      <button class="nav-link" data-view="subscription"><span class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></span> Subscription</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <details class="help-card support-disclosure">
+        <summary class="support-toggle"><span class="support-toggle-icon" aria-hidden="true">?</span><span>Contact Support</span><span class="support-toggle-chevron" aria-hidden="true">⌄</span></summary>
+        <div class="support-actions">
+          <a class="support-action support-whatsapp" href="https://wa.me/918320353848" target="_blank" rel="noopener noreferrer"><span class="support-action-icon whatsapp-brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3 20l.9-4.7A8.5 8.5 0 1 1 20.5 11.7Z"/><path d="M8.2 7.8c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.2.1.4-.1.6l-.5.6c-.2.2-.2.4 0 .7.5.9 1.2 1.6 2.1 2.1.2.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.5.7c.3.1.4.3.4.5 0 .4-.2 1.2-.7 1.6-.5.5-1.2.7-1.9.6-1.1-.2-2.4-.8-3.7-2-1.2-1.1-2-2.5-2.2-3.5-.2-.8.1-1.6.8-2.5Z"/></svg></span><span><strong>WhatsApp</strong><small>Chat with our team</small></span><span class="support-arrow" aria-hidden="true">↗</span></a>
+          <a class="support-action" href="tel:+918320353848"><span class="support-action-icon" aria-hidden="true">☎</span><span><strong>Call Support</strong><small><strong>+91 83203 53848</strong></small></span><span class="support-arrow" aria-hidden="true">↗</span></a>
+          <a class="support-action" href="mailto:boxbookindia@gmail.com"><span class="support-action-icon" aria-hidden="true">✉</span><span><strong>Email Support</strong><small><strong>boxbookindia@gmail.com</strong></small></span><span class="support-arrow" aria-hidden="true">↗</span></a>
+        </div>
+      </details>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
+      <div class="breadcrumb">Owner Workspace <span>/</span> <strong id="breadcrumbTitle">Overview</strong></div>
+      <div class="notification-wrap">
+        <button class="notification-trigger" id="notificationTrigger" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notificationPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+          <span class="notification-badge hidden" id="notificationBadge">0</span>
+        </button>
+        <section class="notification-panel hidden" id="notificationPanel" aria-label="Notifications">
+          <div class="notification-panel-heading"><div><strong>Notifications</strong><small id="notificationSummary">Updates from BoxBook</small></div><button type="button" id="markNotificationsRead">Mark all read</button></div>
+          <div class="notification-list" id="notificationList"><p class="notification-empty">No notifications yet.</p></div>
+        </section>
+      </div>
+      <div class="profile-menu-wrap">
+        <button class="profile profile-menu-trigger" id="profileMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
+          <span class="avatar">O</span><span class="profile-copy"><strong id="ownerGroundName">Owner Account</strong><small id="ownerEmailLabel">owner@boxbook.in</small></span><span class="profile-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="profile-dropdown hidden" id="profileDropdown" role="menu">
+          <button type="button" role="menuitem" data-profile-action="profile"><span class="profile-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-3.5 3.2-5.5 7-5.5s6.5 2 7 5.5"/></svg></span> Profile</button>
+          <button type="button" role="menuitem" data-profile-action="plan"><span class="profile-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M7 15h4"/></svg></span> My Plan</button>
+          <button type="button" role="menuitem" data-profile-action="password"><span class="profile-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span> Password Change</button>
+          <div class="profile-dropdown-divider"></div>
+          <button type="button" role="menuitem" class="profile-logout" data-profile-action="logout"><span class="profile-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3.5"/><path d="M12 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg></span> Logout</button>
+        </div>
+      </div>
+      <div class="account-modal hidden" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
+        <div class="account-modal-card"><button type="button" class="account-modal-close" id="accountModalClose" aria-label="Close">×</button><span class="eyebrow" id="accountModalEyebrow">OWNER ACCOUNT</span><h2 id="accountModalTitle">Profile</h2><div id="accountModalBody"></div></div>
+      </div>
+    </header>
+    <div class="content">
+      <div class="plan-expiry-alert hidden" id="planExpiryAlert" role="status" aria-live="polite"><span class="plan-expiry-alert-icon" aria-hidden="true">!</span><div class="plan-expiry-alert-copy"><strong id="planExpiryAlertTitle">Plan expiry reminder</strong><p id="planExpiryAlertText"></p></div><button type="button" id="closePlanExpiryAlert" class="plan-expiry-alert-close" aria-label="Close notification">×</button></div>
+      <section class="view active" id="view-overview">
+        <div class="page-heading"><div><span class="eyebrow">YOUR BUSINESS AT A GLANCE</span><h1>Owner Dashboard</h1><p>Welcome back! Here’s what’s happening with your grounds.</p></div><div class="page-heading-actions"><button class="primary-btn" data-go="grounds">＋ Add a Ground</button><button class="secondary-btn" type="button" id="dashboardNewBookingButton">＋ New Booking</button></div></div>
+        <section class="dashboard-hero" aria-label="Welcome to your sports ground dashboard">
+          <div class="hero-copy"><span class="hero-kicker"><span class="hero-live-dot"></span> YOUR GROUND, YOUR GAME</span><h2>Let’s make today a <span>great game.</span></h2><p>Your bookings and grounds, all in one easy place.</p><button class="hero-cta" data-go="bookings">Manage bookings <span aria-hidden="true">→</span></button><div class="hero-mini-note"><span aria-hidden="true">✦</span> Simple tools. More play time.</div></div>
+          <div class="hero-art" aria-hidden="true">
+            <span class="hero-spark spark-one">✦</span><span class="hero-spark spark-two">✦</span><span class="hero-orbit orbit-one"></span><span class="hero-orbit orbit-two"></span>
+            <svg class="hero-cartoon" viewBox="0 0 360 255" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="skinTone" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9b184"/><stop offset=".55" stop-color="#c98b5e"/><stop offset="1" stop-color="#9e6342"/></linearGradient>
+                <linearGradient id="jersey" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9b45"/><stop offset=".48" stop-color="#f97316"/><stop offset="1" stop-color="#c2410c"/></linearGradient>
+                <linearGradient id="trouser" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#26365e"/><stop offset=".5" stop-color="#172554"/><stop offset="1" stop-color="#101a38"/></linearGradient>
+                <linearGradient id="helmet" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#425578"/><stop offset=".5" stop-color="#172554"/><stop offset="1" stop-color="#0b1228"/></linearGradient>
+                <linearGradient id="ballPaint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb36b"/><stop offset=".5" stop-color="#f97316"/><stop offset="1" stop-color="#c2410c"/></linearGradient>
+                <radialGradient id="faceLight" cx=".3" cy=".2" r=".9"><stop offset="0" stop-color="#f4c49a"/><stop offset="1" stop-color="#b9794f"/></radialGradient>
+                <filter id="softShadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+              </defs>
+              <ellipse cx="178" cy="230" rx="93" ry="12" fill="#7c2d12" opacity=".15" filter="url(#softShadow)"/>
+              <path d="M83 215Q95 192 120 193L222 193Q251 194 272 216L272 226H79Z" fill="#fed7aa" opacity=".9"/>
+              <path d="M126 177L106 220Q104 225 112 226H146L162 188M193 183L211 225H247Q252 224 248 218L228 177Z" fill="url(#trouser)"/>
+              <path d="M108 218L145 218L149 229H105Q100 226 108 218ZM211 218L247 218L255 229H216Z" fill="#f8fafc"/>
+              <path d="M103 226H150L151 232H101Q98 229 103 226ZM215 226H257L260 232H216Z" fill="#172554"/>
+              <path d="M131 122Q120 127 114 143L101 174Q99 181 107 186L132 197L153 165L167 189Q171 193 180 190L224 175L207 135L188 121Z" fill="url(#jersey)"/>
+              <path d="M134 135L119 166L139 178L154 151M192 136L207 163L185 176L169 151" fill="none" stroke="#fff7ed" stroke-width="5.5" stroke-linecap="round" opacity=".96"/>
+              <path d="M147 126L151 160L171 169L188 155L191 127" fill="#ea580c" opacity=".58"/>
+              <path d="M151 125L156 151L171 158L184 149L188 125" fill="none" stroke="#fdba74" stroke-width="2" opacity=".85"/>
+              <path d="M149 79Q164 67 183 81L195 120L180 143L143 132L137 99Z" fill="#fff7ed" stroke="#d6d3d1" stroke-width="1.4"/>
+              <path d="M147 88L188 97M143 101L192 110M146 115L185 124" stroke="#fdba74" stroke-width="3.5" stroke-linecap="round"/>
+              <path d="M153 77Q137 62 145 43Q151 28 170 29Q190 29 194 49Q197 63 183 81L178 91L153 88Z" fill="url(#faceLight)"/>
+              <path d="M145 50Q141 30 161 24Q184 20 195 40L194 54L186 46L180 36L164 43L149 42Z" fill="url(#helmet)"/>
+              <path d="M149 43Q169 33 190 42" fill="none" stroke="#6b7d9f" stroke-width="2" opacity=".7"/>
+              <path d="M149 48Q155 44 161 48M173 48Q180 44 185 49" fill="none" stroke="#7c4a32" stroke-width="2.2" stroke-linecap="round"/>
+              <ellipse cx="156" cy="53" rx="2.5" ry="3" fill="#172554"/><ellipse cx="178" cy="53" rx="2.5" ry="3" fill="#172554"/>
+              <circle cx="157" cy="52" r=".8" fill="#fff"/><circle cx="179" cy="52" r=".8" fill="#fff"/>
+              <path d="M166 54L163 63L169 64" fill="none" stroke="#a16245" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M158 69Q168 76 178 68" fill="none" stroke="#8f3e2c" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M153 73Q168 80 181 72" fill="none" stroke="#f3c29d" stroke-width="2" opacity=".7"/>
+              <path d="M144 91L117 113L96 91" fill="none" stroke="url(#skinTone)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M187 91L216 108L239 82" fill="none" stroke="url(#skinTone)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M95 91L88 81M95 91L84 97M95 91L101 81" stroke="url(#skinTone)" stroke-width="5.5" stroke-linecap="round"/>
+              <path d="M239 82L243 71M239 82L250 83M239 82L234 71" stroke="url(#skinTone)" stroke-width="5.5" stroke-linecap="round"/>
+              <path d="M108 174L133 185M180 188L217 176" stroke="#9a3412" stroke-width="2" opacity=".45" stroke-linecap="round"/>
+              <g class="hero-ball"><circle cx="270" cy="64" r="16" fill="url(#ballPaint)"/><ellipse cx="265" cy="58" rx="5" ry="3" fill="#fff" opacity=".2" transform="rotate(-30 265 58)"/><path d="M261 50Q275 63 278 78M255 57Q268 69 269 79" fill="none" stroke="#fff7ed" stroke-width="2.3" stroke-linecap="round"/></g>
+              <path d="M43 222V181M34 222V187M52 222V187M33 198H53" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+              <path d="M290 222V181M281 222V187M299 222V187M280 198H300" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+              <path d="M22 234H326" stroke="#fb923c" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+            </svg>
+            <span class="hero-ground-chip"><span>🏏</span> Ready to play</span>
+          </div>
+        </section>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span>My Grounds</span><span class="stat-icon orange">⌂</span></div><strong id="statGrounds">0</strong><small><span class="tiny-dot"></span> Your listed venues</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Total Bookings</span><span class="stat-icon navy">▤</span></div><strong id="statBookings">0</strong><small>All booking requests</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Pending Requests</span><span class="stat-icon peach">◷</span></div><strong id="statPending">0</strong><small>Need your attention</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Confirmed Revenue</span><span class="stat-icon green">₹</span></div><strong id="statRevenue">₹0</strong><small>Confirmed bookings only</small></article>
+        </div>
+        <div class="section-grid dashboard-section-grid">
+          <article class="panel recent-bookings-panel"><div class="panel-heading"><div><h2>Recent Bookings</h2><p>Keep track of your latest requests.</p></div><button class="text-btn" data-go="bookings">View all →</button></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="recentBookingRows"></tbody></table></div></article>
+          <div class="dashboard-side-cards">
+            <article class="panel quick-panel"><div class="panel-heading"><div><h2>Quick Actions</h2><p>Manage your venue faster.</p></div></div><button class="quick-action" data-go="grounds"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h.01M15 9h.01"/><path d="M18 4v6m-3-3h6"/></svg></span><span><strong>Add a new ground</strong><small>List another sports venue</small></span><b>→</b></button><button class="quick-action" data-go="bookings"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18m-13 5 2 2 5-5"/></svg></span><span><strong>Check bookings</strong><small>Review booking requests</small></span><b>→</b></button><button class="quick-action" data-go="subscription"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></span><span><strong>View subscription</strong><small>Manage your subscription</small></span><b>→</b></button></article>
+            <article class="panel dashboard-subscription-status" id="dashboardSubscriptionStatus"><div><h2>Subscription Status</h2><p id="dashboardPlanName">No plan selected</p><p id="dashboardPlanExpiry">Choose a plan in Subscription to see its expiry date.</p></div><button type="button" class="primary-btn" id="renewPlanButton">Renew Plan</button></article>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="view-revenue">
+        <div class="page-heading"><div><span class="eyebrow">BUSINESS ANALYTICS</span><h1>Revenue Report</h1><p>Track your earnings, compare performance and review confirmed bookings.</p></div></div>
+        <section class="panel revenue-report-panel" aria-labelledby="revenueReportTitle">
+          <div class="panel-heading revenue-report-heading">
+            <div><h2 id="revenueReportTitle">Revenue overview</h2><p>Confirmed bookings only · Based on booking date</p></div>
+              <div class="revenue-period-actions">
+              <label class="revenue-period-label" for="revenuePeriod">Report period
+                <select id="revenuePeriod" class="filter-select"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option></select>
+              </label>
+              <button type="button" class="primary-btn" id="downloadPaymentReport">↓ Download CSV</button>
+            </div>
+          </div>
+          <div class="revenue-summary-grid">
+            <article class="revenue-summary-card"><span>Total earnings</span><strong id="reportRevenue">₹0</strong></article>
+            <article class="revenue-summary-card"><span>Confirmed bookings</span><strong id="reportBookings">0</strong></article>
+            <article class="revenue-summary-card"><span>Average booking value</span><strong id="reportAverage">₹0</strong></article>
+          </div>
+          <div class="revenue-insights-grid">
+            <article class="revenue-insight-card"><span>Highest earning ground</span><strong id="reportTopGround">—</strong><small id="reportTopGroundAmount">₹0 earnings</small></article>
+            <article class="revenue-insight-card"><span>Previous period comparison</span><strong id="reportGrowth">0%</strong><small id="reportGrowthCaption">Compared with previous period</small></article>
+          </div>
+          <div class="revenue-chart-section"><div class="revenue-chart-heading"><div><h3>Revenue trend</h3><p id="revenueTrendCaption">Earnings across this period</p></div></div><div class="revenue-chart" id="revenueTrendChart" aria-label="Revenue trend chart"><p class="revenue-chart-empty">No confirmed earnings for this period.</p></div></div>
+          <div class="revenue-ground-breakdown"><h3>Earnings by ground</h3><div class="table-wrap"><table><thead><tr><th>GROUND</th><th>CONFIRMED BOOKINGS</th><th>EARNINGS</th></tr></thead><tbody id="revenueGroundRows"><tr><td colspan="3">No confirmed earnings for this period.</td></tr></tbody></table></div></div>
+          <div class="revenue-ground-breakdown revenue-booking-breakdown"><h3>Booking-wise earnings</h3><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE</th><th>AMOUNT</th></tr></thead><tbody id="revenueBookingRows"><tr><td colspan="5">No confirmed bookings for this period.</td></tr></tbody></table></div></div>
+        </section>
+      </section>
+      <section class="view" id="view-grounds">
+        <div class="page-heading"><div><span class="eyebrow">YOUR VENUES</span><h1>My Grounds</h1><p>Add and manage the grounds listed under your owner account.</p></div><button class="primary-btn" id="showGroundForm">＋ Add a Ground</button></div>
+        <div class="panel form-panel hidden" id="groundFormPanel"><div class="panel-heading"><div><h2 id="groundFormTitle">Add a ground</h2><p id="groundFormDescription">Add your ground details.</p></div><button class="icon-btn" id="cancelGroundForm" aria-label="Close form">✕</button></div><form id="groundForm" class="ground-form"><label>Ground name<input id="groundName" required maxlength="70" placeholder="e.g. Sunrise Box Cricket"></label><label>Sport type<select id="groundSport"><option>Box Cricket</option><option>Pickleball</option></select></label><label>Location<input id="groundLocation" required maxlength="100" placeholder="City or area"></label><label>Ground mobile number<input id="groundMobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[0-9]{10}" required placeholder="10-digit mobile number"></label><label>Price per hour (₹)<input id="groundPrice" type="number" min="1" max="100000" required placeholder="1200"></label><label>Owner UPI ID<input id="groundUpiId" placeholder="name@upi" autocomplete="off"></label><label>QR code image URL<input id="groundQrImageUrl" type="url" placeholder="https://... (optional)"></label><label class="full">Short description<textarea id="groundDescription" rows="3" maxlength="220" placeholder="Tell players about your ground"></textarea></label><div class="form-actions full"><button type="button" class="secondary-btn" id="cancelGroundForm2">Cancel</button><button class="primary-btn" id="groundFormSubmit" type="submit">Save Ground</button></div></form></div>
+        <div class="grounds-grid" id="groundsGrid"></div><div class="empty-state hidden" id="groundsEmpty"><span>⌂</span><h3>No grounds added yet</h3><p>Add your first venue to see it listed here.</p><button class="primary-btn" data-open-form>＋ Add a Ground</button></div>
+      </section>
+      <section class="view" id="view-availability">
+        <div class="page-heading"><div><span class="eyebrow">GROUND SCHEDULE</span><h1>Ground Availability</h1><p>Set the days and operating hours players can book for each ground.</p></div></div>
+        <section class="panel availability-panel">
+          <div class="availability-ground-picker"><label for="availabilityGroundSelect">Choose ground</label><select id="availabilityGroundSelect"><option value="">Select your ground</option></select></div>
+          <div id="availabilityEditor" class="availability-editor"><p class="availability-empty">Add a ground first to manage its availability.</p></div>
+          <div class="availability-actions hidden" id="availabilityActions"><button type="button" class="primary-btn" id="saveAvailabilityButton">Save Availability</button></div>
+        </section>
+      </section>
+      <section class="view" id="view-bookings">
+        <div class="page-heading"><div><span class="eyebrow">RESERVATIONS</span><h1>Bookings</h1><p>Review booking activity for your venue.</p></div><button class="primary-btn" type="button" id="showOwnerBookingForm">＋ New Booking</button></div>
+        <div class="panel form-panel hidden" id="ownerBookingFormPanel"><div class="panel-heading"><div><h2>Create a booking</h2><p>Book a time slot directly for a customer.</p></div><button class="icon-btn" type="button" id="cancelOwnerBookingForm" aria-label="Close form">✕</button></div><form id="ownerBookingForm" class="ground-form"><label>Choose ground<select id="ownerBookingGround" required><option value="">Select your ground</option></select></label><label>Customer name<input id="ownerBookingCustomer" required maxlength="70" placeholder="Customer full name"></label><label>Mobile number<input id="ownerBookingPhone" type="tel" inputmode="numeric" maxlength="10" minlength="10" pattern="[0-9]{10}" required placeholder="10-digit mobile number"></label><label>Booking date<input id="ownerBookingDate" type="date" required></label><label>Start time<select id="ownerBookingStart" required><option value="">Select start time</option></select></label><label>End time<select id="ownerBookingEnd" required><option value="">Select end time</option></select></label><label class="full">Booking amount (₹)<input id="ownerBookingAmount" type="number" min="1" step="1" required readonly></label><div class="form-actions full"><button class="secondary-btn" type="button" id="cancelOwnerBookingForm2">Cancel</button><button class="primary-btn" type="submit">Confirm Booking</button></div></form></div>
+        <div class="panel"><div class="panel-heading booking-panel-heading"><div><h2>All Bookings</h2><p>Search and filter your booking requests.</p></div><div class="booking-tools"><input class="booking-search" id="bookingSearch" type="search" placeholder="Search customer, ground or ID" aria-label="Search bookings"><input class="filter-select date-filter" id="bookingDateFilter" type="date" aria-label="Filter bookings by date"><select class="filter-select" id="bookingFilter" aria-label="Filter bookings by status"><option value="all">All statuses</option><option value="Confirmed">Confirmed</option><option value="Pending">Pending</option><option value="Rejected">Rejected</option><option value="Expired">Expired</option></select></div></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>DATE & TIME</th><th>AMOUNT</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="bookingRows"></tbody></table></div><p class="table-note">Booking details shown here are saved in this browser until secure backend integration is completed.</p></div>
+      </section>
+      <section class="view" id="view-calendar">
+        <div class="page-heading"><div><span class="eyebrow">BOOKING SCHEDULE</span><h1>Booking Calendar</h1><p>View your ground bookings by date and check each day's schedule.</p></div></div>
+        <section class="panel booking-calendar-panel">
+          <div class="booking-calendar-toolbar"><div><h2 id="calendarMonthTitle">Month Year</h2><p>Select a date to view its bookings.</p></div><div class="booking-calendar-nav"><button type="button" class="secondary-btn" id="calendarToday">Today</button><button type="button" class="secondary-btn" id="calendarPrev" aria-label="Previous month">‹</button><button type="button" class="secondary-btn" id="calendarNext" aria-label="Next month">›</button></div></div>
+          <div class="booking-calendar-legend"><span><i class="calendar-dot confirmed"></i> Confirmed</span><span><i class="calendar-dot pending"></i> Pending</span><span><i class="calendar-dot other"></i> Other</span></div>
+          <div class="booking-calendar-grid" id="bookingCalendarGrid" aria-label="Monthly booking calendar"></div>
+        </section>
+        <section class="panel booking-calendar-details"><div class="panel-heading"><div><h2 id="calendarSelectedTitle">Bookings</h2><p id="calendarSelectedSummary">Select a date to see booking details.</p></div></div><div class="table-wrap"><table><thead><tr><th>BOOKING</th><th>CUSTOMER</th><th>GROUND</th><th>TIME</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="calendarBookingRows"></tbody></table></div></section>
+      </section>
+      <section class="view" id="view-subscription">
+        <div class="page-heading"><div><span class="eyebrow">OWNER PLAN</span><h1>Subscription</h1><p>Choose a monthly or yearly plan based on how many grounds you manage.</p></div></div>
+        <div class="subscription-banner"><div><span class="eyebrow">BOXBOOK OWNER PLANS</span><h2>Flexible plans for your grounds.</h2><p>Choose 1 ground for ₹199/month or ₹1,999/year, or up to 2 grounds for ₹299/month or ₹2,999/year.</p></div><div class="banner-symbol">◇</div></div>
+        <div class="plans-grid">
+          <article class="plan-card featured-plan"><span class="popular-label">FREE</span><span class="plan-label">10-DAY TRIAL</span><h3>Free Trial</h3><p>Try the owner dashboard free for 10 days.</p><div class="plan-price">₹0 <small>/ 10 days</small></div><ul><li>List and manage 1 ground</li><li>View booking information</li><li>Owner dashboard access</li><li>No payment required</li></ul><button class="plan-select" data-plan="Free Trial - 1 Ground" type="button" disabled>Automatic on Signup</button></article>
+          <article class="plan-card"><span class="plan-label">MONTHLY PLAN</span><h3>1 Ground</h3><p>For owners managing one box ground.</p><div class="plan-price">₹199 <small>/ month</small></div><ul><li>List and manage 1 ground</li><li>View booking information</li><li>Owner dashboard access</li></ul><button class="plan-select" data-plan="Monthly - 1 Ground" type="button" disabled>Coming Soon</button></article>
+          <article class="plan-card"><span class="plan-label">MONTHLY PLAN</span><h3>2 Grounds</h3><p>For owners managing up to two box grounds.</p><div class="plan-price">₹299 <small>/ month</small></div><ul><li>List and manage up to 2 grounds</li><li>View booking information</li><li>Owner dashboard access</li></ul><button class="plan-select" data-plan="Monthly - 2 Grounds" type="button" disabled>Coming Soon</button></article>
+          <article class="plan-card featured-plan"><span class="popular-label">SAVE ₹389</span><span class="plan-label">YEARLY PLAN</span><h3>1 Ground</h3><p>Pay yearly and save compared with monthly billing.</p><div class="plan-price">₹1,999 <small>/ year</small></div><ul><li>List and manage 1 ground</li><li>View booking information</li><li>Owner dashboard access</li></ul><button class="plan-select" data-plan="Yearly - 1 Ground" type="button" disabled>Coming Soon</button></article>
+          <article class="plan-card featured-plan"><span class="popular-label">SAVE ₹589</span><span class="plan-label">YEARLY PLAN</span><h3>2 Grounds</h3><p>Pay yearly and save compared with monthly billing.</p><div class="plan-price">₹2,999 <small>/ year</small></div><ul><li>List and manage up to 2 grounds</li><li>View booking information</li><li>Owner dashboard access</li></ul><button class="plan-select" data-plan="Yearly - 2 Grounds" type="button" disabled>Coming Soon</button></article>
+        </div>
+        <div class="notice subscription-note"><strong id="planNoticeTitle">No plan selected</strong><p id="planNoticeText">Paid plan selection is temporarily unavailable. Free Trial activates automatically when you create an owner account.</p></div>
+      </section>
+      <footer class="footer"><span>© 2026 BoxBook | India</span><span>Play more. Plan less.</span></footer>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="../firebase/init.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
