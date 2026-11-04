@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F97316">
+  <title>Super Admin | Box Book India</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--orange:#F97316;--orange-dark:#C2410C;--orange-soft:#FFF2E8;--ink:#172033;--muted:#748092;--line:#E9EDF2;--surface:#fff;--canvas:#F7F8FA;--green:#15803D;--red:#B91C1C;--shadow:0 12px 35px rgba(22,34,51,.06}
+    *{box-sizing:border-box}html{min-height:100%;background:var(--canvas)}body{margin:0;color:var(--ink);font-family:'DM Sans',sans-serif;background:var(--canvas)}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.6}.hidden{display:none!important}
+    .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#ffead8,transparent 35%),radial-gradient(circle at 90% 90%,#ffe6d2,transparent 32%),#fffaf6}
+    .login-card{width:min(100%,440px);padding:38px;background:#fff;border:1px solid #f3e5db;border-radius:22px;box-shadow:0 25px 70px rgba(124,63,24,.12)}
+    .brand{display:flex;align-items:center;gap:12px;font:700 20px 'Space Grotesk',sans-serif}.brand-mark{width:42px;height:44px;display:grid;place-items:center;color:#fff;background:var(--orange);clip-path:polygon(50% 0,94% 16%,90% 67%,50% 100%,10% 67%,6% 16%);font-size:20px}.brand em{font-style:normal;color:var(--orange)}.brand small{display:block;margin-top:4px;color:var(--muted);font:700 9px 'DM Sans',sans-serif;letter-spacing:1.5px}
+    .login-card h1{margin:32px 0 8px;font:700 30px 'Space Grotesk',sans-serif;letter-spacing:-1px}.subtle{color:var(--muted);font-size:13px;line-height:1.65}.field{display:grid;gap:8px;margin-top:20px}.field label{font-size:12px;font-weight:700;color:#465164}.field input,.toolbar input{width:100%;padding:13px 14px;border:1px solid #DDE3EA;border-radius:10px;background:#fff;color:var(--ink);outline:none}.field input:focus,.toolbar input:focus{border-color:var(--orange);box-shadow:0 0 0 3px #F973161A}.primary{width:100%;margin-top:24px;padding:14px;border:0;border-radius:10px;background:var(--orange);color:#fff;font-weight:800}.primary:hover{background:#EA580C}.message{min-height:20px;margin-top:14px;color:var(--red);font-size:12px;line-height:1.5}.security-note{margin-top:22px;padding:12px 13px;border-radius:10px;background:#FFF7ED;color:#9A3412;font-size:11px;line-height:1.6}
+    .app{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;padding:25px 17px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:5}.sidebar .brand{padding:0 10px 28px;border-bottom:1px solid var(--line)}.side-label{padding:25px 11px 10px;color:#A0A8B5;font-size:9px;font-weight:800;letter-spacing:1.6px}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:0;border-radius:10px;background:transparent;color:#657084;text-align:left;font-size:13px;font-weight:700}.nav button:hover{background:#FFF7F0;color:var(--orange-dark)}.nav button.active{background:var(--orange-soft);color:var(--orange-dark)}.nav .nav-icon{width:20px;text-align:center;font-size:16px}.sidebar-bottom{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+    .main{margin-left:250px;min-height:100vh}.topbar{height:78px;position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.crumb{font-size:12px;color:var(--muted)}.crumb strong{color:var(--ink)}.top-actions{display:flex;align-items:center;gap:12px}.admin-email{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5B6575;font-size:12px}.ghost,.refresh{padding:9px 13px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#4B5565;font-size:12px;font-weight:700}.ghost:hover,.refresh:hover{border-color:#FDBA74;color:var(--orange-dark)}.mobile-menu{display:none}
+    .content{max-width:1450px;margin:0 auto;padding:32px 36px 55px}.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:25px}.eyebrow{color:var(--orange-dark);font-size:10px;font-weight:800;letter-spacing:1.7px}.page-head h1{margin:8px 0 6px;font:700 clamp(25px,3vw,34px) 'Space Grotesk',sans-serif;letter-spacing:-1px}.page-head p{margin:0;color:var(--muted);font-size:13px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px}.metric{padding:19px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.metric-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;font-weight:700}.metric-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:var(--orange-soft);color:var(--orange-dark);font-size:16px}.metric-value{margin-top:15px;font:700 29px 'Space Grotesk',sans-serif;letter-spacing:-.8px}.metric-foot{margin-top:4px;color:#98A1AE;font-size:10px}
+    .panel{padding:21px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:17px}.panel-head h2{margin:0;font:700 16px 'Space Grotesk',sans-serif}.panel-head p{margin:5px 0 0;color:var(--muted);font-size:11px}.toolbar{display:flex;gap:10px;align-items:center}.toolbar input{width:min(280px,45vw);padding:10px 12px;font-size:12px}.table-wrap{width:100%;overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th{padding:11px 12px;background:#FAFBFC;color:#8791A0;text-align:left;font-size:9px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--line)}td{padding:13px 12px;border-bottom:1px solid #F0F2F5;color:#465164;font-size:11px}tbody tr:last-child td{border-bottom:0}td strong{color:#202B3D;font-size:12px}.muted-cell{color:#98A1AE}.pill{display:inline-flex;align-items:center;padding:5px 8px;border-radius:30px;background:#F1F5F9;color:#596579;font-size:9px;font-weight:800}.pill.active{background:#EAF7EE;color:var(--green)}.pill.trial{background:#FFF7E8;color:#A16207}.pill.inactive{background:#FEECEC;color:var(--red)}.empty{padding:30px 15px;text-align:center;color:var(--muted);font-size:12px}.info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.info-card{padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.info-card h3{margin:0 0 8px;font:700 14px 'Space Grotesk'}.info-card p{margin:0;color:var(--muted);font-size:11px;line-height:1.7}.notice{padding:14px 16px;border:1px solid #FED7AA;border-radius:11px;background:#FFF7ED;color:#9A3412;font-size:11px;line-height:1.7}.notice strong{display:block;margin-bottom:3px}.loading{padding:30px;text-align:center;color:var(--muted);font-size:12px}.error-box{padding:16px;border-radius:10px;background:#FEF2F2;color:#991B1B;font-size:12px;line-height:1.6}
+    @media(max-width:1050px){.sidebar{width:220px}.main{margin-left:220px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:26px 24px}.topbar{padding:0 24px}}
+    @media(max-width:700px){.sidebar{transform:translateX(-100%);transition:transform .2s;width:260px;box-shadow:15px 0 40px #17203318}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.topbar{height:66px;padding:0 15px;gap:10px}.mobile-menu{display:inline-grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:#fff}.crumb{margin-right:auto}.admin-email{display:none}.content{padding:23px 14px 40px}.page-head{align-items:flex-start;flex-direction:column}.cards{gap:10px}.metric{padding:15px}.metric-value{font-size:25px}.panel{padding:15px}.panel-head{align-items:flex-start;flex-direction:column}.toolbar{width:100%}.toolbar input{width:100%}.info-grid{grid-template-columns:1fr}.login-card{padding:27px 22px}}
+  </style>
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="brand"><span class="brand-mark">BB</span><span>Box Book <em>| India</em><small>SUPER ADMIN CONTROL CENTER</small></span></div>
+      <h1>Super Admin Login</h1>
+      <p class="subtle">Sign in with your authorized administrator account to manage the Box Book India platform.</p>
+      <div class="field"><label for="adminEmail">Email address</label><input id="adminEmail" type="email" autocomplete="username" required placeholder="admin@example.com"></div>
+      <div class="field"><label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required placeholder="Enter your password"></div>
+      <button class="primary" id="loginButton" type="submit">Secure Login <span aria-hidden="true">→</span></button>
+      <div class="message" id="loginMessage" role="alert" aria-live="polite"></div>
+      <div class="security-note"><strong>Protected access.</strong> Only Firebase accounts with the server-assigned <code>superAdmin: true</code> custom claim can enter. Owner accounts are not granted administrator access.</div>
+    </form>
+  </section>
+
+  <div class="app hidden" id="adminApp">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">BB</span><span>Box Book <em>| India</em><small>SUPER ADMIN</small></span></div>
+      <div class="side-label">MANAGEMENT</div>
+      <nav class="nav" aria-label="Super Admin navigation">
+        <button class="active" data-view="overview"><span class="nav-icon">▦</span>Dashboard</button>
+        <button data-view="owners"><span class="nav-icon">♙</span>Owner Management</button>
+        <button data-view="plans"><span class="nav-icon">◇</span>Subscription Plans</button>
+        <button data-view="payments"><span class="nav-icon">₹</span>Payments</button>
+        <button data-view="grounds"><span class="nav-icon">▤</span>Sports Grounds</button>
+      </nav>
+      <div class="sidebar-bottom">Authorized administration only.<br>Box Book India · Super Admin</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Open navigation">☰</button>
+        <div class="crumb">Super Admin <span> / </span><strong id="breadcrumb">Dashboard</strong></div>
+        <div class="top-actions"><span class="admin-email" id="adminEmailLabel"></span><button class="refresh" id="refreshButton" type="button">↻ Refresh</button><button class="ghost" id="logoutButton" type="button">Logout</button></div>
+      </header>
+      <div class="content">
+        <section class="view" id="view-overview">
+          <div class="page-head"><div><span class="eyebrow">PLATFORM OVERVIEW</span><h1>Super Admin Dashboard</h1><p>Monitor registered owners and sports grounds across Box Book India.</p></div></div>
+          <div class="cards">
+            <article class="metric"><div class="metric-top">Total Owners <span class="metric-icon">♙</span></div><div class="metric-value" id="metricOwners">—</div><div class="metric-foot">Registered owner profiles</div></article>
+            <article class="metric"><div class="metric-top">Total Sports Grounds <span class="metric-icon">▤</span></div><div class="metric-value" id="metricGrounds">—</div><div class="metric-foot">Ground records in Firestore</div></article>
+            <article class="metric"><div class="metric-top">Trial Owners <span class="metric-icon">◷</span></div><div class="metric-value" id="metricTrials">—</div><div class="metric-foot">Owners currently marked as trial</div></article>
+            <article class="metric"><div class="metric-top">Paid Plans <span class="metric-icon">₹</span></div><div class="metric-value" id="metricPaid">—</div><div class="metric-foot">Paid subscriptions recorded</div></article>
+          </div>
+          <div class="panel"><div class="panel-head"><div><h2>Recently Registered Owners</h2><p>Latest owner profiles available in the database.</p></div><button class="ghost" type="button" data-open-view="owners">View all owners →</button></div><div class="table-wrap"><table><thead><tr><th>Owner</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Status</th></tr></thead><tbody id="recentOwners"><tr><td colspan="5" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
+          <div class="notice"><strong>Data and feature status</strong>Owner profiles and sports grounds are read directly from Firebase Firestore. Subscription plan records and payment transactions are not yet stored in dedicated Firestore collections, so those sections are shown as setup-required rather than displaying invented figures.</div>
+        </section>
+
+        <section class="view hidden" id="view-owners">
+          <div class="page-head"><div><span class="eyebrow">ACCOUNT DIRECTORY</span><h1>Owner Management</h1><p>Review owner profiles, contact details and current plan information.</p></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Owners</h2><p id="ownerCountLabel">Loading owner records…</p></div><div class="toolbar"><input id="ownerSearch" type="search" placeholder="Search name, email or mobile…" aria-label="Search owners"></div></div><div class="table-wrap"><table><thead><tr><th>Owner</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Subscription</th><th>Trial / Expiry</th></tr></thead><tbody id="ownerRows"><tr><td colspan="6" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
+        </section>
+
+        <section class="view hidden" id="view-plans">
+          <div class="page-head"><div><span class="eyebrow">PRICING & ACCESS</span><h1>Subscription Plans</h1><p>Central plan configuration for owner accounts.</p></div></div>
+          <div class="notice"><strong>Subscription plan management is not connected yet</strong>The current project does not have a shared subscription-plans collection or a server-validated plan purchase flow. Creating or editing plans in this page before that backend exists would only save browser-local data and could show different prices to different users. This section is intentionally read-only until the secure shared plan system is added.</div>
+          <div class="info-grid" style="margin-top:16px"><article class="info-card"><h3>Plan setup required</h3><p>Monthly and yearly plan prices, duration, maximum grounds per owner, included features and active/inactive state need a shared Firestore collection and server-side validation.</p></article><article class="info-card"><h3>Existing owner plan fields</h3><p>Owner profiles currently contain fields such as <code>planName</code>, <code>subscriptionStatus</code> and trial dates. These can be reviewed in Owner Management, but are not a complete paid-plan ledger.</p></article></div>
+        </section>
+
+        <section class="view hidden" id="view-payments">
+          <div class="page-head"><div><span class="eyebrow">TRANSACTION RECORDS</span><h1>Payments</h1><p>Payment history and subscription collections.</p></div></div>
+          <div class="notice"><strong>No verified payment ledger is connected</strong>The current application does not save subscription payments in a dedicated Firestore collection and does not provide server-side payment verification. Booking payment fields shown in the owner interface are not a verified platform subscription transaction record. No revenue total is displayed until trusted payment records are available.</div>
+          <div class="info-grid" style="margin-top:16px"><article class="info-card"><h3>Payment records</h3><p>A secure payment integration should store the gateway order ID, verified transaction ID, owner UID, plan, amount, currency, payment status and timestamps.</p></article><article class="info-card"><h3>Verification</h3><p>Payment success must be confirmed by a trusted server or payment-gateway webhook—not by a browser redirect or a value entered by an owner.</p></article></div>
+        </section>
+
+        <section class="view hidden" id="view-grounds">
+          <div class="page-head"><div><span class="eyebrow">LISTING DIRECTORY</span><h1>Sports Grounds</h1><p>All sports ground listings currently stored in Firebase.</p></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th></tr></thead><tbody id="groundRows"><tr><td colspan="6" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase/config.js';
+    import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+
+    const $ = id => document.getElementById(id);
+    const state = { owners: [], grounds: [], user: null, loading: false };
+    const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
+    const dateLabel = value => {
+      if (!value) return '—';
+      const date = value?.toDate ? value.toDate() : new Date(value);
+      return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    };
+    const ownerStatus = owner => {
+      const status = String(owner.subscriptionStatus || '').toLowerCase();
+      if (status === 'active' || status === 'paid') return {label:'Active',className:'active'};
+      if (status === 'trial') {
+        const expiry = owner.trialExpiresAt ? new Date(owner.trialExpiresAt) : null;
+        if (expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now()) return {label:'Trial expired',className:'inactive'};
+        return {label:'Trial',className:'trial'};
+      }
+      if (status) return {label:status.replace(/[_-]/g,' '),className:'inactive'};
+      return {label:'Not set',className:''};
+    };
+    const showMessage = message => { $('loginMessage').textContent = message || ''; };
+    function showLogin(message='') {
+      $('adminApp').classList.add('hidden');
+      $('loginScreen').classList.remove('hidden');
+      showMessage(message);
+    }
+    function showApp(user) {
+      state.user = user;
+      $('loginScreen').classList.add('hidden');
+      $('adminApp').classList.remove('hidden');
+      $('adminEmailLabel').textContent = user.email || 'Authorized administrator';
+      loadData();
+    }
+    async function verifySuperAdmin(user) {
+      const token = await getIdTokenResult(user, true);
+      return token.claims.superAdmin === true;
+    }
+    async function loadData() {
+      if (state.loading) return;
+      state.loading = true;
+      $('refreshButton').disabled = true;
+      $('refreshButton').textContent = 'Loading…';
+      try {
+        const [ownerSnapshot, groundSnapshot] = await Promise.all([
+          getDocs(collection(db,'owners')),
+          getDocs(collection(db,'grounds'))
+        ]);
+        state.owners = ownerSnapshot.docs.map(item => ({id:item.id,...item.data()}));
+        state.grounds = groundSnapshot.docs.map(item => ({id:item.id,...item.data()}));
+        renderAll();
+      } catch (error) {
+        console.error('Super Admin data load failed:', error);
+        const detail = error.code === 'permission-denied'
+          ? 'Firestore denied access. Confirm this account has the superAdmin custom claim and that the deployed Firestore rules allow administrator reads.'
+          : 'Could not load Firebase records. Check the internet connection and Firebase configuration, then refresh.';
+        $('recentOwners').innerHTML = '<tr><td colspan="5" class="empty">' + escapeHTML(detail) + '</td></tr>';
+        $('ownerRows').innerHTML = '<tr><td colspan="6" class="empty">' + escapeHTML(detail) + '</td></tr>';
+        $('groundRows').innerHTML = '<tr><td colspan="6" class="empty">' + escapeHTML(detail) + '</td></tr>';
+        $('metricOwners').textContent = '—'; $('metricGrounds').textContent = '—';
+        $('metricTrials').textContent = '—'; $('metricPaid').textContent = '—';
+      } finally {
+        state.loading = false;
+        $('refreshButton').disabled = false;
+        $('refreshButton').textContent = '↻ Refresh';
+      }
+    }
+    function renderAll() {
+      const trials = state.owners.filter(owner => ownerStatus(owner).className === 'trial').length;
+      const paid = state.owners.filter(owner => ['active','paid'].includes(String(owner.subscriptionStatus || '').toLowerCase()) && !String(owner.planName || '').toLowerCase().includes('trial')).length;
+      $('metricOwners').textContent = state.owners.length.toLocaleString('en-IN');
+      $('metricGrounds').textContent = state.grounds.length.toLocaleString('en-IN');
+      $('metricTrials').textContent = trials.toLocaleString('en-IN');
+      $('metricPaid').textContent = paid.toLocaleString('en-IN');
+      renderOwners();
+      renderGrounds();
+      const recent = [...state.owners].sort((a,b) => {
+        const av = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || a.trialStartedAt || 0).getTime();
+        const bv = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || b.trialStartedAt || 0).getTime();
+        return bv-av;
+      }).slice(0,5);
+      $('recentOwners').innerHTML = recent.length ? recent.map(owner => {
+        const status = ownerStatus(owner);
+        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong></td><td>' + escapeHTML(owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td></tr>';
+      }).join('') : '<tr><td colspan="5" class="empty">No owner profiles found.</td></tr>';
+    }
+    function renderOwners() {
+      const query = $('ownerSearch').value.trim().toLowerCase();
+      const list = state.owners.filter(owner => [owner.fullName,owner.email,owner.mobile,owner.planName,owner.subscriptionStatus].some(value => String(value || '').toLowerCase().includes(query)));
+      $('ownerCountLabel').textContent = list.length + ' of ' + state.owners.length + ' owner records';
+      $('ownerRows').innerHTML = list.length ? list.map(owner => {
+        const status = ownerStatus(owner);
+        const expiry = owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate;
+        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(expiry)) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" class="empty">No matching owner records.</td></tr>';
+    }
+    function renderGrounds() {
+      const query = $('groundSearch').value.trim().toLowerCase();
+      const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone].some(value => String(value || '').toLowerCase().includes(query)));
+      $('groundCountLabel').textContent = list.length + ' of ' + state.grounds.length + ' ground records';
+      $('groundRows').innerHTML = list.length ? list.map(ground => {
+        const sport = ground.sportType || ground.sport || 'Box Cricket';
+        const location = ground.location || [ground.area,ground.city].filter(Boolean).join(', ') || '—';
+        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" class="empty">No matching sports grounds.</td></tr>';
+    }
+    function openView(name) {
+      document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
+      document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active',button.dataset.view === name));
+      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',grounds:'Sports Grounds'};
+      $('breadcrumb').textContent = labels[name] || 'Dashboard';
+      $('sidebar').classList.remove('open');
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    $('loginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = $('loginButton');
+      button.disabled = true; button.textContent = 'Verifying access…'; showMessage('');
+      try {
+        const credential = await signInWithEmailAndPassword(auth,$('adminEmail').value.trim(),$('adminPassword').value);
+        const allowed = await verifySuperAdmin(credential.user);
+        if (!allowed) {
+          await signOut(auth);
+          showLogin('Access denied. This account is not assigned the Super Admin role.');
+          return;
+        }
+        $('adminPassword').value = '';
+        showApp(credential.user);
+      } catch (error) {
+        console.error('Super Admin login failed:',error);
+        const message = error.code === 'auth/invalid-credential' ? 'Incorrect email or password.'
+          : error.code === 'auth/too-many-requests' ? 'Too many attempts. Please try again later.'
+          : error.code === 'auth/network-request-failed' ? 'Network error. Check your connection.'
+          : error.code === 'auth/user-disabled' ? 'This account has been disabled.'
+          : 'Could not verify administrator access. Please try again.';
+        showLogin(message);
+      } finally {
+        button.disabled = false; button.textContent = 'Secure Login →';
+      }
+    });
+    $('logoutButton').addEventListener('click', async () => { await signOut(auth); state.user = null; showLogin(); });
+    $('refreshButton').addEventListener('click',loadData);
+    $('ownerSearch').addEventListener('input',renderOwners);
+    $('groundSearch').addEventListener('input',renderGrounds);
+    document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click',() => openView(button.dataset.view)));
+    document.querySelectorAll('[data-open-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.openView)));
+    $('mobileMenu').addEventListener('click',() => $('sidebar').classList.toggle('open'));
+    document.addEventListener('click',event => {
+      if (window.innerWidth <= 700 && $('sidebar').classList.contains('open') && !$('sidebar').contains(event.target) && !$('mobileMenu').contains(event.target)) $('sidebar').classList.remove('open');
+    });
+    onAuthStateChanged(auth,async user => {
+      if (!user) { showLogin(); return; }
+      try {
+        const allowed = await verifySuperAdmin(user);
+        if (!allowed) { await signOut(auth); showLogin('Access denied. This account is not assigned the Super Admin role.'); return; }
+        showApp(user);
+      } catch (error) {
+        console.error('Super Admin role verification failed:',error);
+        await signOut(auth); showLogin('Could not verify administrator permissions. Please sign in again.');
+      }
+    });
+  </script>
+</body>
+</html>
