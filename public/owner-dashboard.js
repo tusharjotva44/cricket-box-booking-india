@@ -8,7 +8,19 @@
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
   const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
-  let selectedPlan = (() => { try { const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}'); return plans[OWNER_EMAIL] || ''; } catch { return ''; } })();
+  let selectedPlan = (() => {
+    try {
+      const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      const savedPlan = plans[OWNER_EMAIL] || '';
+      if (savedPlan.startsWith('Free Trial')) return savedPlan;
+      delete plans[OWNER_EMAIL];
+      localStorage.setItem(STORE.plan, JSON.stringify(plans));
+      const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+      delete dates[OWNER_EMAIL];
+      localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
+      return '';
+    } catch { return ''; }
+  })();
   let toastTimer;
   const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
   const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
@@ -362,7 +374,11 @@
       : (isTrial ? 'Your free trial is active for 10 days. ' : 'Demo mode: this plan allows up to ' + groundLimit() + (groundLimit() === 1 ? ' ground. ' : ' grounds. ')) + (expiryDetails ? expiryDetails : 'No expiry date is set.');
     $('dashboardPlanName').textContent = selectedPlan + (isExpired ? ' (Expired)' : isTrial ? ' (Active)' : '');
     $('dashboardPlanExpiry').textContent = expiryDetails || 'Expiry date is not set yet.';
-    document.querySelectorAll('.plan-select').forEach(b => { b.textContent = b.dataset.plan === selectedPlan ? 'Selected for preview' : 'Select Plan'; });
+    document.querySelectorAll('.plan-select').forEach(b => {
+      b.disabled = true;
+      b.textContent = b.dataset.plan.startsWith('Free Trial') ? 'Automatic on Signup' : 'Coming Soon';
+      b.setAttribute('aria-disabled', 'true');
+    });
     renderPlanExpiryAlert();
   }
   function openGroundForm() {
@@ -610,17 +626,16 @@
     try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save approval in this browser.'); return; }
     renderBookings(); toast('Booking approved. Overlapping pending requests were rejected so the slot cannot be confirmed twice.');
   });
-  document.querySelectorAll('.plan-select').forEach(button => button.addEventListener('click', () => {
-    if (button.dataset.plan.startsWith('Free Trial')) {
-      toast('Free Trial activates automatically when you sign up.');
-      return;
-    }
-    selectedPlan = button.dataset.plan;
-    setPlanExpiry();
-    saveSelectedPlan();
-    syncPlanPreview();
-    toast(selectedPlan + ' plan selected for this browser demo.');
-  }));
+  document.querySelectorAll('.plan-select').forEach(button => {
+    button.disabled = true;
+    button.setAttribute('aria-disabled', 'true');
+    button.textContent = button.dataset.plan.startsWith('Free Trial') ? 'Automatic on Signup' : 'Coming Soon';
+    button.addEventListener('click', () => {
+      toast(button.dataset.plan.startsWith('Free Trial')
+        ? 'Free Trial activates automatically when you create an owner account.'
+        : 'Paid subscription plans are temporarily unavailable.');
+    });
+  });
   syncPlanPreview();
   (async () => {
     try {
