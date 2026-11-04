@@ -821,6 +821,7 @@
                 profileMessage.style.color = '#15803d';
                 renderOwnerName();
                 profileSave.textContent = 'Saved';
+                accountModal.classList.add('hidden');
               } catch (error) {
                 profileMessage.textContent = 'Profile could not be saved. Please check your connection and try again.';
                 profileSave.disabled = false;
