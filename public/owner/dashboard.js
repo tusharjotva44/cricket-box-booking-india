@@ -3,6 +3,12 @@
   const savedOwnerSession = (localStorage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
   if (!savedOwnerSession) { window.location.replace('login.html'); return; }
   const OWNER_EMAIL = savedOwnerSession;
+
+  // Keep browser Back from leaving the authenticated owner dashboard.
+  window.history.pushState({ ownerDashboard: true }, '', window.location.href);
+  window.addEventListener('popstate', () => {
+    window.history.pushState({ ownerDashboard: true }, '', window.location.href);
+  });
   let ownerProfile = {};
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
