@@ -8,7 +8,9 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 import {
@@ -26,6 +28,9 @@ import {
   deleteDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+// Keep owner authentication available after refreshes and browser restarts.
+await setPersistence(auth, browserLocalPersistence);
 
 window.firebaseApp = app;
 window.firebaseAuth = auth;
