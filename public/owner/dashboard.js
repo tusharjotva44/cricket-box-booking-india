@@ -274,9 +274,6 @@
       }, reject);
     });
 
-    if (!user || !user.email || user.email.toLowerCase() !== OWNER_EMAIL) {
-      throw new Error('Owner authentication required.');
-    }
     if (!user || !user.email) {
       localStorage.removeItem('boxbook_session_v1');
       window.location.replace('login.html');
