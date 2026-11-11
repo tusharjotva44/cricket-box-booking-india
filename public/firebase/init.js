@@ -100,7 +100,7 @@ window.firebaseAuthApi = {
     const end = start === null || rawEnd === null ? null : (rawEnd <= start ? rawEnd + 1440 : rawEnd);
     const slotIds = [];
     const slotMinutes = [];
-    if (start !== null && end !== null && end > start && (end - start) <= 480 && (end - start) % 30 === 0) {
+    if (start !== null && end !== null && end > start && (end - start) <= 1440 && (end - start) % 30 === 0) {
       const baseDate = new Date(String(booking.date) + 'T00:00:00Z');
       for (let minute = start; minute < end; minute += 30) {
         const day = new Date(baseDate);
