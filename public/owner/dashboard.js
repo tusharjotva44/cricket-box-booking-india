@@ -976,7 +976,7 @@
       const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
       for (const legacy of legacyBookings) {
         if (!legacy.id || existingIds.has(String(legacy.id))) continue;
-        await api.saveBooking(db, {...legacy, owner:OWNER_EMAIL, ownerUid:user.uid, bookingSource:legacy.bookingSource || (legacy.status === 'Pending' ? 'Main website' : 'Owner dashboard')});
+        await api.saveBooking(db, {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid:user.uid, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')});
         existingIds.add(String(legacy.id));
       }
       remoteBookings = await api.getOwnerBookings(db, user.uid);
