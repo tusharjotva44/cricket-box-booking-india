@@ -133,6 +133,7 @@ function connectSharedGrounds() {
   );
 }
 window.addEventListener('firebase-ready', connectSharedGrounds);
+window.addEventListener('firebase-ready', connectPublicBookingSlots);
 connectSharedGrounds();
 
 let firebaseAuthListenerStarted = false;
