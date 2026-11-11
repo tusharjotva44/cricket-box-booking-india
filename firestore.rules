@@ -27,6 +27,35 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    match /bookingSlots/{slotId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.bookingId is string
+        && request.resource.data.ownerUid is string
+        && request.resource.data.groundId is string
+        && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId]);
+
+      allow update: if (
+          request.auth != null
+          && request.auth.uid == resource.data.ownerUid
+          && request.resource.data.ownerUid == resource.data.ownerUid
+        )
+        || (
+          resource.data.status == 'Pending'
+          && resource.data.holdExpiresAt <= request.time.toMillis()
+          && request.resource.data.bookingId is string
+          && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
+        );
+
+      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+    }
+
     match /bookings/{bookingId} {
       allow read: if request.auth != null
         && (
