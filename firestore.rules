@@ -26,5 +26,53 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;
     }
+
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null
+        && (
+          request.auth.uid == resource.data.ownerUid
+          || request.auth.token.superAdmin == true
+        );
+
+      allow create: if request.resource.data.ownerUid is string
+        && request.resource.data.groundId is string
+        && exists(/databases/$(database)/documents/grounds/$(request.resource.data.groundId))
+        && get(/databases/$(database)/documents/grounds/$(request.resource.data.groundId)).data.ownerUid == request.resource.data.ownerUid
+        && request.resource.data.id == bookingId
+        && request.resource.data.date is string
+        && request.resource.data.startTime is string
+        && request.resource.data.endTime is string
+        && request.resource.data.customerName is string
+        && request.resource.data.phone is string
+        && request.resource.data.amount is number
+        && (
+          (
+            request.resource.data.status == 'Pending'
+            && request.resource.data.bookingSource == 'Main website'
+          )
+          ||
+          (
+            request.auth != null
+            && request.auth.uid == request.resource.data.ownerUid
+            && request.resource.data.status == 'Confirmed'
+            && request.resource.data.bookingSource == 'Owner dashboard'
+          )
+        );
+
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmedAt', 'updatedAt'])
+        && request.resource.data.status in ['Confirmed', 'Rejected', 'Expired']
+        ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
+          && request.resource.data.paymentStatus == 'Payment submitted — not verified'
+          && resource.data.status == 'Pending'
+        );
+
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.ownerUid || request.auth.token.superAdmin == true);
+    }
   }
 }
