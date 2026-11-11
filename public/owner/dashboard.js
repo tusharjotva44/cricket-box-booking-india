@@ -622,7 +622,7 @@
       toast('Booking confirmed and synced live.');
     } catch (error) {
       console.error('Owner booking save failed:', error);
-      toast('Booking could not be saved. Please check your connection and try again.');
+      toast(error.code === 'booking/slot-taken' ? 'This time overlaps an existing booking. Choose another slot.' : 'Booking could not be saved. Please check your connection and try again.');
     } finally {
       if (button) button.disabled = false;
     }
