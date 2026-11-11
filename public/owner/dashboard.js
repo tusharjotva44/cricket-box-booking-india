@@ -13,7 +13,8 @@
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
-  const bookingsForOwner = () => readList(STORE.bookings).filter(b => b.owner === OWNER_EMAIL).map(b => ({id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
+  let remoteBookings = [];
+  const bookingsForOwner = () => remoteBookings.map(b => ({...b, id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = (() => {
     try {
       const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
@@ -586,7 +587,7 @@
   ['cancelOwnerBookingForm','cancelOwnerBookingForm2'].forEach(id => $(id).addEventListener('click', () => $('ownerBookingFormPanel').classList.add('hidden')));
   $('ownerBookingStart').addEventListener('change', () => { updateOwnerBookingEndOptions(); updateOwnerBookingAmount(); });
   ['ownerBookingGround','ownerBookingEnd'].forEach(id => $(id).addEventListener('change', updateOwnerBookingAmount));
-  $('ownerBookingForm').addEventListener('submit', event => {
+  $('ownerBookingForm').addEventListener('submit', async event => {
     event.preventDefault();
     const ground = grounds.find(g => g.id === $('ownerBookingGround').value);
     const customerName = $('ownerBookingCustomer').value.trim();
@@ -599,48 +600,67 @@
     if (!/^[0-9]{10}$/.test(phone)) { toast('Enter a valid 10-digit mobile number.'); return; }
     if (!date || date < new Date().toISOString().slice(0, 10)) { toast('Choose today or a future date.'); return; }
     const start = timeMinutes(startTime), finish = timeMinutes(endTime);
-    if (start === null || finish === null || (finish <= start && !(finish + 1440 > start))) { toast('Choose a valid start and end time.'); return; }
+    if (start === null || finish === null) { toast('Choose a valid start and end time.'); return; }
     const duration = finish > start ? finish - start : finish + 1440 - start;
-    if (duration > 8 * 60) { toast('A booking can be up to 8 hours.'); return; }
+    if (duration <= 0 || duration > 8 * 60) { toast('A booking can be up to 8 hours.'); return; }
     const slot = timeLabel(startTime) + ' - ' + timeLabel(endTime);
-    const booking = {id:'OWN-' + Date.now(), groundId:ground.id, groundName:ground.name, customerName, phone, date, slot, startTime, endTime, amount:Math.round(Number(ground.price || 0) * duration / 60), owner:OWNER_EMAIL, status:'Confirmed', paymentStatus:'Pay at venue', bookingSource:'Owner dashboard', createdAt:Date.now()};
-    const allBookings = readList(STORE.bookings);
+    const booking = {id:'OWN-' + Date.now(), groundId:ground.id, groundName:ground.name, customerName, phone, date, slot, startTime, endTime, amount:Math.round(Number(ground.price || 0) * duration / 60), owner:OWNER_EMAIL, ownerUid:ownerUid, status:'Confirmed', paymentStatus:'Pay at venue', bookingSource:'Owner dashboard', createdAt:Date.now()};
+    const allBookings = bookingsForOwner();
     if (allBookings.some(existing => existing.groundId === ground.id && existing.date === date && existing.status !== 'Rejected' && existing.status !== 'Expired' && existing.status !== 'Cancelled' && overlaps(booking, existing))) {
       toast('This time overlaps an existing booking. Choose another slot.');
       return;
     }
+    const button = event.submitter;
+    if (button) button.disabled = true;
     try {
-      allBookings.push(booking);
-      localStorage.setItem(STORE.bookings, JSON.stringify(allBookings));
-    } catch {
-      toast('Could not save this booking in this browser.');
-      return;
+      const { api, db } = await getOwnerFirebaseContext();
+      await api.saveBooking(db, booking);
+      $('ownerBookingFormPanel').classList.add('hidden');
+      toast('Booking confirmed and synced live.');
+    } catch (error) {
+      console.error('Owner booking save failed:', error);
+      toast('Booking could not be saved. Please check your connection and try again.');
+    } finally {
+      if (button) button.disabled = false;
     }
-    $('ownerBookingFormPanel').classList.add('hidden');
-    renderBookings();
-    toast('Booking confirmed and added to your bookings.');
   });
   $('revenuePeriod').addEventListener('change', renderRevenueReport);
   $('downloadPaymentReport').addEventListener('click', downloadPaymentReceivedCSV);
   $('bookingFilter').addEventListener('change', renderBookings);
   $('bookingSearch').addEventListener('input', renderBookings);
   $('bookingDateFilter').addEventListener('change', renderBookings);
-  $('bookingRows').addEventListener('click', event => {
+  $('bookingRows').addEventListener('click', async event => {
     const approveButton = event.target.closest('[data-approve]');
     const rejectButton = event.target.closest('[data-reject]');
     if (!approveButton && !rejectButton) return;
     const bookingId = approveButton ? approveButton.dataset.approve : rejectButton.dataset.reject;
-    const allBookings = readList(STORE.bookings);
-    const booking = allBookings.find(b => b.id === bookingId && b.owner === OWNER_EMAIL);
+    const booking = remoteBookings.find(item => item.id === bookingId && item.ownerUid === ownerUid);
     if (!booking || (booking.status && booking.status !== 'Pending')) return;
-    if (booking.holdExpiresAt && Number(booking.holdExpiresAt) <= Date.now()) { booking.status = 'Expired'; try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch {} renderBookings(); toast('Pending hold expired. Slot is available again.'); return; }
-    if (rejectButton) { booking.status = 'Rejected'; try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save the rejection in this browser.'); return; } renderBookings(); toast('Booking request rejected. Slot released.'); return; }
-    const confirmedConflict = allBookings.some(other => other.id !== booking.id && other.groundId === booking.groundId && other.status === 'Confirmed' && overlaps(booking, other));
+    if (booking.holdExpiresAt && Number(booking.holdExpiresAt) <= Date.now()) {
+      try {
+        const {api,db}=await getOwnerFirebaseContext();
+        await api.updateBooking(db,bookingId,{status:'Expired'});
+        toast('Pending hold expired. Slot is available again.');
+      } catch { toast('Could not update the expired booking.'); }
+      return;
+    }
+    const {api,db}=await getOwnerFirebaseContext();
+    if (rejectButton) {
+      try { await api.updateBooking(db,bookingId,{status:'Rejected'}); toast('Booking request rejected. Slot released.'); }
+      catch { toast('Could not save the rejection. Please try again.'); }
+      return;
+    }
+    const confirmedConflict = remoteBookings.some(other => other.id !== booking.id && other.groundId === booking.groundId && other.status === 'Confirmed' && overlaps(booking, other));
     if (confirmedConflict) { toast('This time overlaps an already confirmed booking.'); return; }
-    booking.status = 'Confirmed'; booking.confirmedAt = Date.now();
-    allBookings.forEach(other => { if (other.id !== booking.id && other.owner === OWNER_EMAIL && (!other.status || other.status === 'Pending') && (!other.holdExpiresAt || Number(other.holdExpiresAt) > Date.now()) && overlaps(booking, other)) other.status = 'Rejected'; });
-    try { localStorage.setItem(STORE.bookings, JSON.stringify(allBookings)); } catch { toast('Could not save approval in this browser.'); return; }
-    renderBookings(); toast('Booking approved. Overlapping pending requests were rejected so the slot cannot be confirmed twice.');
+    const overlappingPending = remoteBookings.filter(other => other.id !== booking.id && other.ownerUid === ownerUid && (!other.status || other.status === 'Pending') && (!other.holdExpiresAt || Number(other.holdExpiresAt) > Date.now()) && overlaps(booking, other));
+    try {
+      await api.updateBooking(db,bookingId,{status:'Confirmed',confirmedAt:Date.now()});
+      await Promise.all(overlappingPending.map(other => api.updateBooking(db,other.id,{status:'Rejected'})));
+      toast('Booking approved. Overlapping pending requests were rejected.');
+    } catch (error) {
+      console.error('Booking status update failed:',error);
+      toast('Could not update booking status. Please try again.');
+    }
   });
   document.querySelectorAll('.plan-select').forEach(button => {
     button.disabled = true;
