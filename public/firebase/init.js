@@ -91,7 +91,43 @@ window.firebaseAuthApi = {
     onSnapshot(collection(database, "grounds"), snapshot =>
       onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
       onError
-    )
+    ),
+
+  saveBooking: (database, booking) =>
+    firestoreSetDoc(firestoreDoc(database, "bookings", String(booking.id)), {
+      ...booking,
+      createdAt: Number(booking.createdAt || Date.now()),
+      updatedAt: serverTimestamp()
+    }),
+
+  getOwnerBookings: async (database, uid) => {
+    const result = await getDocs(query(collection(database, "bookings"), where("ownerUid", "==", uid)));
+    return result.docs.map(item => ({ id: item.id, ...item.data() }));
+  },
+
+  watchOwnerBookings: (database, uid, onChange, onError) =>
+    onSnapshot(query(collection(database, "bookings"), where("ownerUid", "==", uid)), snapshot =>
+      onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
+      onError
+    ),
+
+  watchAllBookings: (database, onChange, onError) =>
+    onSnapshot(collection(database, "bookings"), snapshot =>
+      onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
+      onError
+    ),
+
+  updateBooking: (database, bookingId, changes) =>
+    updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
+      ...changes,
+      updatedAt: serverTimestamp()
+    }),
+
+  updateBookingPaymentStatus: (database, bookingId, paymentStatus) =>
+    updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
+      paymentStatus,
+      updatedAt: serverTimestamp()
+    })
 };
 
 console.log("Firebase initialized successfully.");
