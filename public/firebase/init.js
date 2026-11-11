@@ -151,6 +151,13 @@ window.firebaseAuthApi = {
     });
   },
 
+  saveBookingRecord: (database, booking) =>
+    firestoreSetDoc(firestoreDoc(database, "bookings", String(booking.id)), {
+      ...booking,
+      createdAt: Number(booking.createdAt || Date.now()),
+      updatedAt: serverTimestamp()
+    }),
+
   getOwnerBookings: async (database, uid) => {
     const result = await getDocs(query(collection(database, "bookings"), where("ownerUid", "==", uid)));
     return result.docs.map(item => ({ id: item.id, ...item.data() }));
