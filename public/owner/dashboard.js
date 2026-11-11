@@ -615,7 +615,8 @@
     const button = event.submitter;
     if (button) button.disabled = true;
     try {
-      const { api, db } = await getOwnerFirebaseContext();
+      const { user, api, db } = await getOwnerFirebaseContext();
+      booking.ownerUid = user.uid;
       await api.saveBooking(db, booking);
       $('ownerBookingFormPanel').classList.add('hidden');
       toast('Booking confirmed and synced live.');
