@@ -110,6 +110,7 @@
         <button data-view="owners"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Owner Management</button>
         <button data-view="plans"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M7 15h3"/></svg></span>Subscription Plans</button>
         <button data-view="payments"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span>Payments</button>
+        <button data-view="bookings"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3M16 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg></span>Bookings</button>
         <button data-view="grounds"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M3 10h18M8 21v-6h8v6M8 7h.01M16 7h.01"/></svg></span>Sports Grounds</button>
       </nav>
       <div class="side-label">QUICK ACCESS</div>
@@ -152,7 +153,13 @@
         <section class="view hidden" id="view-payments">
           <div class="page-head"><div><span class="eyebrow">TRANSACTION RECORDS</span><h1>Payments</h1><p>Payment history and subscription collections.</p></div></div>
           <div class="notice"><strong>No verified payment ledger is connected</strong>The current application does not save subscription payments in a dedicated Firestore collection and does not provide server-side payment verification. Booking payment fields shown in the owner interface are not a verified platform subscription transaction record. No revenue total is displayed until trusted payment records are available.</div>
+          <div class="panel"><div class="panel-head"><div><h2>Booking payment status</h2><p>These are customer-reported booking payment statuses, not verified gateway transactions.</p></div></div><div class="table-wrap"><table><thead><tr><th>Booking</th><th>Customer</th><th>Ground</th><th>Amount</th><th>Payment Status</th></tr></thead><tbody id="paymentRows"><tr><td colspan="5" class="loading">Loading payment statuses…</td></tr></tbody></table></div></div>
           <div class="info-grid" style="margin-top:16px"><article class="info-card"><h3>Payment records</h3><p>A secure payment integration should store the gateway order ID, verified transaction ID, owner UID, plan, amount, currency, payment status and timestamps.</p></article><article class="info-card"><h3>Verification</h3><p>Payment success must be confirmed by a trusted server or payment-gateway webhook—not by a browser redirect or a value entered by an owner.</p></article></div>
+        </section>
+
+        <section class="view hidden" id="view-bookings">
+          <div class="page-head"><div><span class="eyebrow">LIVE RESERVATIONS</span><h1>Bookings</h1><p id="bookingCountLabel">Loading booking records…</p></div><div class="toolbar"><input id="bookingSearch" type="search" placeholder="Search customer, ground, owner or booking ID…" aria-label="Search bookings"></div></div>
+          <div class="panel"><div class="table-wrap"><table><thead><tr><th>Booking</th><th>Customer</th><th>Phone</th><th>Ground</th><th>Owner</th><th>Date & Time</th><th>Amount</th><th>Status</th></tr></thead><tbody id="bookingRows"><tr><td colspan="8" class="loading">Loading booking records…</td></tr></tbody></table></div></div>
         </section>
 
         <section class="view hidden" id="view-grounds">
@@ -166,10 +173,10 @@
   <script type="module">
     import { auth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { collection, getDocs, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
 
     const $ = id => document.getElementById(id);
-    const state = { owners: [], grounds: [], user: null, loading: false };
+    const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
     const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
     const dateLabel = value => {
@@ -205,34 +212,40 @@
       const token = await getIdTokenResult(user, true);
       return token.claims.superAdmin === true;
     }
-    async function loadData() {
-      if (state.loading) return;
-      state.loading = true;
+    function loadData() {
+      state.unsubscribers.forEach(unsubscribe => unsubscribe());
+      state.unsubscribers = [];
       $('refreshButton').disabled = true;
-      $('refreshButton').textContent = 'Loading…';
-      try {
-        const [ownerSnapshot, groundSnapshot] = await Promise.all([
-          getDocs(collection(db,'owners')),
-          getDocs(collection(db,'grounds'))
-        ]);
-        state.owners = ownerSnapshot.docs.map(item => ({id:item.id,...item.data()}));
-        state.grounds = groundSnapshot.docs.map(item => ({id:item.id,...item.data()}));
-        renderAll();
-      } catch (error) {
-        console.error('Super Admin data load failed:', error);
-        const detail = error.code === 'permission-denied'
-          ? 'Firestore denied access. Confirm this account has the superAdmin custom claim and that the deployed Firestore rules allow administrator reads.'
-          : 'Could not load Firebase records. Check the internet connection and Firebase configuration, then refresh.';
-        $('recentOwners').innerHTML = '<tr><td colspan="5" class="empty">' + escapeHTML(detail) + '</td></tr>';
-        $('ownerRows').innerHTML = '<tr><td colspan="6" class="empty">' + escapeHTML(detail) + '</td></tr>';
-        $('groundRows').innerHTML = '<tr><td colspan="6" class="empty">' + escapeHTML(detail) + '</td></tr>';
-        $('metricOwners').textContent = '—'; $('metricGrounds').textContent = '—';
-        $('metricTrials').textContent = '—'; $('metricPaid').textContent = '—';
-      } finally {
-        state.loading = false;
+      $('refreshButton').textContent = 'Connecting…';
+      const finish = () => {
         $('refreshButton').disabled = false;
         $('refreshButton').textContent = '↻ Refresh';
-      }
+      };
+      const showError = (error, targetId, colspan) => {
+        console.error('Super Admin live data listener failed:', error);
+        const message = error.code === 'permission-denied'
+          ? 'Firestore denied access. Check Super Admin custom claim and Firestore rules.'
+          : 'Could not load live records. Check connection and Firebase rules.';
+        const target = $(targetId);
+        if (target) target.innerHTML = '<tr><td colspan="' + colspan + '" class="empty">' + escapeHTML(message) + '</td></tr>';
+        finish();
+      };
+      state.unsubscribers.push(
+        onSnapshot(collection(db,'owners'), snapshot => {
+          state.owners = snapshot.docs.map(item => ({id:item.id,...item.data()}));
+          renderAll(); finish();
+        }, error => showError(error,'ownerRows',6)),
+        onSnapshot(collection(db,'grounds'), snapshot => {
+          state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
+          renderAll(); finish();
+        }, error => showError(error,'groundRows',6)),
+        onSnapshot(collection(db,'bookings'), snapshot => {
+          state.bookings = snapshot.docs.map(item => ({id:item.id,...item.data()}));
+          renderBookings();
+          renderPayments();
+          finish();
+        }, error => showError(error,'bookingRows',8))
+      );
     }
     function renderAll() {
       const trials = state.owners.filter(owner => ownerStatus(owner).className === 'trial').length;
@@ -263,6 +276,18 @@
         return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(expiry)) + '</td></tr>';
       }).join('') : '<tr><td colspan="6" class="empty">No matching owner records.</td></tr>';
     }
+    function renderBookings() {
+      const query = $('bookingSearch').value.trim().toLowerCase();
+      const list = [...state.bookings].sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+        .filter(booking => [booking.id,booking.customerName,booking.phone,booking.groundName,booking.owner,booking.ownerEmail,booking.ownerUid,booking.status,booking.paymentStatus].some(value => String(value || '').toLowerCase().includes(query)));
+      $('bookingCountLabel').textContent = list.length + ' of ' + state.bookings.length + ' booking records';
+      $('bookingRows').innerHTML = list.length ? list.map(booking => '<tr><td><strong>' + escapeHTML(booking.id) + '</strong><br><span class="muted-cell">' + escapeHTML(booking.bookingSource || 'Website') + '</span></td><td>' + escapeHTML(booking.customerName || '—') + '</td><td>' + escapeHTML(booking.phone || '—') + '</td><td>' + escapeHTML(booking.groundName || booking.groundId || '—') + '</td><td>' + escapeHTML(booking.owner || booking.ownerEmail || booking.ownerUid || '—') + '</td><td>' + escapeHTML(booking.date || '—') + '<br><span class="muted-cell">' + escapeHTML(booking.slot || '—') + '</span></td><td>' + escapeHTML(money(booking.amount)) + '</td><td>' + escapeHTML(booking.status || 'Pending') + '</td></tr>').join('') : '<tr><td colspan="8" class="empty">No booking records found.</td></tr>';
+    }
+    function renderPayments() {
+      const list = [...state.bookings].sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      $('paymentRows').innerHTML = list.length ? list.map(booking => '<tr><td>' + escapeHTML(booking.id) + '</td><td>' + escapeHTML(booking.customerName || '—') + '</td><td>' + escapeHTML(booking.groundName || '—') + '</td><td>' + escapeHTML(money(booking.amount)) + '</td><td>' + escapeHTML(booking.paymentStatus || 'Not recorded') + '</td></tr>').join('') : '<tr><td colspan="5" class="empty">No booking payment statuses found.</td></tr>';
+    }
+
     function renderGrounds() {
       const query = $('groundSearch').value.trim().toLowerCase();
       const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone].some(value => String(value || '').toLowerCase().includes(query)));
@@ -276,7 +301,7 @@
     function openView(name) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
       document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active',button.dataset.view === name));
-      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',grounds:'Sports Grounds'};
+      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',bookings:'Bookings',grounds:'Sports Grounds'};
       $('breadcrumb').textContent = labels[name] || 'Dashboard';
       $('sidebar').classList.remove('open');
       window.scrollTo({top:0,behavior:'smooth'});
@@ -312,6 +337,7 @@
     $('refreshButton').addEventListener('click',loadData);
     $('ownerSearch').addEventListener('input',renderOwners);
     $('groundSearch').addEventListener('input',renderGrounds);
+    $('bookingSearch').addEventListener('input',renderBookings);
     document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click',() => openView(button.dataset.view)));
     document.querySelectorAll('[data-open-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.openView)));
     $('mobileMenu').addEventListener('click',() => $('sidebar').classList.toggle('open'));
