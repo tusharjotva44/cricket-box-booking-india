@@ -168,6 +168,12 @@ window.firebaseAuthApi = {
       onError
     ),
 
+  watchPublicBookingSlots: (database, groundId, onChange, onError) =>
+    onSnapshot(query(collection(database, "bookingSlots"), where("groundId", "==", String(groundId))), snapshot =>
+      onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
+      onError
+    ),
+
   updateBooking: async (database, bookingId, changes) => {
     const bookingRef = firestoreDoc(database,"bookings",String(bookingId));
     await runTransaction(database,async transaction => {
