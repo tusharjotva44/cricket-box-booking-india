@@ -95,8 +95,8 @@ window.firebaseAuthApi = {
     ),
 
   saveBooking: async (database, booking) => {
-    const start = /^\\d{2}:\\d{2}$/.test(booking.startTime || '') ? Number(booking.startTime.slice(0,2)) * 60 + Number(booking.startTime.slice(3,5)) : null;
-    const rawEnd = /^\\d{2}:\\d{2}$/.test(booking.endTime || '') ? Number(booking.endTime.slice(0,2)) * 60 + Number(booking.endTime.slice(3,5)) : null;
+    const start = /^\d{2}:\d{2}$/.test(booking.startTime || '') ? Number(booking.startTime.slice(0,2)) * 60 + Number(booking.startTime.slice(3,5)) : null;
+    const rawEnd = /^\d{2}:\d{2}$/.test(booking.endTime || '') ? Number(booking.endTime.slice(0,2)) * 60 + Number(booking.endTime.slice(3,5)) : null;
     const end = start === null || rawEnd === null ? null : (rawEnd <= start ? rawEnd + 1440 : rawEnd);
     const slotIds = [];
     const slotMinutes = [];
