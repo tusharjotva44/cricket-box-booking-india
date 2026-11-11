@@ -164,7 +164,7 @@
 
         <section class="view hidden" id="view-grounds">
           <div class="page-head"><div><span class="eyebrow">LISTING DIRECTORY</span><h1>Sports Grounds</h1><p>All sports ground listings currently stored in Firebase.</p></div></div>
-          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th></tr></thead><tbody id="groundRows"><tr><td colspan="6" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Availability</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="10" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
         </section>
       </div>
     </main>
@@ -240,7 +240,7 @@
         onSnapshot(collection(db,'grounds'), snapshot => {
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
-        }, error => showError(error,'groundRows',6)),
+        }, error => showError(error,'groundRows',10)),
         onSnapshot(collection(db,'bookings'), snapshot => {
           state.bookings = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderBookings();
@@ -292,13 +292,17 @@
 
     function renderGrounds() {
       const query = $('groundSearch').value.trim().toLowerCase();
-      const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone].some(value => String(value || '').toLowerCase().includes(query)));
+      const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone,ground.description,ground.upiId].some(value => String(value || '').toLowerCase().includes(query)));
       $('groundCountLabel').textContent = list.length + ' of ' + state.grounds.length + ' ground records';
       $('groundRows').innerHTML = list.length ? list.map(ground => {
         const sport = ground.sportType || ground.sport || 'Box Cricket';
         const location = ground.location || [ground.area,ground.city].filter(Boolean).join(', ') || '—';
-        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td></tr>';
-      }).join('') : '<tr><td colspan="6" class="empty">No matching sports grounds.</td></tr>';
+        const availability = ground.availability
+          ? Object.entries(ground.availability).filter(([,value]) => value && value.open).map(([day,value]) => day + ': ' + (value.start || '—') + '–' + (value.end || '—')).join(', ')
+          : (Array.isArray(ground.slots) ? ground.slots.join(', ') : '—');
+        const mediaUrls = [ground.image,ground.qrImageUrl].filter(Boolean).join(' | ') || '—';
+        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td>' + escapeHTML(availability || '—') + '</td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
+      }).join('') : '<tr><td colspan="10" class="empty">No matching sports grounds.</td></tr>';
     }
     function openView(name) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
