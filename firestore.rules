@@ -54,18 +54,19 @@ service cloud.firestore {
           (
             request.auth != null
             && request.auth.uid == request.resource.data.ownerUid
-            && request.resource.data.status == 'Confirmed'
             && request.resource.data.bookingSource == 'Owner dashboard'
+            && request.resource.data.status in ['Pending', 'Confirmed', 'Rejected', 'Expired', 'Cancelled']
           )
         );
 
-      allow update: if request.auth != null
-        && request.auth.uid == resource.data.ownerUid
-        && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmedAt', 'updatedAt'])
-        && request.resource.data.status in ['Confirmed', 'Rejected', 'Expired']
-        ||
-        (
+      allow update: if (
+          request.auth != null
+          && request.auth.uid == resource.data.ownerUid
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmedAt', 'updatedAt'])
+          && request.resource.data.status in ['Confirmed', 'Rejected', 'Expired']
+        )
+        || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
           && request.resource.data.paymentStatus == 'Payment submitted — not verified'
           && resource.data.status == 'Pending'
