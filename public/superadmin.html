@@ -80,7 +80,12 @@
     @media(max-width:1050px){.sidebar{width:225px}.main{margin-left:225px}.main>.topbar{padding:0 24px}.content{padding:30px 24px 48px}}
     @media(max-width:700px){.sidebar{width:270px}.main{margin-left:0}.main>.topbar{height:70px;padding:0 15px}.content{padding:24px 15px 42px}.cards{gap:11px}.metric{padding:16px}.metric-value{font-size:27px}.panel{padding:16px}.info-grid{gap:12px}.login-card{padding:29px 23px}}
 
-  </style>
+  
+    .quick-links{display:grid;gap:6px;padding:0 10px 16px}
+    .quick-links a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #F3E4D8;border-radius:10px;background:#FFFAF6;color:#59665D;text-decoration:none;font-size:12px;font-weight:700;transition:background .15s,border-color .15s,color .15s}
+    .quick-links a span{color:#C2410C;font-size:15px}
+    .quick-links a:hover{border-color:#FDBA74;background:#FFF0E5;color:#9A3412}
+</style>
 </head>
 <body>
   <section class="login-screen" id="loginScreen">
@@ -106,6 +111,11 @@
         <button data-view="plans"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M7 15h3"/></svg></span>Subscription Plans</button>
         <button data-view="payments"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span>Payments</button>
         <button data-view="grounds"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M3 10h18M8 21v-6h8v6M8 7h.01M16 7h.01"/></svg></span>Sports Grounds</button>
+      </nav>
+      <div class="side-label">QUICK ACCESS</div>
+      <nav class="quick-links" aria-label="Quick access">
+        <a href="./index.html">Main Website <span aria-hidden="true">↗</span></a>
+        <a href="./owner/dashboard.html">Owner Dashboard <span aria-hidden="true">↗</span></a>
       </nav>
       <div class="sidebar-bottom">Authorized administration only.<br>Box Book India · Super Admin</div>
     </aside>
