@@ -197,6 +197,8 @@
     };
     const showMessage = message => { $('loginMessage').textContent = message || ''; };
     function showLogin(message='') {
+      state.unsubscribers.forEach(unsubscribe => unsubscribe());
+      state.unsubscribers = [];
       $('adminApp').classList.add('hidden');
       $('loginScreen').classList.remove('hidden');
       showMessage(message);
