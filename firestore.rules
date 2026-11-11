@@ -97,7 +97,7 @@ service cloud.firestore {
         || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
           && request.resource.data.paymentStatus == 'Payment submitted — not verified'
-          && resource.data.status == 'Pending'
+          && resource.data.status in ['Pending', 'Confirmed']
         );
 
       allow delete: if request.auth != null
