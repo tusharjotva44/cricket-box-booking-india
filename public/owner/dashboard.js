@@ -14,6 +14,8 @@
   const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
   let remoteBookings = [];
+  let ownerUid = '';
+  let knownBookingIds = new Set();
   const bookingsForOwner = () => remoteBookings.map(b => ({...b, id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = (() => {
     try {
@@ -956,6 +958,7 @@
   (async () => {
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
+      ownerUid = user.uid;
       const remoteProfile = await api.getOwnerProfile(db, user.uid);
       const signedInEmail = String(user.email || OWNER_EMAIL).trim().toLowerCase();
       ownerProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === signedInEmail) ? remoteProfile : {};
@@ -967,27 +970,45 @@
         await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
       }
       renderGrounds();
+
+      const existingBookings = await api.getOwnerBookings(db, user.uid);
+      const existingIds = new Set(existingBookings.map(item => String(item.id)));
+      const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
+      for (const legacy of legacyBookings) {
+        if (!legacy.id || existingIds.has(String(legacy.id))) continue;
+        await api.saveBooking(db, {...legacy, owner:OWNER_EMAIL, ownerUid:user.uid});
+        existingIds.add(String(legacy.id));
+      }
+      remoteBookings = await api.getOwnerBookings(db, user.uid);
+      knownBookingIds = new Set(remoteBookings.map(item => String(item.id)));
+      renderBookings();
+      window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, user.uid, latest => {
+        const incoming = latest.filter(item => !knownBookingIds.has(String(item.id)));
+        incoming.forEach(item => {
+          const normalized = bookingsForOwner().find(booking => booking.id === item.id) || {
+            customer:item.customerName || 'Customer', ground:item.groundName || 'Ground',
+            date:item.date || '', time:item.slot || '', id:item.id
+          };
+          toast('New booking request from ' + normalized.customer + ' for ' + normalized.ground + '.');
+          playBookingAlertSound();
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New BoxBook booking request', {body: normalized.customer + ' · ' + normalized.ground + ' · ' + normalized.date + ' · ' + normalized.time, tag:String(item.id || 'boxbook-booking')});
+          }
+        });
+        remoteBookings = latest;
+        knownBookingIds = new Set(latest.map(item => String(item.id)));
+        renderBookings();
+      }, error => {
+        console.error('Live booking listener failed:', error);
+        toast('Live bookings could not be loaded. Check Firestore permissions.');
+      });
     } catch (error) {
-      console.error('Ground sync failed:', error);
-      toast('Ground sync failed. Please refresh or check Firebase permissions.');
+      console.error('Owner data sync failed:', error);
+      toast('Owner data could not be synced. Please refresh or check Firebase permissions.');
     }
   })();
-  let knownBookingIds = new Set(sampleBookings.map(b => b.id));
   window.addEventListener('storage', event => {
     if (event.key === NOTIFICATION_STORE) renderNotifications();
     if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); }
-    if (event.key === STORE.bookings) {
-      const latest = bookingsForOwner();
-      const incoming = latest.filter(b => !knownBookingIds.has(b.id));
-      incoming.forEach(b => {
-        toast('New booking request from ' + b.customer + ' for ' + b.ground + '.');
-        playBookingAlertSound();
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('New BoxBook booking request', {body: b.customer + ' · ' + b.ground + ' · ' + b.date + ' · ' + b.time, tag: String(b.id || 'boxbook-booking')});
-        }
-      });
-      knownBookingIds = new Set(latest.map(b => b.id));
-      renderBookings();
-    }
   });
 })();
