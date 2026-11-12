@@ -1,8 +1,11 @@
 (() => {
+  const IS_ADMIN_OWNER_PREVIEW = new URLSearchParams(window.location.search).get('adminOwnerPreview') === '1';
+  const storage = IS_ADMIN_OWNER_PREVIEW ? window.sessionStorage : window.storage;
   const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1', planExpiry:'boxbook_owner_plan_expiry_v1'};
-  const savedOwnerSession = (localStorage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
-  if (!savedOwnerSession) { window.location.replace('login.html'); return; }
-  const OWNER_EMAIL = savedOwnerSession;
+  const savedOwnerSession = (storage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
+  if (!IS_ADMIN_OWNER_PREVIEW && !savedOwnerSession) { window.location.replace('login.html'); return; }
+  if (IS_ADMIN_OWNER_PREVIEW && !window.opener) { window.location.replace('login.html'); return; }
+  let OWNER_EMAIL = savedOwnerSession;
 
   // Keep browser Back from leaving the authenticated owner dashboard.
   window.history.pushState({ ownerDashboard: true }, '', window.location.href);
@@ -11,7 +14,7 @@
   });
   let ownerProfile = {};
   const $ = (id) => document.getElementById(id);
-  const readList = (key) => { try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
+  const readList = (key) => { try { const data = JSON.parse(storage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
   let remoteBookings = [];
   let ownerUid = '';
@@ -19,7 +22,7 @@
   const bookingsForOwner = () => remoteBookings.map(b => ({...b, id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = (() => {
     try {
-      const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      const plans = JSON.parse(storage.getItem(STORE.plan) || '{}');
       return plans[OWNER_EMAIL] || '';
     } catch { return ''; }
   })();
@@ -30,13 +33,13 @@
   const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
   function readAdminNotifications() {
     try {
-      const items = JSON.parse(localStorage.getItem(NOTIFICATION_STORE) || '[]');
+      const items = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
       return Array.isArray(items) ? items.filter(item => item && (!item.ownerEmail || String(item.ownerEmail).trim().toLowerCase() === OWNER_EMAIL || item.ownerEmail === '*')) : [];
     } catch { return []; }
   }
   function readNotificationIds() {
     try {
-      const data = JSON.parse(localStorage.getItem(NOTIFICATION_READ_STORE) || '{}');
+      const data = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
       return Array.isArray(data[OWNER_EMAIL]) ? data[OWNER_EMAIL] : [];
     } catch { return []; }
   }
@@ -64,7 +67,7 @@
     await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
     try {
       const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL);
-      localStorage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))]));
+      storage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))]));
     } catch {}
   };
   const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
@@ -260,6 +263,9 @@
       });
     }
 
+    if (IS_ADMIN_OWNER_PREVIEW && window.ownerPreviewError) {
+      throw new Error('Super Admin owner session could not be verified. Please close this tab and try again.');
+    }
     const api = window.firebaseAuthApi;
     const auth = window.firebaseAuth;
     if (!api || !auth || !window.firebaseDB) throw new Error('Firebase is not ready.');
@@ -273,12 +279,24 @@
     });
 
     if (!user || !user.email) {
-      localStorage.removeItem('boxbook_session_v1');
+      if (IS_ADMIN_OWNER_PREVIEW) throw new Error('Super Admin owner session could not be verified. Please close this tab and try again.');
+      storage.removeItem('boxbook_session_v1');
       window.location.replace('login.html');
       throw new Error('Please sign in to your owner account.');
     }
-    if (String(user.email).trim().toLowerCase() !== OWNER_EMAIL) {
-      localStorage.removeItem('boxbook_session_v1');
+    if (IS_ADMIN_OWNER_PREVIEW) {
+      OWNER_EMAIL = String(user.email).trim().toLowerCase();
+      if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
+      document.title = 'Owner Dashboard | Super Admin View';
+      if (!document.getElementById('adminOwnerPreviewBanner')) {
+        const banner = document.createElement('div');
+        banner.id = 'adminOwnerPreviewBanner';
+        banner.textContent = 'SUPER ADMIN SESSION · Viewing owner account: ' + OWNER_EMAIL;
+        banner.style.cssText = 'position:relative;z-index:1000;padding:9px 16px;background:#fff0e5;border-bottom:1px solid #fed7aa;color:#9a3412;text-align:center;font:700 12px Arial,sans-serif;letter-spacing:.2px';
+        document.body.prepend(banner);
+      }
+    } else if (String(user.email).trim().toLowerCase() !== OWNER_EMAIL) {
+      storage.removeItem('boxbook_session_v1');
       window.location.replace('login.html');
       throw new Error('Signed-in account does not match this owner session.');
     }
@@ -309,13 +327,13 @@
   }
   function saveSelectedPlan() {
     try {
-      const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      const plans = JSON.parse(storage.getItem(STORE.plan) || '{}');
       plans[OWNER_EMAIL] = selectedPlan;
-      localStorage.setItem(STORE.plan, JSON.stringify(plans));
+      storage.setItem(STORE.plan, JSON.stringify(plans));
     } catch {}
   }
   function getPlanExpiry() {
-    try { const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}'); return dates[OWNER_EMAIL] || ''; } catch { return ''; }
+    try { const dates = JSON.parse(storage.getItem(STORE.planExpiry) || '{}'); return dates[OWNER_EMAIL] || ''; } catch { return ''; }
   }
   function formatPlanDate(value) {
     const date = new Date(value);
@@ -334,7 +352,7 @@
     const daysLeft = expiryValue ? daysUntilExpiry(expiryValue) : null;
     const dismissedKey = 'boxbook_plan_expiry_notice_dismissed_v1';
     let dismissed = {};
-    try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}') || {}; } catch {}
+    try { dismissed = JSON.parse(storage.getItem(dismissedKey) || '{}') || {}; } catch {}
     const noticeKey = OWNER_EMAIL + ':' + expiryValue;
     const isExpired = expiryValue && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() <= Date.now();
     const shouldShow = !!selectedPlan && !!expiryValue && (isExpired || (daysLeft !== null && daysLeft <= 10));
@@ -354,9 +372,9 @@
     else if (selectedPlan.startsWith('Yearly')) expiry.setFullYear(expiry.getFullYear() + 1);
     else expiry.setMonth(expiry.getMonth() + 1);
     try {
-      const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+      const dates = JSON.parse(storage.getItem(STORE.planExpiry) || '{}');
       dates[OWNER_EMAIL] = expiry.toISOString();
-      localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
+      storage.setItem(STORE.planExpiry, JSON.stringify(dates));
     } catch {}
   }
   function syncPlanPreview() {
@@ -471,9 +489,9 @@
     const expiryValue = getPlanExpiry();
     const dismissedKey = 'boxbook_plan_expiry_notice_dismissed_v1';
     let dismissed = {};
-    try { dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}') || {}; } catch {}
+    try { dismissed = JSON.parse(storage.getItem(dismissedKey) || '{}') || {}; } catch {}
     dismissed[OWNER_EMAIL] = OWNER_EMAIL + ':' + expiryValue;
-    try { localStorage.setItem(dismissedKey, JSON.stringify(dismissed)); } catch {}
+    try { storage.setItem(dismissedKey, JSON.stringify(dismissed)); } catch {}
     $('planExpiryAlert').classList.add('hidden');
   });
   document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.go); if (button.dataset.go === 'grounds') openGroundForm(); }));
@@ -687,14 +705,14 @@
       selectedPlan = profile && typeof profile.planName === 'string' ? profile.planName : '';
       selectedPlanStatus = profile ? String(profile.subscriptionStatus || '').toLowerCase() : '';
       const planExpiry = profile ? (profile.trialExpiresAt || profile.subscriptionExpiry || profile.expiryDate || '') : '';
-      const savedPlans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      const savedPlans = JSON.parse(storage.getItem(STORE.plan) || '{}');
       if (selectedPlan) savedPlans[OWNER_EMAIL] = selectedPlan;
       else delete savedPlans[OWNER_EMAIL];
-      localStorage.setItem(STORE.plan, JSON.stringify(savedPlans));
-      const savedDates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+      storage.setItem(STORE.plan, JSON.stringify(savedPlans));
+      const savedDates = JSON.parse(storage.getItem(STORE.planExpiry) || '{}');
       if (planExpiry) savedDates[OWNER_EMAIL] = planExpiry;
       else delete savedDates[OWNER_EMAIL];
-      localStorage.setItem(STORE.planExpiry, JSON.stringify(savedDates));
+      storage.setItem(STORE.planExpiry, JSON.stringify(savedDates));
       planLoaded = true;
       syncPlanPreview();
       renderGrounds();
@@ -757,9 +775,9 @@
     $('markNotificationsRead').addEventListener('click', () => {
       const ids = readAdminNotifications().map(item => String(item.id || item.createdAt || item.title || 'notification'));
       try {
-        const all = JSON.parse(localStorage.getItem(NOTIFICATION_READ_STORE) || '{}');
+        const all = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
         all[OWNER_EMAIL] = Array.from(new Set([...(Array.isArray(all[OWNER_EMAIL]) ? all[OWNER_EMAIL] : []), ...ids]));
-        localStorage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(all));
+        storage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(all));
       } catch {}
       renderNotifications();
     });
@@ -948,7 +966,8 @@
               throw new Error('Firebase logout is not ready.');
             }
             await window.firebaseAuthApi.signOut(window.firebaseAuth);
-            localStorage.removeItem('boxbook_session_v1');
+            storage.removeItem('boxbook_session_v1');
+            if (IS_ADMIN_OWNER_PREVIEW) { window.close(); return; }
             window.location.replace('login.html');
           } catch (error) {
             toast('Logout failed. Please try again.');
