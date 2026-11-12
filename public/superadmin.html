@@ -217,12 +217,12 @@
   </div>
 
   <script type="module">
-    import { auth, db } from './firebase/config.js';
+    import { app, auth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
 
-    const functions = getFunctions(auth.app, 'asia-south1');
+    const functions = getFunctions(app, 'asia-south1');
     const createOwnerDashboardSession = httpsCallable(functions, 'createOwnerDashboardSession');
 
     const $ = id => document.getElementById(id);
