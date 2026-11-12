@@ -1,6 +1,6 @@
 (() => {
   const IS_ADMIN_OWNER_PREVIEW = new URLSearchParams(window.location.search).get('adminOwnerPreview') === '1';
-  const storage = IS_ADMIN_OWNER_PREVIEW ? window.sessionStorage : window.storage;
+  const storage = IS_ADMIN_OWNER_PREVIEW ? window.sessionStorage : window.localStorage;
   const STORE = {grounds:'boxbook_grounds_v1', bookings:'boxbook_bookings_v1', plan:'boxbook_owner_plan_v1', planExpiry:'boxbook_owner_plan_expiry_v1'};
   const savedOwnerSession = (storage.getItem('boxbook_session_v1') || '').trim().toLowerCase();
   if (!IS_ADMIN_OWNER_PREVIEW && !savedOwnerSession) { window.location.replace('login.html'); return; }
@@ -253,6 +253,7 @@
     renderBookingCalendar();
   }
   async function getOwnerFirebaseContext() {
+    if (window.firebaseReadyPromise) await window.firebaseReadyPromise;
     if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseDB) {
       await new Promise((resolve, reject) => {
         const timeout = window.setTimeout(() => reject(new Error('Firebase is taking too long to load. Please refresh and try again.')), 10000);
@@ -287,6 +288,7 @@
     if (IS_ADMIN_OWNER_PREVIEW) {
       OWNER_EMAIL = String(user.email).trim().toLowerCase();
       if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
+      renderNotifications();
       document.title = 'Owner Dashboard | Super Admin View';
       if (!document.getElementById('adminOwnerPreviewBanner')) {
         const banner = document.createElement('div');
