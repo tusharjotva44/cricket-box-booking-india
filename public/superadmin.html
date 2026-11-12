@@ -325,7 +325,7 @@
       $('ownerRows').innerHTML = list.length ? list.map(owner => {
         const status = ownerStatus(owner);
         const expiry = owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate;
-        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.contactEmail || owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td><button type="button" class="owner-edit-btn" data-edit-owner="' + escapeHTML(owner.id) + '">Edit</button></td></tr>';
+        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.contactEmail || owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td><div class="owner-row-actions"><button type="button" class="owner-edit-btn" data-edit-owner="' + escapeHTML(owner.id) + '">Edit</button><button type="button" class="owner-login-btn" data-login-owner="' + escapeHTML(owner.id) + '">Login</button></div></td></tr>';
       }).join('') : '<tr><td colspan="7" class="empty">No matching owner records.</td></tr>';
     }
 
