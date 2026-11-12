@@ -185,7 +185,14 @@
           <input id="editOwnerEmail" type="email" placeholder="Contact email address" required>
         </label>
         <label>Plan name
-          <input id="editOwnerPlan" type="text" maxlength="80" placeholder="e.g. Free Trial - 1 Ground" required>
+          <select id="editOwnerPlan" required>
+            <option value="">Select a plan</option>
+            <option value="Free Trial - 1 Ground">Free Trial - 1 Ground</option>
+            <option value="Monthly - 1 Ground">Monthly - 1 Ground</option>
+            <option value="Monthly - 2 Grounds">Monthly - 2 Grounds</option>
+            <option value="Yearly - 1 Ground">Yearly - 1 Ground</option>
+            <option value="Yearly - 2 Grounds">Yearly - 2 Grounds</option>
+          </select>
         </label>
         <label>Subscription status
           <select id="editOwnerStatus">
@@ -349,6 +356,16 @@
       const button = event.target.closest('[data-edit-owner]');
       if (button) openOwnerEditor(button.dataset.editOwner);
     });
+
+    $('editOwnerPlan').addEventListener('change', () => {
+      const selected = $('editOwnerPlan').value;
+      if (!selected) return;
+      const nextExpiry = new Date();
+      if (selected.startsWith('Free Trial')) nextExpiry.setDate(nextExpiry.getDate() + 10);
+      else if (selected.startsWith('Yearly')) nextExpiry.setFullYear(nextExpiry.getFullYear() + 1);
+      else if (selected.startsWith('Monthly')) nextExpiry.setMonth(nextExpiry.getMonth() + 1);
+      $('editOwnerExpiry').value = nextExpiry.getFullYear() + '-' + String(nextExpiry.getMonth()+1).padStart(2,'0') + '-' + String(nextExpiry.getDate()).padStart(2,'0');
+    });
     $('ownerEditCancel').addEventListener('click', closeOwnerEditor);
     $('ownerEditModal').addEventListener('click', event => {
       if (event.target === $('ownerEditModal')) closeOwnerEditor();
@@ -372,21 +389,34 @@
         $('ownerEditMessage').textContent = 'Contact email and plan name are required.';
         return;
       }
-      const expiry = expiryInput ? new Date(expiryInput + 'T23:59:59').toISOString() : null;
+      let expiry = expiryInput ? new Date(expiryInput + 'T23:59:59').toISOString() : null;
       const owner = state.owners.find(item => item.id === ownerId);
       if (!owner) {
         $('ownerEditMessage').textContent = 'Owner record was not found. Refresh and try again.';
         return;
       }
       const statusValue = subscriptionStatus === 'not_set' ? '' : subscriptionStatus;
+      const planChanged = owner.planName !== planName || String(owner.subscriptionStatus || '') !== statusValue;
+      const activationDate = new Date();
+      if (!expiry && ['trial','active','paid'].includes(subscriptionStatus)) {
+        const defaultExpiry = new Date(activationDate);
+        if (planName.startsWith('Free Trial')) defaultExpiry.setDate(defaultExpiry.getDate() + 10);
+        else if (planName.startsWith('Yearly')) defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
+        else if (planName.startsWith('Monthly')) defaultExpiry.setMonth(defaultExpiry.getMonth() + 1);
+        expiry = defaultExpiry.toISOString();
+      }
+      const startedAt = planChanged ? activationDate.toISOString() : (owner.subscriptionStartedAt || owner.trialStartedAt || activationDate.toISOString());
       const changes = {
         mobile,
         contactEmail,
         planName,
         subscriptionStatus: statusValue,
+        trialStartedAt: subscriptionStatus === 'trial' ? startedAt : null,
         trialExpiresAt: subscriptionStatus === 'trial' ? expiry : null,
+        subscriptionStartedAt: ['active','paid'].includes(subscriptionStatus) ? startedAt : null,
         subscriptionExpiry: ['active','paid'].includes(subscriptionStatus) ? expiry : null,
         expiryDate: expiry,
+        planAssignedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
       const saveButton = $('ownerEditSave');
