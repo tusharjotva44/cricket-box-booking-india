@@ -32,6 +32,11 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+// Let the owner dashboard wait until Firebase setup and any admin token handoff finish.
+window.firebaseReadyPromise = new Promise(resolve => {
+  window.addEventListener("firebase-ready", resolve, { once: true });
+});
+
 // Normal owner sessions persist; Super Admin owner sessions stay isolated to this tab.
 await setPersistence(auth, isAdminOwnerPreview ? inMemoryPersistence : browserLocalPersistence);
 
