@@ -7,12 +7,16 @@ const firebaseConfig = {
   appId: "1:625081417102:web:c922a00e8ab3d8677b38df",
   measurementId: "G-EQBZ6K59PV"
 };
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
+const isAdminOwnerPreview = new URLSearchParams(window.location.search).get("adminOwnerPreview") === "1";
+const previewAppName = "boxbook-owner-preview";
+const app = isAdminOwnerPreview
+  ? (getApps().find(existing => existing.name === previewAppName) || initializeApp(firebaseConfig, previewAppName))
+  : (getApps().find(existing => existing.name === "[DEFAULT]") || initializeApp(firebaseConfig));
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { app, auth, db };
+export { app, auth, db, isAdminOwnerPreview };
