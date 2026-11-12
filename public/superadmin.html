@@ -219,11 +219,7 @@
   <script type="module">
     import { app, auth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
-
-    const functions = getFunctions(app, 'asia-south1');
-    const createOwnerDashboardSession = httpsCallable(functions, 'createOwnerDashboardSession');
 
     const $ = id => document.getElementById(id);
     const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
@@ -358,7 +354,7 @@
     }
     async function openOwnerLogin(ownerId, button) {
       const owner = state.owners.find(item => item.id === ownerId);
-      if (!owner) return;
+      if (!owner || !state.user) return;
       const ownerWindow = window.open('/owner/dashboard.html?adminOwnerPreview=1', '_blank');
       if (!ownerWindow) {
         window.alert('The owner dashboard tab was blocked. Allow pop-ups for this website and try again.');
@@ -379,26 +375,14 @@
       const timeout = window.setTimeout(() => {
         cleanup();
         if (!ownerWindow.closed) ownerWindow.close();
-        window.alert('Owner session could not be started. Check that the Cloud Function is deployed and try again.');
-      }, 35000);
-      async function receiveReady(event) {
+        window.alert('Admin Preview could not be started. Make sure you are still signed in as Super Admin and try again.');
+      }, 20000);
+      function receiveReady(event) {
         if (event.origin !== window.location.origin || event.source !== ownerWindow
           || !event.data || event.data.type !== 'BOXBOOK_OWNER_PREVIEW_READY') return;
-        window.removeEventListener('message', receiveReady);
-        try {
-          const response = await createOwnerDashboardSession({ ownerUid: ownerId });
-          const customToken = response && response.data && response.data.customToken;
-          if (!customToken || ownerWindow.closed) throw new Error('The owner session could not be created.');
-          ownerWindow.postMessage({ type: 'BOXBOOK_OWNER_PREVIEW_TOKEN', customToken }, window.location.origin);
-          cleanup();
-        } catch (error) {
-          cleanup();
-          if (!ownerWindow.closed) ownerWindow.close();
-          console.error('Super Admin owner login failed:', error);
-          window.alert(error.code === 'functions/permission-denied'
-            ? 'Your Super Admin permission could not be verified.'
-            : 'Owner login failed. Make sure the owner account exists and the Cloud Function is deployed.');
-        }
+        if (ownerWindow.closed) { cleanup(); return; }
+        ownerWindow.postMessage({ type: 'BOXBOOK_OWNER_PREVIEW_TARGET', ownerUid: ownerId }, window.location.origin);
+        cleanup();
       }
       window.addEventListener('message', receiveReady);
     }
