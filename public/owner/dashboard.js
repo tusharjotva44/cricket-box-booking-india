@@ -1050,7 +1050,7 @@
       }
       renderGrounds();
 
-      const existingBookings = await api.getOwnerBookings(db, user.uid);
+      const existingBookings = await api.getOwnerBookings(db, ownerUid);
       const existingIds = new Set(existingBookings.map(item => String(item.id)));
       const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
       for (const legacy of legacyBookings) {
