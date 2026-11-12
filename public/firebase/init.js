@@ -3,7 +3,6 @@ import { app, auth, db, isAdminOwnerPreview } from "./config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithCustomToken,
   sendPasswordResetEmail,
   updatePassword,
   reauthenticateWithCredential,
@@ -11,7 +10,7 @@ import {
   signOut,
   onAuthStateChanged,
   browserLocalPersistence,
-  inMemoryPersistence,
+  getIdTokenResult,
   setPersistence
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
@@ -32,13 +31,13 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-// Let the owner dashboard wait until Firebase setup and any admin token handoff finish.
+// Let the owner dashboard wait until Firebase setup and Super Admin preview verification finish.
 window.firebaseReadyPromise = new Promise(resolve => {
   window.addEventListener("firebase-ready", resolve, { once: true });
 });
 
-// Normal owner sessions persist; Super Admin owner sessions stay isolated to this tab.
-await setPersistence(auth, isAdminOwnerPreview ? inMemoryPersistence : browserLocalPersistence);
+// Owner sessions and Super Admin preview tabs use the existing browser-persisted Firebase session.
+await setPersistence(auth, browserLocalPersistence);
 
 window.firebaseApp = app;
 window.firebaseAuth = auth;
@@ -47,7 +46,6 @@ window.firebaseDB = db;
 window.firebaseAuthApi = {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithCustomToken,
   sendPasswordResetEmail,
   updatePassword,
   reauthenticateWithCredential,
@@ -222,29 +220,44 @@ window.firebaseAuthApi = {
 
 if (isAdminOwnerPreview) {
   try {
-    if (!window.opener) throw new Error("This owner session must be opened from Super Admin.");
-    const customToken = await new Promise((resolve, reject) => {
+    if (!window.opener) throw new Error("This Admin Preview must be opened from Super Admin.");
+    const ownerUid = await new Promise((resolve, reject) => {
       const timeout = window.setTimeout(() => {
-        window.removeEventListener("message", receiveToken);
-        reject(new Error("Super Admin did not provide an owner session token."));
+        window.removeEventListener("message", receiveTarget);
+        reject(new Error("Super Admin did not provide an owner account."));
       }, 30000);
-      function receiveToken(event) {
+      function receiveTarget(event) {
         if (event.origin !== window.location.origin || event.source !== window.opener
-          || !event.data || event.data.type !== "BOXBOOK_OWNER_PREVIEW_TOKEN") return;
+          || !event.data || event.data.type !== "BOXBOOK_OWNER_PREVIEW_TARGET") return;
         window.clearTimeout(timeout);
-        window.removeEventListener("message", receiveToken);
-        if (typeof event.data.customToken !== "string" || !event.data.customToken) {
-          reject(new Error("The owner session token was invalid."));
+        window.removeEventListener("message", receiveTarget);
+        const uid = typeof event.data.ownerUid === "string" ? event.data.ownerUid.trim() : "";
+        if (!uid || uid.length > 128) {
+          reject(new Error("The selected owner account was invalid."));
           return;
         }
-        resolve(event.data.customToken);
+        resolve(uid);
       }
-      window.addEventListener("message", receiveToken);
+      window.addEventListener("message", receiveTarget);
       window.opener.postMessage({ type: "BOXBOOK_OWNER_PREVIEW_READY" }, window.location.origin);
     });
-    await signInWithCustomToken(auth, customToken);
+    const currentUser = auth.currentUser || await new Promise((resolve, reject) => {
+      let unsubscribe = () => {};
+      unsubscribe = onAuthStateChanged(auth, user => {
+        unsubscribe();
+        resolve(user);
+      }, error => {
+        unsubscribe();
+        reject(error);
+      });
+    });
+    if (!currentUser) throw new Error("Please sign in to Super Admin before opening an owner preview.");
+    const tokenResult = await getIdTokenResult(currentUser, true);
+    if (tokenResult.claims.superAdmin !== true) throw new Error("This account is not authorized for Super Admin preview.");
+    window.adminOwnerPreviewTargetUid = ownerUid;
+    window.adminOwnerPreviewAdminUid = currentUser.uid;
   } catch (error) {
-    console.error("Super Admin owner session could not start:", error);
+    console.error("Super Admin owner preview could not start:", error);
     window.ownerPreviewError = error;
   }
 }
