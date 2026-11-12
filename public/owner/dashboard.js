@@ -253,7 +253,7 @@
     renderBookingCalendar();
   }
   async function getOwnerFirebaseContext() {
-    if (window.firebaseReadyPromise) await window.firebaseReadyPromise;
+    if (IS_ADMIN_OWNER_PREVIEW && window.firebaseReadyPromise) await window.firebaseReadyPromise;
     if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseDB) {
       await new Promise((resolve, reject) => {
         const timeout = window.setTimeout(() => reject(new Error('Firebase is taking too long to load. Please refresh and try again.')), 10000);
