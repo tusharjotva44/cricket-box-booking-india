@@ -12,10 +12,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const isAdminOwnerPreview = new URLSearchParams(window.location.search).get("adminOwnerPreview") === "1";
-const previewAppName = "boxbook-owner-preview";
-const app = isAdminOwnerPreview
-  ? (getApps().find(existing => existing.name === previewAppName) || initializeApp(firebaseConfig, previewAppName))
-  : (getApps().find(existing => existing.name === "[DEFAULT]") || initializeApp(firebaseConfig));
+const app = getApps().find(existing => existing.name === "[DEFAULT]") || initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
