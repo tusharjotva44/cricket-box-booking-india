@@ -20,16 +20,11 @@
   let selectedPlan = (() => {
     try {
       const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
-      const savedPlan = plans[OWNER_EMAIL] || '';
-      if (savedPlan.startsWith('Free Trial')) return savedPlan;
-      delete plans[OWNER_EMAIL];
-      localStorage.setItem(STORE.plan, JSON.stringify(plans));
-      const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
-      delete dates[OWNER_EMAIL];
-      localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
-      return '';
+      return plans[OWNER_EMAIL] || '';
     } catch { return ''; }
   })();
+  let selectedPlanStatus = selectedPlan.startsWith('Free Trial') ? 'trial' : '';
+  let planLoaded = false;
   let toastTimer;
   const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
   const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
@@ -306,7 +301,10 @@
     $('groundsGrid').classList.toggle('hidden', grounds.length === 0);
   }
   function groundLimit() {
-    if (selectedPlan.startsWith('Free Trial') && getPlanExpiry() && new Date(getPlanExpiry()).getTime() <= Date.now()) return 0;
+    if (!planLoaded || !selectedPlan || !['trial','active','paid'].includes(selectedPlanStatus)) return 0;
+    const expiry = getPlanExpiry();
+    if (expiry && new Date(expiry).getTime() <= Date.now()) return 0;
+    if (selectedPlan.startsWith('Free Trial') && !expiry) return 0;
     return selectedPlan.includes('2 Grounds') ? 2 : selectedPlan.includes('1 Ground') ? 1 : 0;
   }
   function saveSelectedPlan() {
@@ -362,23 +360,11 @@
     } catch {}
   }
   function syncPlanPreview() {
-    if (selectedPlan && !selectedPlan.startsWith('Free Trial')) {
-      selectedPlan = '';
-      try {
-        const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
-        delete plans[OWNER_EMAIL];
-        localStorage.setItem(STORE.plan, JSON.stringify(plans));
-        const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
-        delete dates[OWNER_EMAIL];
-        localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
-      } catch {}
-    }
-    if (!selectedPlan) {
-      $('dashboardPlanName').textContent = 'No plan selected';
-      $('dashboardPlanExpiry').textContent = 'Paid plan selection is temporarily unavailable. Free Trial activates automatically on signup.';
-      $('planNoticeTitle').textContent = 'Paid plans coming soon';
-      $('planNoticeText').textContent = 'Paid plan selection and preview are disabled until the payment system is ready. Free Trial activates automatically when you create an owner account.';
-      renderPlanExpiryAlert();
+    if (!planLoaded) {
+      $('dashboardPlanName').textContent = 'Loading plan details…';
+      $('dashboardPlanExpiry').textContent = 'Checking your current plan.';
+      $('planNoticeTitle').textContent = 'Loading plan details';
+      $('planNoticeText').textContent = 'Your current plan is being checked.';
       return;
     }
     const expiryValue = getPlanExpiry();
@@ -386,23 +372,41 @@
     const daysLeft = expiryValue ? daysUntilExpiry(expiryValue) : null;
     const isTrial = selectedPlan.startsWith('Free Trial');
     const isExpired = !!expiryValue && new Date(expiryValue).getTime() <= Date.now();
-    const expiryDetails = expiryText ? (isExpired ? 'Expired on ' + expiryText + '.' : 'Expires on ' + expiryText + ' (' + daysLeft + (daysLeft === 1 ? ' day left).' : ' days left).')) : '';
-    $('planNoticeTitle').textContent = isExpired ? selectedPlan + ' — Expired' : selectedPlan + ' — Active';
-    $('planNoticeText').textContent = isExpired
-      ? 'Your 10-day free trial has expired. Paid plan selection is temporarily unavailable.'
-      : 'Your free trial is active for 10 days. ' + (expiryDetails || 'No expiry date is set.');
-    $('dashboardPlanName').textContent = selectedPlan + (isExpired ? ' (Expired)' : isTrial ? ' (Active)' : '');
-    $('dashboardPlanExpiry').textContent = expiryDetails || 'Expiry date is not set yet.';
-    document.querySelectorAll('.plan-select').forEach(b => {
-      b.disabled = true;
-      b.textContent = b.dataset.plan.startsWith('Free Trial') ? 'Automatic on Signup' : 'Coming Soon';
-      b.setAttribute('aria-disabled', 'true');
+    const isEnabled = !!selectedPlan && ['trial','active','paid'].includes(selectedPlanStatus) && !isExpired;
+    const expiryDetails = !expiryText
+      ? 'Expiry date is not set.'
+      : isExpired
+        ? 'Expired on ' + expiryText + '.'
+        : daysLeft === null
+          ? 'Expires on ' + expiryText + '.'
+          : 'Expires on ' + expiryText + ' (' + daysLeft + (daysLeft === 1 ? ' day left).' : ' days left).');
+    if (!selectedPlan) {
+      $('dashboardPlanName').textContent = 'No plan selected';
+      $('dashboardPlanExpiry').textContent = 'Please contact Super Admin to assign a plan.';
+      $('planNoticeTitle').textContent = 'No plan assigned';
+      $('planNoticeText').textContent = 'Your plan has not been assigned yet. Please contact Super Admin.';
+    } else if (!isEnabled) {
+      $('dashboardPlanName').textContent = selectedPlan + (isExpired ? ' (Expired)' : ' (Inactive)');
+      $('dashboardPlanExpiry').textContent = expiryDetails;
+      $('planNoticeTitle').textContent = selectedPlan + (isExpired ? ' — Expired' : ' — Inactive');
+      $('planNoticeText').textContent = 'This plan is not currently active. Please contact Super Admin.';
+    } else {
+      const statusLabel = isTrial ? 'Trial Active' : 'Active';
+      $('dashboardPlanName').textContent = selectedPlan + ' (' + statusLabel + ')';
+      $('dashboardPlanExpiry').textContent = expiryDetails;
+      $('planNoticeTitle').textContent = selectedPlan + ' — ' + statusLabel;
+      $('planNoticeText').textContent = 'Your plan is active. ' + expiryDetails;
+    }
+    document.querySelectorAll('.plan-select').forEach(button => {
+      button.disabled = true;
+      button.textContent = button.dataset.plan.startsWith('Free Trial') ? 'Automatic on Signup' : 'Coming Soon';
+      button.setAttribute('aria-disabled', 'true');
     });
     renderPlanExpiryAlert();
   }
   function openGroundForm() {
     const limit = groundLimit();
-    if (!limit) { showView('subscription'); toast('Paid plan selection is temporarily unavailable. Free Trial activates automatically on signup.'); return; }
+    if (!limit) { showView('subscription'); toast('Your plan is not active or has expired. Please contact Super Admin.'); return; }
     if (grounds.length >= limit) { showView('subscription'); toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground. ' : ' grounds. ') + 'Choose a 2 Grounds plan to add another.'); return; }
     $('groundFormPanel').classList.remove('hidden');
     $('groundFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -680,18 +684,27 @@
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
       const profile = await api.getOwnerProfile(db, user.uid);
-      if (!profile || profile.planName !== 'Free Trial - 1 Ground' || !profile.trialStartedAt || !profile.trialExpiresAt) return;
-      selectedPlan = profile.planName;
-      const plans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
-      plans[OWNER_EMAIL] = selectedPlan;
-      localStorage.setItem(STORE.plan, JSON.stringify(plans));
-      const dates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
-      dates[OWNER_EMAIL] = profile.trialExpiresAt;
-      localStorage.setItem(STORE.planExpiry, JSON.stringify(dates));
+      selectedPlan = profile && typeof profile.planName === 'string' ? profile.planName : '';
+      selectedPlanStatus = profile ? String(profile.subscriptionStatus || '').toLowerCase() : '';
+      const planExpiry = profile ? (profile.trialExpiresAt || profile.subscriptionExpiry || profile.expiryDate || '') : '';
+      const savedPlans = JSON.parse(localStorage.getItem(STORE.plan) || '{}');
+      if (selectedPlan) savedPlans[OWNER_EMAIL] = selectedPlan;
+      else delete savedPlans[OWNER_EMAIL];
+      localStorage.setItem(STORE.plan, JSON.stringify(savedPlans));
+      const savedDates = JSON.parse(localStorage.getItem(STORE.planExpiry) || '{}');
+      if (planExpiry) savedDates[OWNER_EMAIL] = planExpiry;
+      else delete savedDates[OWNER_EMAIL];
+      localStorage.setItem(STORE.planExpiry, JSON.stringify(savedDates));
+      planLoaded = true;
       syncPlanPreview();
+      renderGrounds();
     } catch (error) {
-      console.error('Could not load owner trial status:', error);
-      toast('Could not load your trial status. Please refresh.');
+      planLoaded = true;
+      selectedPlan = '';
+      selectedPlanStatus = '';
+      syncPlanPreview();
+      console.error('Could not load owner plan:', error);
+      toast('Could not load your current plan. Please refresh or check Firebase permissions.');
     }
   })();
   let bookingAlertAudioContext = null;
