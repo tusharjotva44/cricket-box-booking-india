@@ -1,8 +1,9 @@
 
-import { app, auth, db } from "./config.js";
+import { app, auth, db, isAdminOwnerPreview } from "./config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   sendPasswordResetEmail,
   updatePassword,
   reauthenticateWithCredential,
@@ -10,6 +11,7 @@ import {
   signOut,
   onAuthStateChanged,
   browserLocalPersistence,
+  inMemoryPersistence,
   setPersistence
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
@@ -30,8 +32,8 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-// Keep owner authentication available after refreshes and browser restarts.
-await setPersistence(auth, browserLocalPersistence);
+// Normal owner sessions persist; Super Admin owner sessions stay isolated to this tab.
+await setPersistence(auth, isAdminOwnerPreview ? inMemoryPersistence : browserLocalPersistence);
 
 window.firebaseApp = app;
 window.firebaseAuth = auth;
@@ -40,6 +42,7 @@ window.firebaseDB = db;
 window.firebaseAuthApi = {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   sendPasswordResetEmail,
   updatePassword,
   reauthenticateWithCredential,
@@ -211,6 +214,35 @@ window.firebaseAuthApi = {
       updatedAt: serverTimestamp()
     })
 };
+
+if (isAdminOwnerPreview) {
+  try {
+    if (!window.opener) throw new Error("This owner session must be opened from Super Admin.");
+    const customToken = await new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        window.removeEventListener("message", receiveToken);
+        reject(new Error("Super Admin did not provide an owner session token."));
+      }, 30000);
+      function receiveToken(event) {
+        if (event.origin !== window.location.origin || event.source !== window.opener
+          || !event.data || event.data.type !== "BOXBOOK_OWNER_PREVIEW_TOKEN") return;
+        window.clearTimeout(timeout);
+        window.removeEventListener("message", receiveToken);
+        if (typeof event.data.customToken !== "string" || !event.data.customToken) {
+          reject(new Error("The owner session token was invalid."));
+          return;
+        }
+        resolve(event.data.customToken);
+      }
+      window.addEventListener("message", receiveToken);
+      window.opener.postMessage({ type: "BOXBOOK_OWNER_PREVIEW_READY" }, window.location.origin);
+    });
+    await signInWithCustomToken(auth, customToken);
+  } catch (error) {
+    console.error("Super Admin owner session could not start:", error);
+    window.ownerPreviewError = error;
+  }
+}
 
 console.log("Firebase initialized successfully.");
 window.dispatchEvent(new Event("firebase-ready"));
