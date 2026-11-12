@@ -13,6 +13,7 @@
     window.history.pushState({ ownerDashboard: true }, '', window.location.href);
   });
   let ownerProfile = {};
+  let adminPreviewMode = 'edit';
   const $ = (id) => document.getElementById(id);
   const readList = (key) => { try { const data = JSON.parse(storage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
@@ -64,7 +65,7 @@
   let sampleBookings = bookingsForOwner();
   const saveGrounds = async () => {
     const { user, api, db } = await getOwnerFirebaseContext();
-    await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
+    await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
     try {
       const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL);
       storage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))]));
@@ -76,6 +77,42 @@
     const el = $('toast'); el.textContent = message; el.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
   }
+  function renderAdminPreviewBanner() {
+    let banner = document.getElementById('adminOwnerPreviewBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'adminOwnerPreviewBanner';
+      banner.style.cssText = 'position:relative;z-index:1000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:9px 16px;background:#fff0e5;border-bottom:1px solid #fed7aa;color:#9a3412;font:700 12px Arial,sans-serif;letter-spacing:.2px';
+      document.body.prepend(banner);
+    }
+    banner.innerHTML = '<span>SUPER ADMIN SESSION · ' + (adminPreviewMode === 'edit' ? 'EDIT MODE' : 'VIEW MODE') + ' · Owner: ' + escapeHTML(OWNER_EMAIL) + '</span><button type="button" id="adminOwnerPreviewModeToggle" style="padding:6px 11px;border:1px solid #c2410c;border-radius:7px;background:#fff;color:#9a3412;font:700 11px Arial,sans-serif;cursor:pointer">' + (adminPreviewMode === 'edit' ? 'Switch to View Mode' : 'Switch to Edit Mode') + '</button>';
+    banner.querySelector('#adminOwnerPreviewModeToggle').addEventListener('click', () => {
+      adminPreviewMode = adminPreviewMode === 'edit' ? 'view' : 'edit';
+      document.body.classList.toggle('admin-preview-view-mode', adminPreviewMode === 'view');
+      renderAdminPreviewBanner();
+      toast(adminPreviewMode === 'edit' ? 'Edit Mode enabled.' : 'View Mode enabled. Changes are paused.');
+    });
+    document.body.classList.toggle('admin-preview-view-mode', adminPreviewMode === 'view');
+  }
+  if (IS_ADMIN_OWNER_PREVIEW) {
+    document.addEventListener('click', event => {
+      if (adminPreviewMode !== 'view') return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      const blocked = target.closest('#showGroundForm, [data-open-form], [data-edit-ground], [data-delete], #saveAvailabilityButton, #showOwnerBookingForm, #dashboardNewBookingButton, [data-approve], [data-reject], [data-profile-action="profile"], [data-profile-action="password"]');
+      if (!blocked) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      toast('View Mode is read-only. Switch to Edit Mode to make changes.');
+    }, true);
+    document.addEventListener('submit', event => {
+      if (adminPreviewMode !== 'view') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      toast('View Mode is read-only. Switch to Edit Mode to save changes.');
+    }, true);
+  }
+
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
@@ -265,7 +302,7 @@
     }
 
     if (IS_ADMIN_OWNER_PREVIEW && window.ownerPreviewError) {
-      throw new Error('Super Admin owner session could not be verified. Please close this tab and try again.');
+      throw new Error('Super Admin owner preview could not be verified. Please close this tab and try again.');
     }
     const api = window.firebaseAuthApi;
     const auth = window.firebaseAuth;
@@ -280,23 +317,30 @@
     });
 
     if (!user || !user.email) {
-      if (IS_ADMIN_OWNER_PREVIEW) throw new Error('Super Admin owner session could not be verified. Please close this tab and try again.');
+      if (IS_ADMIN_OWNER_PREVIEW) throw new Error('Super Admin owner preview could not be verified. Please close this tab and try again.');
       storage.removeItem('boxbook_session_v1');
       window.location.replace('login.html');
       throw new Error('Please sign in to your owner account.');
     }
     if (IS_ADMIN_OWNER_PREVIEW) {
-      OWNER_EMAIL = String(user.email).trim().toLowerCase();
+      const targetUid = String(window.adminOwnerPreviewTargetUid || '').trim();
+      if (!targetUid) throw new Error('The selected owner account could not be identified. Please close this tab and try again.');
+      const tokenResult = await user.getIdTokenResult(true);
+      if (tokenResult.claims.superAdmin !== true || user.uid !== window.adminOwnerPreviewAdminUid) {
+        throw new Error('Your Super Admin permission could not be verified.');
+      }
+      ownerUid = targetUid;
+      const targetProfile = await api.getOwnerProfile(window.firebaseDB, ownerUid);
+      if (!targetProfile) throw new Error('The selected owner profile could not be found.');
+      ownerProfile = targetProfile;
+      OWNER_EMAIL = String(targetProfile.email || targetProfile.contactEmail || '').trim().toLowerCase();
+      if (!OWNER_EMAIL) throw new Error('The selected owner profile does not contain an email address.');
       if ($('ownerEmailLabel')) $('ownerEmailLabel').textContent = OWNER_EMAIL;
       renderNotifications();
-      document.title = 'Owner Dashboard | Super Admin View';
-      if (!document.getElementById('adminOwnerPreviewBanner')) {
-        const banner = document.createElement('div');
-        banner.id = 'adminOwnerPreviewBanner';
-        banner.textContent = 'SUPER ADMIN SESSION · Viewing owner account: ' + OWNER_EMAIL;
-        banner.style.cssText = 'position:relative;z-index:1000;padding:9px 16px;background:#fff0e5;border-bottom:1px solid #fed7aa;color:#9a3412;text-align:center;font:700 12px Arial,sans-serif;letter-spacing:.2px';
-        document.body.prepend(banner);
-      }
+      document.title = 'Owner Dashboard | Super Admin Preview';
+      renderAdminPreviewBanner();
+      const passwordAction = document.querySelector('[data-profile-action="password"]');
+      if (passwordAction) passwordAction.hidden = true;
     } else if (String(user.email).trim().toLowerCase() !== OWNER_EMAIL) {
       storage.removeItem('boxbook_session_v1');
       window.location.replace('login.html');
@@ -640,7 +684,7 @@
     if (button) button.disabled = true;
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
-      booking.ownerUid = user.uid;
+      booking.ownerUid = ownerUid;
       await api.saveBooking(db, booking);
       $('ownerBookingFormPanel').classList.add('hidden');
       toast('Booking confirmed and synced live.');
@@ -703,7 +747,7 @@
   (async () => {
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
-      const profile = await api.getOwnerProfile(db, user.uid);
+      const profile = await api.getOwnerProfile(db, ownerUid || user.uid);
       selectedPlan = profile && typeof profile.planName === 'string' ? profile.planName : '';
       selectedPlanStatus = profile ? String(profile.subscriptionStatus || '').toLowerCase() : '';
       const planExpiry = profile ? (profile.trialExpiresAt || profile.subscriptionExpiry || profile.expiryDate || '') : '';
@@ -837,8 +881,8 @@
         (async () => {
           try {
             const { user, api, db } = await getOwnerFirebaseContext();
-            const remoteProfile = await api.getOwnerProfile(db, user.uid);
-            const email = String(user.email || OWNER_EMAIL).trim().toLowerCase();
+            const remoteProfile = await api.getOwnerProfile(db, ownerUid || user.uid);
+            const email = IS_ADMIN_OWNER_PREVIEW ? OWNER_EMAIL : String(user.email || OWNER_EMAIL).trim().toLowerCase();
             const savedProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === email) ? remoteProfile : {};
             const hasSavedProfile = !!remoteProfile;
             const fullName = String(savedProfile.fullName || savedProfile.yourName || '');
@@ -874,7 +918,7 @@
                   profileSave.textContent = 'Save Changes';
                   return;
                 }
-                await api.updateOwnerProfile(db, user.uid, { fullName: updatedName, email });
+                await api.updateOwnerProfile(db, ownerUid || user.uid, { fullName: updatedName, email });
                 ownerProfile = { ...savedProfile, fullName: updatedName, email };
                 profileMessage.textContent = 'Profile updated successfully.';
                 profileMessage.style.color = '#15803d';
@@ -962,6 +1006,7 @@
         });
       } else if (action === 'logout') {
         closeProfileMenu();
+        if (IS_ADMIN_OWNER_PREVIEW) { window.close(); return; }
         (async () => {
           try {
             if (!window.firebaseAuthApi || !window.firebaseAuth || typeof window.firebaseAuthApi.signOut !== 'function') {
@@ -969,7 +1014,6 @@
             }
             await window.firebaseAuthApi.signOut(window.firebaseAuth);
             storage.removeItem('boxbook_session_v1');
-            if (IS_ADMIN_OWNER_PREVIEW) { window.close(); return; }
             window.location.replace('login.html');
           } catch (error) {
             toast('Logout failed. Please try again.');
@@ -993,16 +1037,16 @@
   (async () => {
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
-      ownerUid = user.uid;
-      const remoteProfile = await api.getOwnerProfile(db, user.uid);
-      const signedInEmail = String(user.email || OWNER_EMAIL).trim().toLowerCase();
+      ownerUid = IS_ADMIN_OWNER_PREVIEW ? String(window.adminOwnerPreviewTargetUid || '') : user.uid;
+      const remoteProfile = await api.getOwnerProfile(db, ownerUid);
+      const signedInEmail = IS_ADMIN_OWNER_PREVIEW ? OWNER_EMAIL : String(user.email || OWNER_EMAIL).trim().toLowerCase();
       ownerProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === signedInEmail) ? remoteProfile : {};
       renderOwnerName();
-      const remoteGrounds = await api.getOwnerGrounds(db, user.uid);
+      const remoteGrounds = await api.getOwnerGrounds(db, ownerUid);
       if (remoteGrounds.length) {
         grounds = remoteGrounds.map(g => ({...g, sport:g.sport || g.sportType || 'Box Cricket', location:g.location || '', price:Number(g.price || 0)}));
       } else if (grounds.length) {
-        await api.saveOwnerGrounds(db, user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
+        await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
       }
       renderGrounds();
 
@@ -1011,7 +1055,7 @@
       const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
       for (const legacy of legacyBookings) {
         if (!legacy.id || existingIds.has(String(legacy.id))) continue;
-        const migrated = {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid:user.uid, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')};
+        const migrated = {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')};
         try {
           await api.saveBooking(db, migrated);
         } catch (migrationError) {
@@ -1020,10 +1064,10 @@
         }
         existingIds.add(String(legacy.id));
       }
-      remoteBookings = await api.getOwnerBookings(db, user.uid);
+      remoteBookings = await api.getOwnerBookings(db, ownerUid);
       knownBookingIds = new Set(remoteBookings.map(item => String(item.id)));
       renderBookings();
-      window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, user.uid, latest => {
+      window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, ownerUid, latest => {
         const incoming = latest.filter(item => !knownBookingIds.has(String(item.id)));
         incoming.forEach(item => {
           const normalized = bookingsForOwner().find(booking => booking.id === item.id) || {
