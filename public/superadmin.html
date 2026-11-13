@@ -222,6 +222,7 @@
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
 
     const $ = id => document.getElementById(id);
+    const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
     const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
@@ -257,6 +258,7 @@
       loadData();
     }
     async function verifySuperAdmin(user) {
+      if (String(user.email || '').trim().toLowerCase() !== SUPER_ADMIN_EMAIL) return false;
       const token = await getIdTokenResult(user, true);
       return token.claims.superAdmin === true;
     }
@@ -512,7 +514,12 @@
       const button = $('loginButton');
       button.disabled = true; button.textContent = 'Verifying access…'; showMessage('');
       try {
-        const credential = await signInWithEmailAndPassword(auth,$('adminEmail').value.trim(),$('adminPassword').value);
+        const email = $('adminEmail').value.trim().toLowerCase();
+        if (email !== SUPER_ADMIN_EMAIL) {
+          showLogin('Only the authorized Super Admin account can sign in.');
+          return;
+        }
+        const credential = await signInWithEmailAndPassword(auth,email,$('adminPassword').value);
         const allowed = await verifySuperAdmin(credential.user);
         if (!allowed) {
           await signOut(auth);
