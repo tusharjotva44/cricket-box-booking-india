@@ -1,5 +1,5 @@
 
-import { app, auth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
+import { app, superAdminAuth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -31,7 +31,7 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const sessionAuth = isAdminOwnerPreview ? auth : ownerAuth;
+const sessionAuth = isAdminOwnerPreview ? superAdminAuth : ownerAuth;
 
 // Let the owner dashboard wait until Firebase setup and Super Admin preview verification finish.
 window.firebaseReadyPromise = new Promise(resolve => {
@@ -40,6 +40,7 @@ window.firebaseReadyPromise = new Promise(resolve => {
 
 // Owner sessions and Super Admin preview tabs use the existing browser-persisted Firebase session.
 await setPersistence(sessionAuth, browserLocalPersistence);
+if (isAdminOwnerPreview) await superAdminAuth.authStateReady();
 
 window.firebaseApp = app;
 window.firebaseAuth = sessionAuth;
@@ -243,9 +244,9 @@ if (isAdminOwnerPreview) {
       window.addEventListener("message", receiveTarget);
       window.opener.postMessage({ type: "BOXBOOK_OWNER_PREVIEW_READY" }, window.location.origin);
     });
-    const currentUser = auth.currentUser || await new Promise((resolve, reject) => {
+    const currentUser = superAdminAuth.currentUser || await new Promise((resolve, reject) => {
       let unsubscribe = () => {};
-      unsubscribe = onAuthStateChanged(auth, user => {
+      unsubscribe = onAuthStateChanged(superAdminAuth, user => {
         unsubscribe();
         resolve(user);
       }, error => {
