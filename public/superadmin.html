@@ -543,7 +543,7 @@
         button.disabled = false; button.textContent = 'Secure Login →';
       }
     });
-    $('logoutButton').addEventListener('click', async () => { await signOut(auth); state.user = null; showLogin(); });
+    $('logoutButton').addEventListener('click', async () => { await signOut(superAdminAuth); state.user = null; showLogin(); });
     $('refreshButton').addEventListener('click',loadData);
     $('ownerSearch').addEventListener('input',renderOwners);
     $('groundSearch').addEventListener('input',renderGrounds);
@@ -560,11 +560,11 @@
       if (!user) { showLogin(); return; }
       try {
         const allowed = await verifySuperAdmin(user);
-        if (!allowed) { await signOut(auth); showLogin('Access denied. This account is not assigned the Super Admin role.'); return; }
+        if (!allowed) { await signOut(superAdminAuth); showLogin('Access denied. This account is not assigned the Super Admin role.'); return; }
         showApp(user);
       } catch (error) {
         console.error('Super Admin role verification failed:',error);
-        await signOut(auth); showLogin('Could not verify administrator permissions. Please sign in again.');
+        await signOut(superAdminAuth); showLogin('Could not verify administrator permissions. Please sign in again.');
       }
     });
   </script>
