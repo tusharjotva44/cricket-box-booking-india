@@ -1,0 +1,15 @@
+﻿{
+  "projects": {
+    "default": "box-book-india-5183f"
+  },
+  "targets": {
+    "box-book-india-5183f": {
+      "hosting": {
+        "boxbookindia": [
+          "boxbookindia"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
