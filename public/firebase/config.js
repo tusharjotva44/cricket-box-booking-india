@@ -14,6 +14,9 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/12.5.0/firebase
 const isAdminOwnerPreview = new URLSearchParams(window.location.search).get("adminOwnerPreview") === "1";
 const app = getApps().find(existing => existing.name === "[DEFAULT]") || initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Owner accounts use a separate Firebase Auth app so owner sign-in does not replace Super Admin's session.
+const ownerApp = getApps().find(existing => existing.name === "OWNER_AUTH") || initializeApp(firebaseConfig, "OWNER_AUTH");
+const ownerAuth = getAuth(ownerApp);
 const db = getFirestore(app);
 
-export { app, auth, db, isAdminOwnerPreview };
+export { app, auth, ownerAuth, db, isAdminOwnerPreview };
