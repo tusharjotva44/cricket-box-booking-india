@@ -16,8 +16,9 @@ const app = getApps().find(existing => existing.name === "[DEFAULT]") || initial
 // Keep Super Admin and Owner sign-in on separate named Firebase apps and persistence keys.
 const superAdminApp = getApps().find(existing => existing.name === "SUPER_ADMIN_AUTH") || initializeApp(firebaseConfig, "SUPER_ADMIN_AUTH");
 const superAdminAuth = getAuth(superAdminApp);
+const auth = getAuth(app);
 const ownerApp = getApps().find(existing => existing.name === "OWNER_AUTH") || initializeApp(firebaseConfig, "OWNER_AUTH");
 const ownerAuth = getAuth(ownerApp);
 const db = getFirestore(app);
 
-export { app, superAdminAuth, ownerAuth, db, isAdminOwnerPreview };
+export { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview };
