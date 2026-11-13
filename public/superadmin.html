@@ -89,7 +89,8 @@
 </style>
 </head>
 <body>
-  <section class="login-screen" id="loginScreen">
+  <div id="authLoading" class="loading" style="min-height:100vh;display:grid;place-items:center">Checking Super Admin session...</div>
+  <section class="login-screen hidden" id="loginScreen">
     <form class="login-card" id="loginForm">
       <div class="brand"><span class="brand-mark">BB</span><span>Box Book <em>| India</em><small>SUPER ADMIN CONTROL CENTER</small></span></div>
       <h1>Super Admin Login</h1>
@@ -217,7 +218,7 @@
   </div>
 
   <script type="module">
-    import { app, auth, db } from './firebase/config.js';
+    import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
 
@@ -247,11 +248,13 @@
       state.unsubscribers.forEach(unsubscribe => unsubscribe());
       state.unsubscribers = [];
       $('adminApp').classList.add('hidden');
+      $('authLoading').classList.add('hidden');
       $('loginScreen').classList.remove('hidden');
       showMessage(message);
     }
     function showApp(user) {
       state.user = user;
+      $('authLoading').classList.add('hidden');
       $('loginScreen').classList.add('hidden');
       $('adminApp').classList.remove('hidden');
       $('adminEmailLabel').textContent = user.email || 'Authorized administrator';
@@ -519,10 +522,10 @@
           showLogin('Only the authorized Super Admin account can sign in.');
           return;
         }
-        const credential = await signInWithEmailAndPassword(auth,email,$('adminPassword').value);
+        const credential = await signInWithEmailAndPassword(superAdminAuth,email,$('adminPassword').value);
         const allowed = await verifySuperAdmin(credential.user);
         if (!allowed) {
-          await signOut(auth);
+          await signOut(superAdminAuth);
           showLogin('Access denied. This account is not assigned the Super Admin role.');
           return;
         }
@@ -551,8 +554,9 @@
     document.addEventListener('click',event => {
       if (window.innerWidth <= 700 && $('sidebar').classList.contains('open') && !$('sidebar').contains(event.target) && !$('mobileMenu').contains(event.target)) $('sidebar').classList.remove('open');
     });
-    await setPersistence(auth, browserLocalPersistence);
-    onAuthStateChanged(auth,async user => {
+    await setPersistence(superAdminAuth, browserLocalPersistence);
+    await superAdminAuth.authStateReady();
+    onAuthStateChanged(superAdminAuth,async user => {
       if (!user) { showLogin(); return; }
       try {
         const allowed = await verifySuperAdmin(user);
