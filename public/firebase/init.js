@@ -1,5 +1,5 @@
 
-import { app, superAdminAuth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
+import { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -31,14 +31,15 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const sessionAuth = isAdminOwnerPreview ? superAdminAuth : ownerAuth;
+const isOwnerPage = window.location.pathname.startsWith("/owner/");
+const sessionAuth = isAdminOwnerPreview ? superAdminAuth : isOwnerPage ? ownerAuth : auth;
 
 // Let the owner dashboard wait until Firebase setup and Super Admin preview verification finish.
 window.firebaseReadyPromise = new Promise(resolve => {
   window.addEventListener("firebase-ready", resolve, { once: true });
 });
 
-// Owner sessions and Super Admin preview tabs use the existing browser-persisted Firebase session.
+// Public, Owner, and Super Admin sessions each use their own browser-persisted Firebase Auth instance.
 await setPersistence(sessionAuth, browserLocalPersistence);
 if (isAdminOwnerPreview) await superAdminAuth.authStateReady();
 
