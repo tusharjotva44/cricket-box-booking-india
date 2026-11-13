@@ -308,6 +308,7 @@
     const auth = window.firebaseAuth;
     if (!api || !auth || !window.firebaseDB) throw new Error('Firebase is not ready.');
 
+    await auth.authStateReady();
     const user = await new Promise((resolve, reject) => {
       let unsubscribe = () => {};
       unsubscribe = api.onAuthStateChanged(auth, currentUser => {
