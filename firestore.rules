@@ -1,19 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSuperAdmin() {
+      return request.auth != null
+        && request.auth.token.superAdmin == true
+        && request.auth.token.email == 'tusharjotva44@gmail.com';
+    }
+
     match /owners/{ownerId} {
       allow read: if request.auth != null
-        && (request.auth.uid == ownerId || request.auth.token.superAdmin == true);
+        && (request.auth.uid == ownerId || isSuperAdmin());
       allow create: if request.auth != null && request.auth.uid == ownerId;
       allow update: if request.auth != null
         && (
-          request.auth.token.superAdmin == true
+          isSuperAdmin()
           || (
             request.auth.uid == ownerId
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'updatedAt'])
           )
         );
-      allow delete: if request.auth != null && request.auth.token.superAdmin == true;
+      allow delete: if request.auth != null && isSuperAdmin();
     }
 
     match /grounds/{groundId} {
@@ -21,18 +27,18 @@ service cloud.firestore {
       allow create: if request.auth != null
         && (
           request.resource.data.ownerUid == request.auth.uid
-          || request.auth.token.superAdmin == true
+          || isSuperAdmin()
         );
       allow update: if request.auth != null
         && request.resource.data.ownerUid == resource.data.ownerUid
         && (
           resource.data.ownerUid == request.auth.uid
-          || request.auth.token.superAdmin == true
+          || isSuperAdmin()
         );
       allow delete: if request.auth != null
         && (
           resource.data.ownerUid == request.auth.uid
-          || request.auth.token.superAdmin == true
+          || isSuperAdmin()
         );
     }
 
@@ -49,7 +55,7 @@ service cloud.firestore {
 
       allow update: if (
           request.auth != null
-          && (request.auth.uid == resource.data.ownerUid || request.auth.token.superAdmin == true)
+          && (request.auth.uid == resource.data.ownerUid || isSuperAdmin())
           && request.resource.data.ownerUid == resource.data.ownerUid
         )
         || (
@@ -63,14 +69,14 @@ service cloud.firestore {
         );
 
       allow delete: if request.auth != null
-        && (request.auth.uid == resource.data.ownerUid || request.auth.token.superAdmin == true);
+        && (request.auth.uid == resource.data.ownerUid || isSuperAdmin());
     }
 
     match /bookings/{bookingId} {
       allow read: if request.auth != null
         && (
           request.auth.uid == resource.data.ownerUid
-          || request.auth.token.superAdmin == true
+          || isSuperAdmin()
         );
 
       allow create: if request.resource.data.ownerUid is string
@@ -92,14 +98,14 @@ service cloud.firestore {
           ||
           (
             request.auth != null
-            && (request.auth.uid == request.resource.data.ownerUid || request.auth.token.superAdmin == true)
+            && (request.auth.uid == request.resource.data.ownerUid || isSuperAdmin())
             && request.resource.data.status in ['Pending', 'Confirmed', 'Rejected', 'Expired', 'Cancelled']
           )
         );
 
       allow update: if (
           request.auth != null
-          && (request.auth.uid == resource.data.ownerUid || request.auth.token.superAdmin == true)
+          && (request.auth.uid == resource.data.ownerUid || isSuperAdmin())
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmedAt', 'updatedAt'])
           && request.resource.data.status in ['Confirmed', 'Rejected', 'Expired']
@@ -111,7 +117,7 @@ service cloud.firestore {
         );
 
       allow delete: if request.auth != null
-        && (request.auth.uid == resource.data.ownerUid || request.auth.token.superAdmin == true);
+        && (request.auth.uid == resource.data.ownerUid || isSuperAdmin());
     }
   }
 }
