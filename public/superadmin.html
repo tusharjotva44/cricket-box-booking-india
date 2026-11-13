@@ -142,7 +142,7 @@
 
         <section class="view hidden" id="view-owners">
           <div class="page-head"><div><span class="eyebrow">ACCOUNT DIRECTORY</span><h1>Owner Management</h1><p>Review owner profiles, contact details and current plan information.</p></div></div>
-          <div class="panel"><div class="panel-head"><div><h2>All Owners</h2><p id="ownerCountLabel">Loading owner records…</p></div><div class="toolbar"><input id="ownerSearch" type="search" placeholder="Search name, email or mobile…" aria-label="Search owners"></div></div><div class="table-wrap"><table><thead><tr><th>Owner</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Subscription</th><th>Trial / Expiry</th><th>Actions</th></tr></thead><tbody id="ownerRows"><tr><td colspan="7" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Owners</h2><p id="ownerCountLabel">Loading owner records…</p></div><div class="toolbar"><input id="ownerSearch" type="search" placeholder="Search name, email or mobile…" aria-label="Search owners"></div></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Mobile No.</th><th>Plan</th><th>Subscription</th><th>Registration Date</th><th>Expiry Date</th><th>Actions</th></tr></thead><tbody id="ownerRows"><tr><td colspan="7" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
         </section>
 
         <section class="view hidden" id="view-plans">
@@ -282,7 +282,7 @@
         onSnapshot(collection(db,'owners'), snapshot => {
           state.owners = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
-        }, error => showError(error,'ownerRows',6)),
+        }, error => showError(error,'ownerRows',8)),
         onSnapshot(collection(db,'grounds'), snapshot => {
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
@@ -318,11 +318,11 @@
       const query = $('ownerSearch').value.trim().toLowerCase();
       const list = state.owners.filter(owner => [owner.fullName,owner.email,owner.contactEmail,owner.mobile,owner.planName,owner.subscriptionStatus].some(value => String(value || '').toLowerCase().includes(query)));
       $('ownerCountLabel').textContent = list.length + ' of ' + state.owners.length + ' owner records';
-      $('ownerRows').innerHTML = list.length ? list.map(owner => {
+      $('ownerRows').innerHTML = list.length ? list.map((owner, index) => {
         const status = ownerStatus(owner);
         const expiry = owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate;
-        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.contactEmail || owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td><div class="owner-row-actions"><button type="button" class="owner-edit-btn" data-edit-owner="' + escapeHTML(owner.id) + '">Edit</button><button type="button" class="owner-login-btn" data-login-owner="' + escapeHTML(owner.id) + '">Login</button></div></td></tr>';
-      }).join('') : '<tr><td colspan="7" class="empty">No matching owner records.</td></tr>';
+        return '<tr><td><strong>' + (index + 1) + '. ' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.contactEmail || owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(owner.createdAt)) + '</td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td><div class="owner-row-actions"><button type="button" class="owner-edit-btn" data-edit-owner="' + escapeHTML(owner.id) + '">Edit</button><button type="button" class="owner-login-btn" data-login-owner="' + escapeHTML(owner.id) + '">Login</button></div></td></tr>';
+      }).join('') : '<tr><td colspan="8" class="empty">No matching owner records.</td></tr>';
     }
 
     function ownerDateInputValue(value) {
