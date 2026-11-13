@@ -6,6 +6,20 @@
   function setMessage(message) {
     $('ownerAuthMessage').textContent = message || '';
   }
+  async function waitForFirebaseReady() {
+    if (window.firebaseAuthApi && window.firebaseAuth && window.firebaseDB) return;
+    await new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        window.removeEventListener('firebase-ready', onReady);
+        reject(new Error('Firebase initialization timed out.'));
+      }, 15000);
+      function onReady() {
+        window.clearTimeout(timeout);
+        resolve();
+      }
+      window.addEventListener('firebase-ready', onReady, { once: true });
+    });
+  }
   function setAuthMode(mode) {
     authMode = mode;
     const signup = mode === 'signup';
@@ -65,8 +79,14 @@
       $('ownerResetMessage').textContent = 'Please enter your email address.';
       return;
     }
+    try {
+      await waitForFirebaseReady();
+    } catch {
+      $('ownerResetMessage').textContent = 'Password reset service could not start. Please refresh and try again.';
+      return;
+    }
     if (!window.firebaseAuthApi || !window.firebaseAuth || !window.firebaseAuthApi.sendPasswordResetEmail) {
-      $('ownerResetMessage').textContent = 'Password reset service is loading. Please try again.';
+      $('ownerResetMessage').textContent = 'Password reset service is unavailable. Please refresh and try again.';
       return;
     }
     submit.disabled = true;
@@ -109,8 +129,14 @@
       if (password !== confirmPassword) return setMessage('Password and Confirm Password do not match.');
     }
 
+    try {
+      await waitForFirebaseReady();
+    } catch {
+      setMessage('Login service could not start. Please refresh and try again.');
+      return;
+    }
     if (!window.firebaseAuthApi || !window.firebaseAuth) {
-      setMessage('Login service is still loading. Please try again in a moment.');
+      setMessage('Login service is unavailable. Please refresh and try again.');
       return;
     }
     submit.disabled = true;
