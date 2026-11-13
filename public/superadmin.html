@@ -218,7 +218,7 @@
 
   <script type="module">
     import { app, auth, db } from './firebase/config.js';
-    import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
+    import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
 
     const $ = id => document.getElementById(id);
@@ -551,6 +551,7 @@
     document.addEventListener('click',event => {
       if (window.innerWidth <= 700 && $('sidebar').classList.contains('open') && !$('sidebar').contains(event.target) && !$('mobileMenu').contains(event.target)) $('sidebar').classList.remove('open');
     });
+    await setPersistence(auth, browserLocalPersistence);
     onAuthStateChanged(auth,async user => {
       if (!user) { showLogin(); return; }
       try {
