@@ -91,6 +91,7 @@
     .quick-links a span{color:#C2410C;font-size:15px}
     .quick-links a:hover{border-color:#FDBA74;background:#FFF0E5;color:#9A3412}
 
+    .ground-status-control{display:grid;justify-items:start;gap:6px;min-width:92px}.ground-status-toggle{padding:8px 12px;border:1px solid #fdba74;border-radius:9px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800;white-space:nowrap}.ground-status-toggle:hover{background:#ffedd5;border-color:#fb923c}
     .subscription-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
     .subscription-plan-card{padding:16px;border:1px solid var(--line);border-radius:13px;background:#fff}
     .subscription-plan-card h3{margin:0 0 8px;font:700 13px 'Space Grotesk',sans-serif;color:var(--ink)}
@@ -342,7 +343,7 @@
   <script type="module">
     import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { collection, doc, getDocs, onSnapshot, updateDoc, setDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { collection, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
 
     const $ = id => document.getElementById(id);
@@ -455,15 +456,7 @@
         onSnapshot(collection(db,'grounds'), snapshot => {
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
-        }, error => showError(error,'groundRows',11)),
-        onSnapshot(collection(db,'bookings'), snapshot => {
-          state.bookings = snapshot.docs.map(item => ({id:item.id,...item.data()}));
-           finish();
-        }, error => {
-          console.error('Super Admin booking listener failed:', error);
-
-          finish();
-        }),
+        }, error => showError(error,'groundRows',10)),
         onSnapshot(collection(db,'subscriptionPlans'), snapshot => {
           state.plans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((a,b) => Number(a.order || 999) - Number(b.order || 999));
           renderSubscriptionPlans();
