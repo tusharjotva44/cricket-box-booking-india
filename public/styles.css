@@ -394,3 +394,13 @@
 @keyframes contactBallFloat{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-10px) rotate(8deg)}}
 @media(max-width:800px){#contact .contact-visual{min-height:160px;margin-top:8px}}
 @media(prefers-reduced-motion:reduce){#contact .contact-visual-ring,#contact .contact-visual-ball{animation:none!important}}
+
+
+/* Contact support detail icons */
+#contact .contact-support-details{display:grid;gap:13px}
+#contact .contact-support-item{display:flex;align-items:center;gap:12px}
+#contact .contact-support-icon{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:10px;background:#ffedd5;border:1px solid #fed7aa;color:#c2410c;font-size:19px;font-weight:700}
+#contact .contact-support-item>span:last-child{display:grid;gap:3px}
+#contact .contact-support-item b{color:#475569;font-size:12px}
+#contact .contact-support-item span span{color:#475569;font-size:13px;line-height:1.5}
+#contact .contact-support-item a{width:max-content;color:#c2410c;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
