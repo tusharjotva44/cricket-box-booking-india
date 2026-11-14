@@ -124,7 +124,7 @@
     .subscription-plan-card .plan-label{font-weight:400}.subscription-plan-card .plan-price{font-weight:400}.subscription-plan-card .plan-price small{font-weight:400}.subscription-plan-card .plan-discount{font-weight:400}
     .subscription-plan-card p{margin:4px 0;color:var(--muted);font-size:11px;line-height:1.5}
     .subscription-plan-card button{margin-top:11px;padding:8px 10px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800}
-    .manual-plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .manual-plan-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
     .manual-plan-grid label{display:grid;gap:7px;color:#465164;font-size:12px;font-weight:700}
     .manual-plan-grid input,.manual-plan-grid select{width:100%;min-width:0;padding:12px;border:1px solid #DDE3EA;border-radius:10px;background:#fff;color:var(--ink);font:inherit}
     .manual-plan-message{min-height:18px;margin:12px 0 0;color:#b91c1c;font-size:12px}
@@ -278,6 +278,7 @@
                 <label>Owner email ID<input id="manualPlanEmail" type="email" required placeholder="owner@example.com" autocomplete="off"></label>
                 <label>Select plan<select id="manualPlanSelect" required><option value="">Select a plan</option></select></label>
                 <label>Plan expiry date<input id="manualPlanExpiry" type="date"></label>
+                <label>Allowed grounds<input id="manualPlanGroundLimit" type="number" min="1" max="100" step="1" required value="1" placeholder="Number of grounds"></label>
               </div>
               <p class="manual-plan-message" id="manualPlanMessage" role="status" aria-live="polite"></p>
               <div class="manual-plan-actions"><button class="primary manual-plan-submit" type="submit" id="manualPlanSubmit">Activate Plan</button></div>
@@ -576,7 +577,8 @@
     }
     function setManualPlanExpiry() {
       const plan = state.plans.find(item => item.name === $('manualPlanSelect').value);
-      if (!plan) { $('manualPlanExpiry').value = ''; return; }
+      if (!plan) { $('manualPlanExpiry').value = ''; $('manualPlanGroundLimit').value = '1'; return; }
+      $('manualPlanGroundLimit').value = String(Math.max(1, Number(plan.grounds || 1)));
       const expiry = planExpiryDate(plan);
       $('manualPlanExpiry').value = expiry.getFullYear() + '-' + String(expiry.getMonth()+1).padStart(2,'0') + '-' + String(expiry.getDate()).padStart(2,'0');
     }
@@ -645,7 +647,9 @@
       const email = $('manualPlanEmail').value.trim().toLowerCase();
       const plan = state.plans.find(item => item.name === $('manualPlanSelect').value);
       const message = $('manualPlanMessage');
+      const allowedGrounds = Number($('manualPlanGroundLimit').value);
       if (!email || !plan) { message.textContent = 'Enter the owner email ID and select a plan.'; return; }
+      if (!Number.isInteger(allowedGrounds) || allowedGrounds < 1 || allowedGrounds > 100) { message.textContent = 'Enter a valid ground limit between 1 and 100.'; return; }
       const matches = state.owners.filter(owner =>
         [owner.email,owner.contactEmail].some(value => String(value || '').trim().toLowerCase() === email)
       );
@@ -669,6 +673,7 @@
       try {
         await updateDoc(doc(db,'owners',owner.id), {
           planName: plan.name,
+          groundLimit: allowedGrounds,
           subscriptionStatus: status,
           trialStartedAt: plan.kind === 'trial' ? now : null,
           trialExpiresAt: plan.kind === 'trial' ? expiry : null,
@@ -681,7 +686,7 @@
           updatedAt: serverTimestamp()
         });
         $('manualPlanForm').reset();
-        message.textContent = 'Successfully assigned ' + plan.name + ' to ' + email + '. Expiry: ' + dateLabel(expiry) + '.';
+        message.textContent = 'Successfully assigned ' + plan.name + ' to ' + email + ' with permission for ' + allowedGrounds + (allowedGrounds === 1 ? ' ground. ' : ' grounds. ') + 'Expiry: ' + dateLabel(expiry) + '.';
       } catch (error) {
         console.error('Manual owner plan activation failed:', error);
         message.textContent = error?.code === 'permission-denied'
