@@ -7,69 +7,109 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 initializeApp();
 setGlobalOptions({ region: "asia-south1", maxInstances: 3 });
 
-// Shared owner-plan transaction writer.
-// Future payment-gateway webhooks must verify the provider signature first,
-// then call this helper with the verified payment details.
-async function recordOwnerPlanTransaction({
+// Activate a paid owner plan and record its transaction atomically.
+// A future provider webhook must verify its signature and the payment/order
+// details, then pass the immutable plan snapshot saved when the order was made.
+async function activateOwnerPlanAfterVerifiedPayment({
   recordId,
   txnId,
   ownerId,
-  ownerName,
-  ownerEmail,
-  planId,
-  planName,
+  plan,
   amount,
   currency = "INR",
-  activationType = "Online Payment",
-  paymentMethod,
-  status = "Paid",
-  provider = null,
-  providerOrderId = null,
-  providerPaymentId = null,
-  recordedBy = null
+  provider,
+  providerOrderId,
+  providerPaymentId
 }) {
   if (typeof recordId !== "string" || !/^[A-Za-z0-9_-]{1,180}$/.test(recordId)) {
-    throw new HttpsError("invalid-argument", "A valid unique transaction record ID is required.");
+    throw new HttpsError("invalid-argument", "A valid unique payment record ID is required.");
   }
-  if (typeof ownerId !== "string" || !ownerId || typeof planName !== "string" || !planName) {
-    throw new HttpsError("invalid-argument", "Owner and plan details are required.");
+  if (typeof ownerId !== "string" || !ownerId || !plan || typeof plan.id !== "string" ||
+      typeof plan.name !== "string" || !plan.name) {
+    throw new HttpsError("invalid-argument", "Verified owner and plan details are required.");
+  }
+  if (!provider || !providerPaymentId || !providerOrderId) {
+    throw new HttpsError("invalid-argument", "Verified payment provider, order ID and payment ID are required.");
+  }
+  if (plan.kind === "trial") {
+    throw new HttpsError("failed-precondition", "A free trial cannot be activated as a paid gateway purchase.");
   }
   const numericAmount = Number(amount);
-  if (!Number.isFinite(numericAmount) || numericAmount < 0) {
-    throw new HttpsError("invalid-argument", "A valid transaction amount is required.");
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    throw new HttpsError("invalid-argument", "A valid verified payment amount is required.");
+  }
+  const durationValue = Number(plan.durationValue || 1);
+  const durationUnit = String(plan.durationUnit || "months");
+  const groundLimit = Number(plan.grounds || 1);
+  if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120 ||
+      !["days", "months", "years"].includes(durationUnit) ||
+      !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100) {
+    throw new HttpsError("invalid-argument", "The saved subscription plan details are invalid.");
   }
 
   const db = getFirestore();
+  const ownerRef = db.collection("owners").doc(ownerId);
   const transactionRef = db.collection("transactionHistory").doc(recordId);
-  await db.runTransaction(async transaction => {
-    const existing = await transaction.get(transactionRef);
-    if (existing.exists) {
-      // Makes repeated webhook deliveries safe: the same provider event cannot
-      // create duplicate transaction history rows.
-      return;
+  return db.runTransaction(async transaction => {
+    const [ownerSnapshot, existingTransaction] = await Promise.all([
+      transaction.get(ownerRef),
+      transaction.get(transactionRef)
+    ]);
+    if (existingTransaction.exists) {
+      // Duplicate webhook delivery: do not extend the plan or add another row.
+      return { alreadyProcessed: true };
     }
+    if (!ownerSnapshot.exists) {
+      throw new HttpsError("not-found", "The owner account for this payment could not be found.");
+    }
+
+    const now = new Date();
+    const expiry = new Date(now);
+    if (durationUnit === "days") expiry.setDate(expiry.getDate() + durationValue);
+    else if (durationUnit === "years") expiry.setFullYear(expiry.getFullYear() + durationValue);
+    else expiry.setMonth(expiry.getMonth() + durationValue);
+
+    const ownerData = ownerSnapshot.data() || {};
+    const ownerName = String(ownerData.fullName || ownerData.yourName || "Owner");
+    const ownerEmail = String(ownerData.contactEmail || ownerData.email || "");
+    const expiryIso = expiry.toISOString();
+
+    transaction.update(ownerRef, {
+      planName: plan.name,
+      groundLimit,
+      subscriptionStatus: "active",
+      trialStartedAt: null,
+      trialExpiresAt: null,
+      subscriptionStartedAt: now.toISOString(),
+      subscriptionExpiry: expiryIso,
+      expiryDate: expiryIso,
+      planAssignedAt: FieldValue.serverTimestamp(),
+      planAssignedBy: "payment_gateway",
+      planActivationMethod: "online_payment",
+      updatedAt: FieldValue.serverTimestamp()
+    });
     transaction.create(transactionRef, {
-      txnId: String(txnId || providerPaymentId || recordId),
+      txnId: String(txnId || providerPaymentId),
       ownerId,
-      ownerName: String(ownerName || "Owner"),
-      ownerEmail: String(ownerEmail || ""),
-      planId: String(planId || ""),
-      planName,
+      ownerName,
+      ownerEmail,
+      planId: plan.id,
+      planName: plan.name,
       amount: numericAmount,
       currency: String(currency || "INR"),
-      activationType,
-      paymentMethod: String(paymentMethod || provider || "Online"),
-      paymentProvider: provider ? String(provider) : null,
-      providerOrderId: providerOrderId ? String(providerOrderId) : null,
-      providerPaymentId: providerPaymentId ? String(providerPaymentId) : null,
-      status,
-      recordedBy: recordedBy ? String(recordedBy) : null,
+      activationType: "Online Payment",
+      paymentMethod: String(provider),
+      paymentProvider: String(provider),
+      providerOrderId: String(providerOrderId),
+      providerPaymentId: String(providerPaymentId),
+      status: "Paid",
+      recordedBy: "payment_gateway",
       createdAt: FieldValue.serverTimestamp(),
-      verifiedAt: status === "Paid" ? FieldValue.serverTimestamp() : null
+      verifiedAt: FieldValue.serverTimestamp()
     });
+    return { alreadyProcessed: false, expiryDate: expiryIso };
   });
 }
-
 
 exports.createOwnerDashboardSession = onCall(
   {
