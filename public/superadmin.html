@@ -193,16 +193,19 @@
 .subscription-plan-card h3{margin-top:3px}
 
   
-    /* Keep subscription plan cards and their Edit buttons consistently aligned. */
-    .subscription-plan-grid{align-items:stretch}
-    .subscription-plan-card{height:100%;display:flex;flex-direction:column;align-items:stretch}
-    .subscription-plan-card .plan-yearly-art{flex:0 0 104px}
-    .subscription-plan-card .plan-label{align-self:flex-start}
-    .subscription-plan-card h3{min-height:34px}
-    .subscription-plan-card .plan-price{min-height:30px}
-    .subscription-plan-card .plan-discount{align-self:flex-start}
-    .subscription-plan-card ul{flex:1 1 auto}
-    .subscription-plan-card>button{align-self:flex-start;margin-top:auto}
+    /* Compact, evenly aligned subscription plan cards. */
+    .subscription-plan-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;align-items:stretch}
+    .subscription-plan-card{height:100%;display:flex;flex-direction:column;align-items:stretch;padding:12px}
+    .subscription-plan-card .plan-yearly-art{height:82px;flex:0 0 82px;margin:-1px -1px 9px}
+    .subscription-plan-card .plan-yearly-art img{width:122px;height:78px}
+    .subscription-plan-card .plan-label{align-self:flex-start;margin:2px 0 7px;padding:6px 9px;font-size:9px}
+    .subscription-plan-card h3{min-height:31px;margin-bottom:6px;font-size:12px}
+    .subscription-plan-card .plan-price{min-height:27px;margin:7px 0;font-size:18px}
+    .subscription-plan-card .plan-price small{font-size:10px}
+    .subscription-plan-card .plan-discount{align-self:flex-start;padding:3px 6px;font-size:9px}
+    .subscription-plan-card ul{flex:1 1 auto;margin:9px 0 3px;padding-left:16px;font-size:10px;line-height:1.55}
+    .subscription-plan-card li{margin:2px 0}
+    .subscription-plan-card>button{align-self:flex-start;margin-top:auto;padding:7px 9px;font-size:10px}
 </style>
 </head>
 <body>
