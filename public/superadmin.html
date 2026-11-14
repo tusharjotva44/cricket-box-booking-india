@@ -206,6 +206,10 @@
     .subscription-plan-card ul{flex:1 1 auto;margin:9px 0 3px;padding-left:16px;font-size:10px;line-height:1.55}
     .subscription-plan-card li{margin:2px 0}
     .subscription-plan-card>button{align-self:flex-start;margin-top:auto;padding:7px 9px;font-size:10px}
+
+    /* Smooth hover feedback for subscription plan cards. */
+    .subscription-plan-card{transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;box-shadow:0 5px 18px rgba(23,37,84,.045)}
+    .subscription-plan-card:hover{transform:translateY(-5px);border-color:#fb923c;box-shadow:0 16px 32px rgba(23,37,84,.11)}
 </style>
 </head>
 <body>
