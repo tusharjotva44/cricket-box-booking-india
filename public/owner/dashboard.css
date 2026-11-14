@@ -330,3 +330,19 @@
 }
 .plan-card h3{margin-top:3px}
 
+
+/* Match the Super Admin subscription plan card design in Owner Dashboard. */
+#ownerSubscriptionPlans .subscription-plan-card{height:100%;display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:12px;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 5px 18px rgba(23,37,84,.045);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+#ownerSubscriptionPlans .subscription-plan-card:hover{transform:translateY(-5px);border-color:#fb923c;box-shadow:0 16px 32px rgba(23,37,84,.11)}
+#ownerSubscriptionPlans .plan-yearly-art{height:82px;flex:0 0 82px;display:flex;align-items:center;justify-content:center;margin:-1px -1px 9px;border-radius:11px;background:linear-gradient(135deg,#fff7ed,#ffedd5);overflow:hidden}
+#ownerSubscriptionPlans .plan-yearly-art img{display:block;width:122px;height:78px;object-fit:contain}
+#ownerSubscriptionPlans .plan-label{display:inline-flex;align-items:center;align-self:flex-start;margin:2px 0 7px;padding:6px 9px;border:1px solid #fed7aa;border-radius:8px;background:#fff0e5;color:#c2410c;font-size:9px;font-weight:800;letter-spacing:1px;line-height:1}
+#ownerSubscriptionPlans .plan-card h3{min-height:31px;margin:3px 0 6px;font:700 12px 'Space Grotesk',sans-serif;color:var(--ink)}
+#ownerSubscriptionPlans .plan-price{min-height:27px;margin:7px 0;color:var(--ink);font:400 18px 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+#ownerSubscriptionPlans .plan-price small{font:400 10px 'DM Sans',sans-serif;color:#9ca3af}
+#ownerSubscriptionPlans .plan-original{color:var(--muted);font-size:11px;text-decoration:line-through;margin-right:6px}
+#ownerSubscriptionPlans .plan-discount{display:inline-flex;align-items:center;align-self:flex-start;justify-content:center;padding:3px 6px;border:1px solid #fb923c;border-radius:8px;background:#fff0e5;color:#c2410c;font-size:9px;font-weight:800;letter-spacing:.35px;box-shadow:0 3px 9px rgba(249,115,22,.12)}
+#ownerSubscriptionPlans .subscription-plan-card ul{flex:1 1 auto;margin:9px 0 3px;padding-left:16px;color:var(--muted);font-size:10px;line-height:1.55}
+#ownerSubscriptionPlans .subscription-plan-card li{margin:2px 0}
+#ownerSubscriptionPlans .subscription-plan-card .plan-select{align-self:flex-start;width:100%;margin-top:auto;padding:9px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:10px;font-weight:800;opacity:.75;cursor:not-allowed}
+@media(max-width:760px){#ownerSubscriptionPlans .subscription-plan-card{padding:12px}}
