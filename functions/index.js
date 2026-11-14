@@ -7,6 +7,70 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 initializeApp();
 setGlobalOptions({ region: "asia-south1", maxInstances: 3 });
 
+// Shared owner-plan transaction writer.
+// Future payment-gateway webhooks must verify the provider signature first,
+// then call this helper with the verified payment details.
+async function recordOwnerPlanTransaction({
+  recordId,
+  txnId,
+  ownerId,
+  ownerName,
+  ownerEmail,
+  planId,
+  planName,
+  amount,
+  currency = "INR",
+  activationType = "Online Payment",
+  paymentMethod,
+  status = "Paid",
+  provider = null,
+  providerOrderId = null,
+  providerPaymentId = null,
+  recordedBy = null
+}) {
+  if (typeof recordId !== "string" || !/^[A-Za-z0-9_-]{1,180}$/.test(recordId)) {
+    throw new HttpsError("invalid-argument", "A valid unique transaction record ID is required.");
+  }
+  if (typeof ownerId !== "string" || !ownerId || typeof planName !== "string" || !planName) {
+    throw new HttpsError("invalid-argument", "Owner and plan details are required.");
+  }
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount < 0) {
+    throw new HttpsError("invalid-argument", "A valid transaction amount is required.");
+  }
+
+  const db = getFirestore();
+  const transactionRef = db.collection("transactionHistory").doc(recordId);
+  await db.runTransaction(async transaction => {
+    const existing = await transaction.get(transactionRef);
+    if (existing.exists) {
+      // Makes repeated webhook deliveries safe: the same provider event cannot
+      // create duplicate transaction history rows.
+      return;
+    }
+    transaction.create(transactionRef, {
+      txnId: String(txnId || providerPaymentId || recordId),
+      ownerId,
+      ownerName: String(ownerName || "Owner"),
+      ownerEmail: String(ownerEmail || ""),
+      planId: String(planId || ""),
+      planName,
+      amount: numericAmount,
+      currency: String(currency || "INR"),
+      activationType,
+      paymentMethod: String(paymentMethod || provider || "Online"),
+      paymentProvider: provider ? String(provider) : null,
+      providerOrderId: providerOrderId ? String(providerOrderId) : null,
+      providerPaymentId: providerPaymentId ? String(providerPaymentId) : null,
+      status,
+      recordedBy: recordedBy ? String(recordedBy) : null,
+      createdAt: FieldValue.serverTimestamp(),
+      verifiedAt: status === "Paid" ? FieldValue.serverTimestamp() : null
+    });
+  });
+}
+
+
 exports.createOwnerDashboardSession = onCall(
   {
     cors: [
