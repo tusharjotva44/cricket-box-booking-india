@@ -91,7 +91,7 @@
     .quick-links a span{color:#C2410C;font-size:15px}
     .quick-links a:hover{border-color:#FDBA74;background:#FFF0E5;color:#9A3412}
 
-    .ground-status-control{display:grid;justify-items:start;gap:6px;min-width:92px}.ground-status-toggle{padding:8px 12px;border:1px solid #fdba74;border-radius:9px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800;white-space:nowrap}.ground-status-toggle:hover{background:#ffedd5;border-color:#fb923c}
+    .ground-status-control{display:flex;align-items:center;min-width:92px}.ground-status-toggle{min-width:88px;padding:8px 12px;border:1px solid;border-radius:9px;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}.ground-status-toggle.is-active{border-color:#86efac;background:#f0fdf4;color:#166534}.ground-status-toggle.is-active:hover{background:#dcfce7}.ground-status-toggle.is-inactive{border-color:#fecaca;background:#fef2f2;color:#991b1b}.ground-status-toggle.is-inactive:hover{background:#fee2e2}
     .subscription-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
     .subscription-plan-card{padding:16px;border:1px solid var(--line);border-radius:13px;background:#fff}
     .subscription-plan-card h3{margin:0 0 8px;font:700 13px 'Space Grotesk',sans-serif;color:var(--ink)}
@@ -886,7 +886,9 @@
         console.error('Could not update ground listing status:', error);
         window.alert('Could not update this ground status. Check Firestore permissions and try again.');
         button.disabled = false;
-        button.textContent = nextActive ? 'Activate' : 'Pause listing';
+        button.textContent = nextActive ? 'Inactive' : 'Active';
+        button.classList.toggle('is-active', !nextActive);
+        button.classList.toggle('is-inactive', nextActive);
       }
     }
     function renderGrounds() {
@@ -898,7 +900,7 @@
         const location = ground.location || [ground.area,ground.city].filter(Boolean).join(', ') || '—';
         const mediaUrls = [ground.image,ground.qrImageUrl].filter(Boolean).join(' | ') || '—';
         const isActive = ground.isActive !== false;
-        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td><div class="ground-status-control"><span class="pill ' + (isActive ? 'active' : 'inactive') + '">' + (isActive ? 'Active' : 'Inactive') + '</span><button type="button" class="ground-status-toggle" data-ground-toggle="' + escapeHTML(ground.id) + '">' + (isActive ? 'Pause listing' : 'Activate') + '</button></div></td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
+        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td><div class="ground-status-control"><button type="button" class="ground-status-toggle ' + (isActive ? 'is-active' : 'is-inactive') + '" data-ground-toggle="' + escapeHTML(ground.id) + '" aria-label="Toggle listing status for ' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '">' + (isActive ? 'Active' : 'Inactive') + '</button></div></td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
       }).join('') : '<tr><td colspan="10" class="empty">No matching sports grounds.</td></tr>';
     }
 
