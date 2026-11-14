@@ -185,27 +185,31 @@
     .subscription-plan-card{transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;box-shadow:0 5px 18px rgba(23,37,84,.045)}
     .subscription-plan-card:hover{transform:translateY(-5px);border-color:#fb923c;box-shadow:0 16px 32px rgba(23,37,84,.11)}
 
-    /* Fit the complete Sports Grounds directory without horizontal scrolling. */
+    /* Give the Sports Grounds directory a wider card and readable table text. */
+    .content:has(#view-grounds:not(.hidden)){max-width:none;padding-left:28px;padding-right:28px}
+    #view-grounds .panel{width:100%;padding:30px 32px}
     #view-grounds .table-wrap{width:100%;overflow-x:hidden}
     #view-grounds table{width:100%;min-width:0;table-layout:fixed;white-space:normal}
-    #view-grounds th,#view-grounds td{padding:10px 6px;font-size:10px;white-space:normal;overflow-wrap:anywhere;word-break:break-word;vertical-align:top}
-    #view-grounds th{font-size:8px;letter-spacing:.35px;line-height:1.35}
+    #view-grounds th,#view-grounds td{padding:13px 9px;font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:top}
+    #view-grounds th{font-size:10px;letter-spacing:.45px;line-height:1.4}
     #view-grounds th:nth-child(1){width:12%}
-    #view-grounds th:nth-child(2){width:7%}
+    #view-grounds th:nth-child(2){width:8%}
     #view-grounds th:nth-child(3){width:11%}
     #view-grounds th:nth-child(4){width:11%}
     #view-grounds th:nth-child(5){width:8%}
     #view-grounds th:nth-child(6){width:8%}
-    #view-grounds th:nth-child(7){width:12%}
+    #view-grounds th:nth-child(7){width:13%}
     #view-grounds th:nth-child(8){width:9%}
     #view-grounds th:nth-child(9){width:9%}
-    #view-grounds th:nth-child(10){width:13%}
-    #view-grounds td strong{font-size:10px;overflow-wrap:anywhere}
+    #view-grounds th:nth-child(10){width:11%}
+    #view-grounds td strong{font-size:13px;overflow-wrap:anywhere}
+    #view-grounds .ground-status-toggle{padding:8px 10px;font-size:10px}
     @media(max-width:700px){
-      #view-grounds .table-wrap{overflow-x:hidden}
-      #view-grounds th,#view-grounds td{padding:8px 3px;font-size:8px}
-      #view-grounds th{font-size:7px;letter-spacing:0}
-      #view-grounds .ground-status-toggle{padding:5px 6px;font-size:8px}
+      .content:has(#view-grounds:not(.hidden)){padding-left:10px;padding-right:10px}
+      #view-grounds .panel{padding:18px 12px}
+      #view-grounds th,#view-grounds td{padding:10px 4px;font-size:10px}
+      #view-grounds th{font-size:9px;letter-spacing:0}
+      #view-grounds .ground-status-toggle{padding:6px 7px;font-size:9px}
     }
 </style>
 </head>
