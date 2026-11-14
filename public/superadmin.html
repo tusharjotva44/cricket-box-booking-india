@@ -211,6 +211,25 @@
       #view-grounds th{font-size:9px;letter-spacing:0}
       #view-grounds .ground-status-toggle{padding:6px 7px;font-size:9px}
     }
+
+    /* Subtle animated sports artwork, limited to the Super Admin Dashboard background. */
+    #view-overview{position:relative;isolation:isolate;overflow:hidden}
+    #view-overview>.dashboard-sports-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+    #view-overview>.dashboard-sports-bg:before{content:"";position:absolute;width:420px;height:420px;right:-115px;top:10px;border-radius:50%;background:radial-gradient(circle,rgba(249,115,22,.075),rgba(249,115,22,0) 70%)}
+    #view-overview>.dashboard-sports-bg:after{content:"";position:absolute;width:300px;height:300px;left:18%;bottom:-170px;border-radius:50%;background:radial-gradient(circle,rgba(213,232,74,.09),rgba(213,232,74,0) 70%)}
+    #view-overview>.dashboard-sports-bg~*{position:relative;z-index:1}
+    #view-overview .sports-art{position:absolute;display:block;will-change:transform;filter:drop-shadow(0 12px 15px rgba(80,65,40,.08))}
+    #view-overview .sports-art svg{display:block;width:100%;height:100%}
+    #view-overview .sports-cricket-bat{width:70px;height:205px;right:9%;top:100px;opacity:.12;transform-origin:50% 85%;animation:dashboardBatFloat 8s ease-in-out infinite}
+    #view-overview .sports-cricket-ball{width:70px;height:70px;right:28%;top:75px;opacity:.17;animation:dashboardCricketBall 9s ease-in-out infinite}
+    #view-overview .sports-pickleball{width:88px;height:88px;right:4%;bottom:90px;opacity:.19;animation:dashboardPickleball 10s ease-in-out infinite}
+    #view-overview .sports-pickleball-small{width:46px;height:46px;right:34%;bottom:42px;opacity:.16;animation:dashboardPickleball 12s ease-in-out -3s infinite reverse}
+    @keyframes dashboardBatFloat{0%,100%{transform:translate3d(0,0,0) rotate(-9deg)}50%{transform:translate3d(-13px,18px,0) rotate(5deg)}}
+    @keyframes dashboardCricketBall{0%,100%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(-25px,35px,0) rotate(170deg)}}
+    @keyframes dashboardPickleball{0%,100%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(-20px,-24px,0) rotate(180deg)}}
+    @media(max-width:700px){#view-overview .sports-cricket-bat{right:2%;top:135px;width:48px;height:145px}#view-overview .sports-cricket-ball{right:22%;top:95px;width:48px;height:48px}#view-overview .sports-pickleball{right:1%;bottom:65px;width:60px;height:60px}#view-overview .sports-pickleball-small{right:28%;bottom:25px;width:34px;height:34px}}
+    @media(prefers-reduced-motion:reduce){#view-overview .sports-art{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -255,6 +274,12 @@
       </header>
       <div class="content">
         <section class="view" id="view-overview">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">PLATFORM OVERVIEW</span><h1>Super Admin Dashboard</h1><p>Monitor registered owners and sports grounds across Box Book India.</p></div></div>
           <div class="cards">
             <article class="metric"><div class="metric-top">Total Owners <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span></div><div class="metric-value" id="metricOwners">—</div><div class="metric-foot">Registered owner profiles</div></article>
