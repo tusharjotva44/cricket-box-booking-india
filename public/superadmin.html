@@ -649,6 +649,7 @@
         const oldName = plan.name;
         state.plans = state.plans.map(item => item.id === planId ? {...item,...changes,updatedAt:new Date()} : item);
         renderSubscriptionPlans();
+        renderOwnerPlanOptions($('editOwnerPlan').value);
         state.owners.filter(owner => owner.planName === oldName).forEach(owner => {
           updateDoc(doc(db,'owners',owner.id), {planName:name,updatedAt:serverTimestamp()}).catch(error => console.warn('Could not sync renamed plan on owner profile:', error));
         });
