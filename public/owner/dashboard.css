@@ -329,3 +329,9 @@
   line-height:1;
 }
 .plan-card h3{margin-top:3px}
+
+
+/* Keep Available Plans in rows of four on desktop, wrapping remaining cards below. */
+.plans-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1200px){.plans-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.plans-grid{grid-template-columns:minmax(0,1fr)}}
