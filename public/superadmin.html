@@ -121,6 +121,7 @@
     .subscription-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
     .subscription-plan-card{padding:16px;border:1px solid var(--line);border-radius:13px;background:#fff}
     .subscription-plan-card h3{margin:0 0 8px;font:700 13px 'Space Grotesk',sans-serif;color:var(--ink)}
+    .subscription-plan-card .plan-label{font-weight:400}.subscription-plan-card .plan-price{font-weight:400}.subscription-plan-card .plan-price small{font-weight:400}.subscription-plan-card .plan-discount{font-weight:400}
     .subscription-plan-card p{margin:4px 0;color:var(--muted);font-size:11px;line-height:1.5}
     .subscription-plan-card button{margin-top:11px;padding:8px 10px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800}
     .manual-plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -343,11 +344,11 @@
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
     const state = { owners: [], grounds: [], plans: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
     const DEFAULT_SUBSCRIPTION_PLANS = [
-      {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:null,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
-      {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:null,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
-      {id:'monthly-2-grounds',name:'Monthly - 2 Grounds',price:null,durationValue:1,durationUnit:'months',grounds:2,details:'Monthly access for up to two sports grounds.',kind:'active',order:3,active:true},
-      {id:'yearly-1-ground',name:'Yearly - 1 Ground',price:null,durationValue:1,durationUnit:'years',grounds:1,details:'Yearly access for one sports ground.',kind:'active',order:4,active:true},
-      {id:'yearly-2-grounds',name:'Yearly - 2 Grounds',price:null,durationValue:1,durationUnit:'years',grounds:2,details:'Yearly access for up to two sports grounds.',kind:'active',order:5,active:true}
+      {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
+      {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
+      {id:'monthly-2-grounds',name:'Monthly - 2 Grounds',price:299,durationValue:1,durationUnit:'months',grounds:2,details:'Monthly access for up to two sports grounds.',kind:'active',order:3,active:true},
+      {id:'yearly-1-ground',name:'Yearly - 1 Ground',price:1999,durationValue:1,durationUnit:'years',grounds:1,details:'Yearly access for one sports ground.',kind:'active',order:4,active:true},
+      {id:'yearly-2-grounds',name:'Yearly - 2 Grounds',price:2999,durationValue:1,durationUnit:'years',grounds:2,details:'Yearly access for up to two sports grounds.',kind:'active',order:5,active:true}
     ];
     const SUPER_ADMIN_IDLE_TIMEOUT = 10 * 60 * 1000;
     let superAdminIdleTimer = null;
@@ -464,11 +465,22 @@
       state.planSeedAttempted = true;
       try {
         const existing = await getDocs(collection(db,'subscriptionPlans'));
-        if (!existing.empty) return;
         const batch = writeBatch(db);
-        DEFAULT_SUBSCRIPTION_PLANS.forEach(plan => {
-          const {id,...data} = plan;
-          batch.set(doc(db,'subscriptionPlans',id), {...data, createdAt:serverTimestamp(), updatedAt:serverTimestamp()});
+        if (existing.empty) {
+          DEFAULT_SUBSCRIPTION_PLANS.forEach(plan => {
+            const {id,...data} = plan;
+            batch.set(doc(db,'subscriptionPlans',id), {...data, createdAt:serverTimestamp(), updatedAt:serverTimestamp()});
+          });
+          await batch.commit();
+          return;
+        }
+        const defaultPrices = Object.fromEntries(DEFAULT_SUBSCRIPTION_PLANS.map(plan => [plan.id,plan.price]));
+        existing.docs.forEach(item => {
+          const current = item.data();
+          const defaultPrice = defaultPrices[item.id];
+          if (defaultPrice !== undefined && (current.price === null || current.price === undefined || current.price === '')) {
+            batch.update(item.ref,{price:defaultPrice,updatedAt:serverTimestamp()});
+          }
         });
         await batch.commit();
       } catch (error) {
@@ -494,14 +506,19 @@
       return expiry;
     }
     function renderSubscriptionPlans() {
+      const defaultPlanPrices = {'free-trial-1-ground':0,'monthly-1-ground':199,'monthly-2-grounds':299,'yearly-1-ground':1999,'yearly-2-grounds':2999};
       $('subscriptionPlanCards').innerHTML = state.plans.map(plan => {
-        const priceSet = Number.isFinite(Number(plan.price)) && plan.price !== null && plan.price !== '';
+        const rawPrice = plan.price === null || plan.price === undefined || plan.price === '' ? defaultPlanPrices[plan.id] : plan.price;
+        const priceSet = rawPrice !== undefined && Number.isFinite(Number(rawPrice));
         const discount = Number(plan.discount || 0);
         const discounted = priceSet && discount > 0;
-        const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
-        const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) : money(plan.price);
-        const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
-        return '<article class="subscription-plan-card"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
+        const finalPrice = priceSet ? Number(rawPrice) * (1 - discount / 100) : null;
+        const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(rawPrice) + '</span>' + money(finalPrice) : money(rawPrice);
+        const grounds = Number(plan.grounds || 1);
+        const yearlySaving = plan.durationUnit === 'years' && priceSet ? (grounds === 1 ? 199 * 12 : 299 * 12) - Number(finalPrice) : 0;
+        const savingMarkup = yearlySaving > 0 ? '<span class="plan-discount">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '';
+        const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + grounds + (grounds === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
+        return '<article class="subscription-plan-card"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + savingMarkup + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
       }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
