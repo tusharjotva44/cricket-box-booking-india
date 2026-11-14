@@ -93,6 +93,7 @@
 
     .ground-availability-btn{padding:8px 12px;border:1px solid #fdba74;border-radius:9px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800}
     .ground-availability-btn:hover{background:#ffedd5;border-color:#fb923c}
+    .ground-status-control{display:grid;justify-items:start;gap:6px;min-width:92px}.ground-status-control .ground-availability-btn{white-space:nowrap}.availability-bookings{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#fff}.availability-bookings-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}.availability-bookings-head h3{margin:0;font:700 14px 'Space Grotesk',sans-serif}.availability-bookings-head label{display:grid;gap:5px;color:var(--muted);font-size:10px;font-weight:700}.availability-bookings-head input{padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--ink);font:inherit}.availability-booking-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:11px}.availability-booking-row strong{display:block;color:var(--ink)}.availability-booking-row small{display:block;margin-top:3px;color:var(--muted)}.availability-booking-row .pill{flex:none}
     .availability-overlay{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:18px;background:rgba(23,37,84,.5)}
     .availability-overlay.hidden{display:none}
     .availability-card{width:min(100%,620px);max-height:calc(100vh - 36px);overflow:auto;padding:24px;background:#fff;border:1px solid #fed7aa;border-radius:18px;box-shadow:0 24px 70px rgba(23,37,84,.2)}
@@ -298,7 +299,7 @@
 
         <section class="view hidden" id="view-grounds">
           <div class="page-head"><div><span class="eyebrow">LISTING DIRECTORY</span><h1>Sports Grounds</h1><p>All sports ground listings currently stored in Firebase.</p></div></div>
-          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Availability</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="10" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Listing Status</th><th>Availability</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="11" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
         </section>
       </div>
     </main>
@@ -320,11 +321,6 @@
         <label>Plan name
           <select id="editOwnerPlan" required>
             <option value="">Select a plan</option>
-            <option value="Free Trial - 1 Ground">Free Trial - 1 Ground</option>
-            <option value="Monthly - 1 Ground">Monthly - 1 Ground</option>
-            <option value="Monthly - 2 Grounds">Monthly - 2 Grounds</option>
-            <option value="Yearly - 1 Ground">Yearly - 1 Ground</option>
-            <option value="Yearly - 2 Grounds">Yearly - 2 Grounds</option>
           </select>
         </label>
         <label>Subscription status
@@ -357,6 +353,7 @@
       </div>
       <div class="availability-day-options" id="availabilityDayOptions"></div>
       <div class="availability-day-editor" id="availabilityDayEditor"></div>
+      <div class="availability-bookings"><div class="availability-bookings-head"><h3>Booked Slots</h3><label>Booking date<input type="date" id="availabilityBookingsDate"></label></div><div id="availabilityBookingsList"><p class="empty">Select a date to view bookings.</p></div></div>
       <p class="availability-modal-message" id="availabilityModalMessage" role="status" aria-live="polite"></p>
       <div class="availability-modal-actions"><button type="button" id="availabilityModalCancel">Close</button><button class="save" type="button" id="availabilitySaveDay">Save Day</button></div>
     </section>
@@ -395,7 +392,7 @@
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
-    const state = { owners: [], grounds: [], plans: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
+    const state = { owners: [], grounds: [], bookings: [], plans: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
     const DEFAULT_SUBSCRIPTION_PLANS = [
       {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
       {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
@@ -501,7 +498,15 @@
         onSnapshot(collection(db,'grounds'), snapshot => {
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
-        }, error => showError(error,'groundRows',10)),
+        }, error => showError(error,'groundRows',11)),
+        onSnapshot(collection(db,'bookings'), snapshot => {
+          state.bookings = snapshot.docs.map(item => ({id:item.id,...item.data()}));
+          renderAvailabilityBookings(); finish();
+        }, error => {
+          console.error('Super Admin booking listener failed:', error);
+          $('availabilityBookingsList').innerHTML = '<p class="empty">Booking records could not be loaded. Check Super Admin Firestore permissions.</p>';
+          finish();
+        }),
         onSnapshot(collection(db,'subscriptionPlans'), snapshot => {
           state.plans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((a,b) => Number(a.order || 999) - Number(b.order || 999));
           renderSubscriptionPlans();
@@ -721,6 +726,7 @@
       renderOwners();
       renderGrounds();
       renderSubscriptionPlans();
+      renderOwnerPlanOptions($('editOwnerPlan').value);
       const recent = [...state.owners].sort((a,b) => {
         const av = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || a.trialStartedAt || 0).getTime();
         const bv = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || b.trialStartedAt || 0).getTime();
@@ -748,13 +754,20 @@
       if (Number.isNaN(date.getTime())) return '';
       return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
     }
+    function renderOwnerPlanOptions(selectedPlan = '') {
+      const plans = state.plans.length ? state.plans : DEFAULT_SUBSCRIPTION_PLANS;
+      const options = plans.map(plan => '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + ' · ' + escapeHTML(planDurationLabel(plan)) + ' · ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds') + '</option>');
+      if (selectedPlan && !plans.some(plan => plan.name === selectedPlan)) options.unshift('<option value="' + escapeHTML(selectedPlan) + '">' + escapeHTML(selectedPlan) + ' · Current plan</option>');
+      $('editOwnerPlan').innerHTML = '<option value="">Select a plan</option>' + options.join('');
+      $('editOwnerPlan').value = selectedPlan;
+    }
     function openOwnerEditor(ownerId) {
       const owner = state.owners.find(item => item.id === ownerId);
       if (!owner) return;
       $('editOwnerId').value = owner.id;
       $('editOwnerMobile').value = String(owner.mobile || '');
       $('editOwnerEmail').value = String(owner.contactEmail || owner.email || '');
-      $('editOwnerPlan').value = String(owner.planName || '');
+      renderOwnerPlanOptions(owner.planName || '');
       const status = String(owner.subscriptionStatus || '').toLowerCase();
       $('editOwnerStatus').value = ['trial','active','paid','inactive'].includes(status) ? status : 'not_set';
       $('editOwnerExpiry').value = ownerDateInputValue(owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate);
@@ -813,10 +826,13 @@
     $('editOwnerPlan').addEventListener('change', () => {
       const selected = $('editOwnerPlan').value;
       if (!selected) return;
-      const nextExpiry = new Date();
-      if (selected.startsWith('Free Trial')) nextExpiry.setDate(nextExpiry.getDate() + 10);
-      else if (selected.startsWith('Yearly')) nextExpiry.setFullYear(nextExpiry.getFullYear() + 1);
-      else if (selected.startsWith('Monthly')) nextExpiry.setMonth(nextExpiry.getMonth() + 1);
+      const selectedPlan = state.plans.find(plan => plan.name === selected) || DEFAULT_SUBSCRIPTION_PLANS.find(plan => plan.name === selected);
+      const nextExpiry = selectedPlan ? planExpiryDate(selectedPlan) : new Date();
+      if (!selectedPlan) {
+        if (selected.startsWith('Free Trial')) nextExpiry.setDate(nextExpiry.getDate() + 10);
+        else if (selected.startsWith('Yearly')) nextExpiry.setFullYear(nextExpiry.getFullYear() + 1);
+        else if (selected.startsWith('Monthly')) nextExpiry.setMonth(nextExpiry.getMonth() + 1);
+      }
       $('editOwnerExpiry').value = nextExpiry.getFullYear() + '-' + String(nextExpiry.getMonth()+1).padStart(2,'0') + '-' + String(nextExpiry.getDate()).padStart(2,'0');
     });
     $('ownerEditCancel').addEventListener('click', closeOwnerEditor);
@@ -853,7 +869,9 @@
       const activationDate = new Date();
       if (!expiry && ['trial','active','paid'].includes(subscriptionStatus)) {
         const defaultExpiry = new Date(activationDate);
-        if (planName.startsWith('Free Trial')) defaultExpiry.setDate(defaultExpiry.getDate() + 10);
+        const selectedPlan = state.plans.find(plan => plan.name === planName) || DEFAULT_SUBSCRIPTION_PLANS.find(plan => plan.name === planName);
+        if (selectedPlan) defaultExpiry.setTime(planExpiryDate(selectedPlan, activationDate).getTime());
+        else if (planName.startsWith('Free Trial')) defaultExpiry.setDate(defaultExpiry.getDate() + 10);
         else if (planName.startsWith('Yearly')) defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
         else if (planName.startsWith('Monthly')) defaultExpiry.setMonth(defaultExpiry.getMonth() + 1);
         expiry = defaultExpiry.toISOString();
@@ -909,7 +927,7 @@
     let availabilityGroundId = '';
     let selectedAvailabilityDay = 'monday';
     let availabilityDraft = {};
-    const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:false,start:'08:00',end:'03:00'}]));
+    const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'08:00',end:'03:00'}]));
     function renderAvailabilityDayOptions() {
       $('availabilityDayOptions').innerHTML = availabilityDays.map(day => {
         const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
@@ -922,6 +940,24 @@
       const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
       $('availabilityDayEditor').innerHTML = '<h3>' + day.label + '</h3><label class="availability-open-toggle"><input id="availabilityDayOpen" type="checkbox" ' + (item.open ? 'checked' : '') + '> Ground open on ' + day.label + '</label><div class="availability-edit-times"><label>Opening time<input id="availabilityDayStart" type="time" value="' + escapeHTML(item.start || '08:00') + '" ' + (!item.open ? 'disabled' : '') + '></label><label>Closing time<input id="availabilityDayEnd" type="time" value="' + escapeHTML(item.end || '03:00') + '" ' + (!item.open ? 'disabled' : '') + '></label></div>';
     }
+    function localDateValue(date = new Date()) { return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0'); }
+    function renderAvailabilityBookings() {
+      const target = $('availabilityBookingsList');
+      if (!target) return;
+      const date = $('availabilityBookingsDate').value;
+      if (!availabilityGroundId || !date) { target.innerHTML = '<p class="empty">Select a date to view bookings.</p>'; return; }
+      const bookings = state.bookings.filter(booking => {
+        if (booking.groundId !== availabilityGroundId || booking.date !== date || ['Rejected','Expired','Cancelled'].includes(String(booking.status || 'Pending'))) return false;
+        return !(String(booking.status || 'Pending') === 'Pending' && booking.holdExpiresAt && Number(booking.holdExpiresAt) <= Date.now());
+      }).sort((a,b) => String(a.startTime || '').localeCompare(String(b.startTime || '')));
+      target.innerHTML = bookings.length ? bookings.map(booking => {
+        const status = String(booking.status || 'Pending');
+        const label = status === 'Pending' ? 'Pending hold' : status;
+        const pill = status === 'Confirmed' ? 'active' : status === 'Pending' ? 'trial' : '';
+        const slot = booking.slot || ((booking.startTime || '—') + ' – ' + (booking.endTime || '—'));
+        return '<div class="availability-booking-row"><div><strong>' + escapeHTML(slot) + '</strong><small>' + escapeHTML(booking.customerName || 'Customer') + ' · ' + escapeHTML(booking.phone || 'No mobile') + ' · ' + money(booking.amount) + '</small></div><span class="pill ' + pill + '">' + escapeHTML(label) + '</span></div>';
+      }).join('') : '<p class="empty">No active bookings for this date.</p>';
+    }
     function openGroundAvailability(groundId) {
       const ground = state.grounds.find(item => item.id === groundId);
       if (!ground) return;
@@ -930,7 +966,9 @@
       selectedAvailabilityDay = availabilityDays.find(day => availabilityDraft[day.key])?.key || 'monday';
       $('groundAvailabilityTitle').textContent = 'Ground Availability';
       $('groundAvailabilityName').textContent = ground.name || ground.groundName || 'Sports Ground';
+      $('availabilityBookingsDate').value = localDateValue();
       $('availabilityModalMessage').textContent = '';
+      renderAvailabilityBookings();
       renderAvailabilityDayOptions();
       renderAvailabilityDayEditor();
       $('groundAvailabilityModal').classList.remove('hidden');
@@ -941,6 +979,21 @@
       availabilityDraft = {};
       $('availabilityModalMessage').textContent = '';
     }
+    async function toggleGroundListing(groundId, button) {
+      const ground = state.grounds.find(item => item.id === groundId);
+      if (!ground) return;
+      const nextActive = ground.isActive === false;
+      button.disabled = true;
+      button.textContent = 'Saving...';
+      try {
+        await updateDoc(doc(db,'grounds',groundId), {isActive:nextActive,updatedAt:serverTimestamp()});
+      } catch (error) {
+        console.error('Could not update ground listing status:', error);
+        window.alert('Could not update this ground status. Check Firestore permissions and try again.');
+        button.disabled = false;
+        button.textContent = nextActive ? 'Activate' : 'Pause listing';
+      }
+    }
     function renderGrounds() {
       const query = $('groundSearch').value.trim().toLowerCase();
       const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone,ground.description,ground.upiId].some(value => String(value || '').toLowerCase().includes(query)));
@@ -949,8 +1002,9 @@
         const sport = ground.sportType || ground.sport || 'Box Cricket';
         const location = ground.location || [ground.area,ground.city].filter(Boolean).join(', ') || '—';
         const mediaUrls = [ground.image,ground.qrImageUrl].filter(Boolean).join(' | ') || '—';
-        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td><button type="button" class="ground-availability-btn" data-ground-availability="' + escapeHTML(ground.id) + '">Availability</button></td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
-      }).join('') : '<tr><td colspan="10" class="empty">No matching sports grounds.</td></tr>';
+        const isActive = ground.isActive !== false;
+        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td><div class="ground-status-control"><span class="pill ' + (isActive ? 'active' : 'inactive') + '">' + (isActive ? 'Active' : 'Inactive') + '</span><button type="button" class="ground-availability-btn" data-ground-toggle="' + escapeHTML(ground.id) + '">' + (isActive ? 'Pause listing' : 'Activate') + '</button></div></td><td><button type="button" class="ground-availability-btn" data-ground-availability="' + escapeHTML(ground.id) + '">Availability</button></td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
+      }).join('') : '<tr><td colspan="11" class="empty">No matching sports grounds.</td></tr>';
     }
 
     function openView(name) {
@@ -1020,9 +1074,12 @@
     $('ownerSearch').addEventListener('input',renderOwners);
     $('groundSearch').addEventListener('input',renderGrounds);
     $('groundRows').addEventListener('click', event => {
-      const button = event.target.closest('[data-ground-availability]');
-      if (button) openGroundAvailability(button.dataset.groundAvailability);
+      const toggleButton = event.target.closest('[data-ground-toggle]');
+      const availabilityButton = event.target.closest('[data-ground-availability]');
+      if (toggleButton) toggleGroundListing(toggleButton.dataset.groundToggle, toggleButton);
+      if (availabilityButton) openGroundAvailability(availabilityButton.dataset.groundAvailability);
     });
+    $('availabilityBookingsDate').addEventListener('change', renderAvailabilityBookings);
     $('availabilityDayOptions').addEventListener('click', event => {
       const button = event.target.closest('[data-availability-select-day]');
       if (!button) return;
