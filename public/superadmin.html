@@ -134,6 +134,8 @@
 
 
 
+    .subscription-plan-card .plan-yearly-art{height:104px;display:flex;align-items:center;justify-content:center;margin:-2px -2px 12px;border-radius:11px;background:linear-gradient(135deg,#fff7ed,#ffedd5);overflow:hidden}
+    .subscription-plan-card .plan-yearly-art img{display:block;width:150px;height:100px;object-fit:contain}
     .subscription-plan-card .plan-price{margin:9px 0;color:var(--ink);font:700 20px 'Space Grotesk',sans-serif}
     .subscription-plan-card .plan-original{color:var(--muted);font-size:11px;text-decoration:line-through;margin-right:6px}
     .subscription-plan-card .plan-discount{display:inline-block;padding:3px 7px;border-radius:20px;background:#fff0e5;color:#9a3412;font-size:10px;font-weight:800}
@@ -499,7 +501,7 @@
         const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
         const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) : money(plan.price);
         const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
-        return '<article class="subscription-plan-card"><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
+        return '<article class="subscription-plan-card">' + (plan.durationUnit === 'years' ? '<div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Yearly plan illustration"></div>' : '') + '<span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
       }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
