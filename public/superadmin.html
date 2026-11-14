@@ -931,18 +931,18 @@
     let availabilityGroundId = '';
     let selectedAvailabilityDay = 'monday';
     let availabilityDraft = {};
-    const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'08:00',end:'03:00'}]));
+    const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'10:00',end:'01:00'}]));
     function renderAvailabilityDayOptions() {
       $('availabilityDayOptions').innerHTML = availabilityDays.map(day => {
-        const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
+        const item = availabilityDraft[day.key] || {open:false,start:'10:00',end:'01:00'};
         const summary = item.open ? (item.start || '—') + ' – ' + (item.end || '—') : 'Closed';
         return '<button type="button" class="availability-day-option ' + (selectedAvailabilityDay === day.key ? 'active ' : '') + (!item.open ? 'closed' : '') + '" data-availability-select-day="' + day.key + '"><strong>' + day.label + '</strong><small>' + escapeHTML(summary) + '</small></button>';
       }).join('');
     }
     function renderAvailabilityDayEditor() {
       const day = availabilityDays.find(item => item.key === selectedAvailabilityDay) || availabilityDays[0];
-      const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
-      $('availabilityDayEditor').innerHTML = '<h3>' + day.label + '</h3><label class="availability-open-toggle"><input id="availabilityDayOpen" type="checkbox" ' + (item.open ? 'checked' : '') + '> Ground open on ' + day.label + '</label><div class="availability-edit-times"><label>Opening time<input id="availabilityDayStart" type="time" value="' + escapeHTML(item.start || '08:00') + '" ' + (!item.open ? 'disabled' : '') + '></label><label>Closing time<input id="availabilityDayEnd" type="time" value="' + escapeHTML(item.end || '03:00') + '" ' + (!item.open ? 'disabled' : '') + '></label></div>';
+      const item = availabilityDraft[day.key] || {open:false,start:'10:00',end:'01:00'};
+      $('availabilityDayEditor').innerHTML = '<h3>' + day.label + '</h3><label class="availability-open-toggle"><input id="availabilityDayOpen" type="checkbox" ' + (item.open ? 'checked' : '') + '> Ground open on ' + day.label + '</label><div class="availability-edit-times"><label>Opening time<input id="availabilityDayStart" type="time" value="' + escapeHTML(item.start || '10:00') + '" ' + (!item.open ? 'disabled' : '') + '></label><label>Closing time<input id="availabilityDayEnd" type="time" value="' + escapeHTML(item.end || '01:00') + '" ' + (!item.open ? 'disabled' : '') + '></label></div>';
     }
     function localDateValue(date = new Date()) { return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0'); }
     function renderAvailabilityBookings() {
