@@ -424,6 +424,27 @@
       storage.setItem(STORE.planExpiry, JSON.stringify(dates));
     } catch {}
   }
+  let availableSubscriptionPlans = [];
+  function planDurationLabel(plan) {
+    const value = Number(plan.durationValue || 1);
+    const unit = String(plan.durationUnit || 'months').replace(/s$/,'');
+    return value + ' ' + unit + (value === 1 ? '' : 's');
+  }
+  function renderOwnerSubscriptionPlans() {
+    const container = $('ownerSubscriptionPlans');
+    if (!container) return;
+    container.innerHTML = availableSubscriptionPlans.map(plan => {
+      const priceSet = Number.isFinite(Number(plan.price)) && plan.price !== null && plan.price !== '';
+      const discount = Number(plan.discount || 0);
+      const discounted = priceSet && discount > 0;
+      const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
+      const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) : money(plan.price);
+      const features = String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+      const isTrial = plan.kind === 'trial';
+      return '<article class="plan-card' + (discounted ? ' featured-plan' : '') + '">' + (discounted ? '<span class="popular-label">' + escapeHTML(discount) + '% OFF</span>' : '') + '<span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div><ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '<li>Maximum ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds') + '</li></ul><button class="' + (isTrial ? 'secondary-btn' : 'primary-btn') + ' plan-select" data-plan="' + escapeHTML(plan.name) + '" type="button" disabled>' + (isTrial ? 'Automatic on Signup' : 'Contact Super Admin') + '</button></article>';
+    }).join('');
+    syncPlanPreview();
+  }
   function syncPlanPreview() {
     if (!planLoaded) {
       $('dashboardPlanName').textContent = 'Loading plan details…';
@@ -1039,6 +1060,11 @@
   (async () => {
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
+      const firestore = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
+      firestore.onSnapshot(firestore.collection(db,'subscriptionPlans'), snapshot => {
+        availableSubscriptionPlans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((left,right) => Number(left.order || 999) - Number(right.order || 999));
+        renderOwnerSubscriptionPlans();
+      }, error => console.error('Could not load live subscription plans:', error));
       ownerUid = IS_ADMIN_OWNER_PREVIEW ? String(window.adminOwnerPreviewTargetUid || '') : user.uid;
       ownerSyncStep = 'Reading owner profile';
       const remoteProfile = await api.getOwnerProfile(db, ownerUid);
