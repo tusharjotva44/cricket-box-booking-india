@@ -90,6 +90,35 @@
     .quick-links a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #F3E4D8;border-radius:10px;background:#FFFAF6;color:#59665D;text-decoration:none;font-size:12px;font-weight:700;transition:background .15s,border-color .15s,color .15s}
     .quick-links a span{color:#C2410C;font-size:15px}
     .quick-links a:hover{border-color:#FDBA74;background:#FFF0E5;color:#9A3412}
+
+    .ground-availability-btn{padding:8px 12px;border:1px solid #fdba74;border-radius:9px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800}
+    .ground-availability-btn:hover{background:#ffedd5;border-color:#fb923c}
+    .availability-overlay{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:18px;background:rgba(23,37,84,.5)}
+    .availability-overlay.hidden{display:none}
+    .availability-card{width:min(100%,620px);max-height:calc(100vh - 36px);overflow:auto;padding:24px;background:#fff;border:1px solid #fed7aa;border-radius:18px;box-shadow:0 24px 70px rgba(23,37,84,.2)}
+    .availability-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .availability-card h2{margin:6px 0 4px;font:700 22px 'Space Grotesk',sans-serif;color:var(--ink)}
+    .availability-card p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+    .availability-close{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:20px}
+    .availability-day-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:20px}
+    .availability-day-option{min-width:0;padding:11px 9px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:left;color:var(--ink)}
+    .availability-day-option strong{display:block;font-size:12px}
+    .availability-day-option small{display:block;margin-top:5px;color:var(--muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .availability-day-option.active{border-color:#fb923c;background:#fff7ed;box-shadow:0 0 0 2px #f9731615}
+    .availability-day-option.closed small{color:#b91c1c}
+    .availability-day-editor{margin-top:16px;padding:17px;border:1px solid var(--line);border-radius:12px;background:#fffdfa}
+    .availability-day-editor h3{margin:0 0 14px;font:700 15px 'Space Grotesk',sans-serif}
+    .availability-open-toggle{display:flex;align-items:center;gap:9px;margin-bottom:15px;color:var(--ink);font-size:12px;font-weight:700}
+    .availability-edit-times{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .availability-edit-times label{display:grid;gap:7px;color:var(--muted);font-size:11px;font-weight:700}
+    .availability-edit-times input{width:100%;padding:11px;border:1px solid #e1e7df;border-radius:9px;background:#fff;color:var(--ink);font:inherit}
+    .availability-edit-times input:disabled{background:#f3f4f6;color:#9ca3af}
+    .availability-modal-message{min-height:18px;margin-top:10px!important;color:#b91c1c!important}
+    .availability-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:14px}
+    .availability-modal-actions button{padding:10px 15px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:12px;font-weight:700}
+    .availability-modal-actions .save{border-color:var(--orange);background:var(--orange);color:#fff}
+    @media(max-width:520px){.availability-day-options{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-card{padding:18px}.availability-edit-times{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -217,6 +246,19 @@
         <button class="save" type="submit" id="ownerEditSave">Save Changes</button>
       </div>
     </form>
+  </div>
+
+  <div class="availability-overlay hidden" id="groundAvailabilityModal" role="dialog" aria-modal="true" aria-labelledby="groundAvailabilityTitle">
+    <section class="availability-card">
+      <div class="availability-card-head">
+        <div><span class="eyebrow">SPORTS GROUND SCHEDULE</span><h2 id="groundAvailabilityTitle">Ground Availability</h2><p id="groundAvailabilityName">View and edit the weekly opening hours.</p></div>
+        <button class="availability-close" id="groundAvailabilityClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="availability-day-options" id="availabilityDayOptions"></div>
+      <div class="availability-day-editor" id="availabilityDayEditor"></div>
+      <p class="availability-modal-message" id="availabilityModalMessage" role="status" aria-live="polite"></p>
+      <div class="availability-modal-actions"><button type="button" id="availabilityModalCancel">Close</button><button class="save" type="button" id="availabilitySaveDay">Save Day</button></div>
+    </section>
   </div>
 
   <script type="module">
@@ -531,6 +573,45 @@
       $('bookingCountLabel').textContent = list.length + ' of ' + state.bookings.length + ' booking records';
       $('bookingRows').innerHTML = list.length ? list.map(booking => '<tr><td><strong>' + escapeHTML(booking.id) + '</strong><br><span class="muted-cell">' + escapeHTML(booking.bookingSource || 'Website') + '</span></td><td>' + escapeHTML(booking.customerName || '—') + '</td><td>' + escapeHTML(booking.phone || '—') + '</td><td>' + escapeHTML(booking.groundName || booking.groundId || '—') + '</td><td>' + escapeHTML(booking.owner || booking.ownerEmail || booking.ownerUid || '—') + '</td><td>' + escapeHTML(booking.date || '—') + '<br><span class="muted-cell">' + escapeHTML(booking.slot || '—') + '</span></td><td>' + escapeHTML(money(booking.amount)) + '</td><td>' + escapeHTML(booking.status || 'Pending') + '</td></tr>').join('') : '<tr><td colspan="8" class="empty">No booking records found.</td></tr>';
     }
+    const availabilityDays = [
+      {key:'monday',label:'Monday'},{key:'tuesday',label:'Tuesday'},{key:'wednesday',label:'Wednesday'},
+      {key:'thursday',label:'Thursday'},{key:'friday',label:'Friday'},{key:'saturday',label:'Saturday'},{key:'sunday',label:'Sunday'}
+    ];
+    let availabilityGroundId = '';
+    let selectedAvailabilityDay = 'monday';
+    let availabilityDraft = {};
+    const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:false,start:'08:00',end:'03:00'}]));
+    function renderAvailabilityDayOptions() {
+      $('availabilityDayOptions').innerHTML = availabilityDays.map(day => {
+        const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
+        const summary = item.open ? (item.start || '—') + ' – ' + (item.end || '—') : 'Closed';
+        return '<button type="button" class="availability-day-option ' + (selectedAvailabilityDay === day.key ? 'active ' : '') + (!item.open ? 'closed' : '') + '" data-availability-select-day="' + day.key + '"><strong>' + day.label + '</strong><small>' + escapeHTML(summary) + '</small></button>';
+      }).join('');
+    }
+    function renderAvailabilityDayEditor() {
+      const day = availabilityDays.find(item => item.key === selectedAvailabilityDay) || availabilityDays[0];
+      const item = availabilityDraft[day.key] || {open:false,start:'08:00',end:'03:00'};
+      $('availabilityDayEditor').innerHTML = '<h3>' + day.label + '</h3><label class="availability-open-toggle"><input id="availabilityDayOpen" type="checkbox" ' + (item.open ? 'checked' : '') + '> Ground open on ' + day.label + '</label><div class="availability-edit-times"><label>Opening time<input id="availabilityDayStart" type="time" value="' + escapeHTML(item.start || '08:00') + '" ' + (!item.open ? 'disabled' : '') + '></label><label>Closing time<input id="availabilityDayEnd" type="time" value="' + escapeHTML(item.end || '03:00') + '" ' + (!item.open ? 'disabled' : '') + '></label></div>';
+    }
+    function openGroundAvailability(groundId) {
+      const ground = state.grounds.find(item => item.id === groundId);
+      if (!ground) return;
+      availabilityGroundId = ground.id;
+      availabilityDraft = {...emptyAvailability(),...(ground.availability || {})};
+      selectedAvailabilityDay = availabilityDays.find(day => availabilityDraft[day.key])?.key || 'monday';
+      $('groundAvailabilityTitle').textContent = 'Ground Availability';
+      $('groundAvailabilityName').textContent = ground.name || ground.groundName || 'Sports Ground';
+      $('availabilityModalMessage').textContent = '';
+      renderAvailabilityDayOptions();
+      renderAvailabilityDayEditor();
+      $('groundAvailabilityModal').classList.remove('hidden');
+    }
+    function closeGroundAvailability() {
+      $('groundAvailabilityModal').classList.add('hidden');
+      availabilityGroundId = '';
+      availabilityDraft = {};
+      $('availabilityModalMessage').textContent = '';
+    }
     function renderGrounds() {
       const query = $('groundSearch').value.trim().toLowerCase();
       const list = state.grounds.filter(ground => [ground.name,ground.groundName,ground.sportType,ground.sport,ground.location,ground.city,ground.area,ground.owner,ground.mobile,ground.phone,ground.description,ground.upiId].some(value => String(value || '').toLowerCase().includes(query)));
@@ -538,13 +619,11 @@
       $('groundRows').innerHTML = list.length ? list.map(ground => {
         const sport = ground.sportType || ground.sport || 'Box Cricket';
         const location = ground.location || [ground.area,ground.city].filter(Boolean).join(', ') || '—';
-        const availability = ground.availability
-          ? Object.entries(ground.availability).filter(([,value]) => value && value.open).map(([day,value]) => day + ': ' + (value.start || '—') + '–' + (value.end || '—')).join(', ')
-          : (Array.isArray(ground.slots) ? ground.slots.join(', ') : '—');
         const mediaUrls = [ground.image,ground.qrImageUrl].filter(Boolean).join(' | ') || '—';
-        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td>' + escapeHTML(availability || '—') + '</td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
+        return '<tr><td><strong>' + escapeHTML(ground.name || ground.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(ground.id) + '</span></td><td>' + escapeHTML(sport) + '</td><td>' + escapeHTML(location) + '</td><td>' + escapeHTML(ground.owner || ground.ownerEmail || ground.ownerUid || '—') + '</td><td>' + escapeHTML(ground.mobile || ground.phone || '—') + '</td><td>' + escapeHTML(money(ground.price)) + '</td><td>' + escapeHTML(ground.description || '—') + '</td><td>' + escapeHTML(ground.upiId || '—') + '</td><td><button type="button" class="ground-availability-btn" data-ground-availability="' + escapeHTML(ground.id) + '">Availability</button></td><td>' + escapeHTML(mediaUrls) + '</td></tr>';
       }).join('') : '<tr><td colspan="10" class="empty">No matching sports grounds.</td></tr>';
     }
+
     function openView(name) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
       document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active',button.dataset.view === name));
@@ -592,6 +671,69 @@
     $('refreshButton').addEventListener('click',loadData);
     $('ownerSearch').addEventListener('input',renderOwners);
     $('groundSearch').addEventListener('input',renderGrounds);
+    $('groundRows').addEventListener('click', event => {
+      const button = event.target.closest('[data-ground-availability]');
+      if (button) openGroundAvailability(button.dataset.groundAvailability);
+    });
+    $('availabilityDayOptions').addEventListener('click', event => {
+      const button = event.target.closest('[data-availability-select-day]');
+      if (!button) return;
+      const current = availabilityDraft[selectedAvailabilityDay] || {};
+      if ($('availabilityDayOpen')) {
+        current.open = $('availabilityDayOpen').checked;
+        current.start = $('availabilityDayStart').value;
+        current.end = $('availabilityDayEnd').value;
+        availabilityDraft[selectedAvailabilityDay] = current;
+      }
+      selectedAvailabilityDay = button.dataset.availabilitySelectDay;
+      renderAvailabilityDayOptions();
+      renderAvailabilityDayEditor();
+      $('availabilityModalMessage').textContent = '';
+    });
+    $('availabilityDayEditor').addEventListener('change', event => {
+      if (event.target.id !== 'availabilityDayOpen') return;
+      $('availabilityDayStart').disabled = !event.target.checked;
+      $('availabilityDayEnd').disabled = !event.target.checked;
+    });
+    $('availabilitySaveDay').addEventListener('click', async () => {
+      const ground = state.grounds.find(item => item.id === availabilityGroundId);
+      if (!ground) return;
+      const open = $('availabilityDayOpen').checked;
+      const start = $('availabilityDayStart').value;
+      const end = $('availabilityDayEnd').value;
+      if (open && (!start || !end || start === end)) {
+        $('availabilityModalMessage').textContent = 'Choose valid opening and closing times for this day.';
+        return;
+      }
+      availabilityDraft[selectedAvailabilityDay] = {open,start,end};
+      const button = $('availabilitySaveDay');
+      button.disabled = true;
+      button.textContent = 'Saving...';
+      $('availabilityModalMessage').textContent = 'Saving availability...';
+      try {
+        await updateDoc(doc(db,'grounds',availabilityGroundId), {
+          availability: availabilityDraft,
+          updatedAt: serverTimestamp()
+        });
+        $('availabilityModalMessage').textContent = 'Availability saved for ' + (availabilityDays.find(day => day.key === selectedAvailabilityDay)?.label || 'this day') + '.';
+        renderAvailabilityDayOptions();
+      } catch (error) {
+        console.error('Could not save ground availability:', error);
+        $('availabilityModalMessage').textContent = 'Could not save availability. Check Firestore permissions and try again.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save Day';
+      }
+    });
+    $('groundAvailabilityClose').addEventListener('click', closeGroundAvailability);
+    $('availabilityModalCancel').addEventListener('click', closeGroundAvailability);
+    $('groundAvailabilityModal').addEventListener('click', event => {
+      if (event.target === $('groundAvailabilityModal')) closeGroundAvailability();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !$('groundAvailabilityModal').classList.contains('hidden')) closeGroundAvailability();
+    });
+
     $('bookingSearch').addEventListener('input',renderBookings);
     document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click',() => openView(button.dataset.view)));
     document.querySelectorAll('[data-open-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.openView)));
