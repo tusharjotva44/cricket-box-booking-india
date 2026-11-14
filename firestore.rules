@@ -7,6 +7,11 @@ service cloud.firestore {
         && request.auth.token.email == 'tusharjotva44@gmail.com';
     }
 
+    match /subscriptionPlans/{planId} {
+      allow read: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /owners/{ownerId} {
       allow read: if request.auth != null
         && (request.auth.uid == ownerId || isSuperAdmin());
