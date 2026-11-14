@@ -368,20 +368,20 @@
   border-color:rgba(255,255,255,.24);
   animation:contactOrbit 9s linear infinite reverse;
 }
-#contact .contact-visual-ball{
+#contact .contact-visual-sports{
   position:relative;
-  width:58px;
-  height:58px;
+  z-index:1;
+  width:164px;
+  height:92px;
   display:grid;
   place-items:center;
-  border-radius:50%;
-  border:3px solid #fed7aa;
-  background:radial-gradient(circle at 32% 28%,#fb923c,#c2410c 72%);
-  color:#fff7ed;
-  font-size:23px;
-  box-shadow:0 10px 30px rgba(249,115,22,.28),0 0 0 12px rgba(249,115,22,.08);
-  animation:contactBallFloat 3.2s ease-in-out infinite;
+  filter:drop-shadow(0 10px 18px rgba(15,23,42,.22));
+  animation:contactSportsFloat 3.4s ease-in-out infinite;
 }
+#contact .contact-visual-sports svg{display:block;width:100%;height:100%;overflow:visible}
+#contact .contact-cricket-bat{transform-origin:54px 55px;animation:contactBatMove 3.4s ease-in-out infinite}
+#contact .contact-cricket-ball{transform-origin:111px 29px;animation:contactCricketSpin 5s linear infinite}
+#contact .contact-pickleball{transform-origin:132px 70px;animation:contactPickleSpin 4.2s linear infinite}
 #contact .contact-visual-caption{
   position:absolute;
   bottom:2px;
@@ -391,9 +391,12 @@
   letter-spacing:2px;
 }
 @keyframes contactOrbit{to{transform:rotate(360deg)}}
-@keyframes contactBallFloat{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-10px) rotate(8deg)}}
+@keyframes contactSportsFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes contactBatMove{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@keyframes contactCricketSpin{to{transform:rotate(360deg)}}
+@keyframes contactPickleSpin{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
 @media(max-width:800px){#contact .contact-visual{min-height:160px;margin-top:8px}}
-@media(prefers-reduced-motion:reduce){#contact .contact-visual-ring,#contact .contact-visual-ball{animation:none!important}}
+@media(prefers-reduced-motion:reduce){#contact .contact-visual-ring,#contact .contact-visual-sports,#contact .contact-cricket-bat,#contact .contact-cricket-ball,#contact .contact-pickleball{animation:none!important}}
 
 
 /* Contact support detail icons */
