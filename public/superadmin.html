@@ -320,9 +320,9 @@
           <label>Duration Unit<select id="planEditDurationUnit" required><option value="days">Days</option><option value="months">Months</option><option value="years">Years</option></select></label>
           <label>Maximum Grounds<input id="planEditGrounds" type="number" min="1" step="1" required></label>
           <label>Discount (%) — Optional<input id="planEditDiscount" type="number" min="0.01" max="100" step="0.01" placeholder="Leave blank for no discount"></label>
-          <label class="full">Plan Details / Features<textarea id="planEditDetails" maxlength="1000" placeholder="Describe what this plan includes"></textarea></label>
+          <label class="full">Plan Features (one feature per line)<textarea id="planEditDetails" maxlength="2000" placeholder="Enter each plan feature on a new line"></textarea></label>
         </div>
-        <p class="plan-edit-hint">Leave Discount blank when you do not want to offer a discount. Original and discounted prices will be shown only when a discount is entered. Prices are not collected or verified here.</p>
+        
         <p class="plan-edit-message" id="planEditMessage" role="status" aria-live="polite"></p>
         <div class="plan-edit-actions"><button type="button" id="planEditCancel">Cancel</button><button class="save" type="submit" id="planEditSave">Save Plan</button></div>
       </form>
@@ -492,9 +492,15 @@
       return expiry;
     }
     function renderSubscriptionPlans() {
-      $('subscriptionPlanCards').innerHTML = state.plans.length ? state.plans.map(plan =>
-        '<article class="subscription-plan-card"><h3>' + escapeHTML(plan.name) + '</h3><p>Duration: ' + escapeHTML(planDurationLabel(plan)) + '</p><p>Maximum grounds: ' + Number(plan.grounds || 1) + '</p><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>'
-      ).join('') : '';
+      $('subscriptionPlanCards').innerHTML = state.plans.map(plan => {
+        const priceSet = Number.isFinite(Number(plan.price)) && plan.price !== null && plan.price !== '';
+        const discount = Number(plan.discount || 0);
+        const discounted = priceSet && discount > 0;
+        const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
+        const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) : money(plan.price);
+        const features = String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+        return '<article class="subscription-plan-card"><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '<li>Maximum ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds') + '</li></ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
+      }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
         '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + ' · ' + escapeHTML(planDurationLabel(plan)) + ' · ' + Number(plan.grounds || 1) + ' ground' + (Number(plan.grounds || 1) > 1 ? 's' : '') + '</option>'
@@ -546,7 +552,8 @@
       button.disabled = true;
       button.textContent = 'Saving…';
       $('planEditMessage').textContent = 'Saving plan details…';
-      const changes = {name,price,durationValue,durationUnit,grounds,details:$('planEditDetails').value.trim(),discount,updatedAt:serverTimestamp()};
+      const details = $('planEditDetails').value.split(/\r?\n/).map(item => item.trim()).filter(Boolean).join('\n');
+      const changes = {name,price,durationValue,durationUnit,grounds,details,discount,updatedAt:serverTimestamp()};
       try {
         await setDoc(doc(db,'subscriptionPlans',planId), {...changes, kind:plan.kind || 'active', order:Number(plan.order || 999), active:true}, {merge:true});
         const oldName = plan.name;
