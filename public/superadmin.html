@@ -212,24 +212,23 @@
       #view-grounds .ground-status-toggle{padding:6px 7px;font-size:9px}
     }
 
-    /* Subtle animated sports artwork, limited to the Super Admin Dashboard background. */
-    #view-overview{position:relative;isolation:isolate;overflow:hidden}
-    #view-overview>.dashboard-sports-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-    #view-overview>.dashboard-sports-bg:before{content:"";position:absolute;width:420px;height:420px;right:-115px;top:10px;border-radius:50%;background:radial-gradient(circle,rgba(249,115,22,.075),rgba(249,115,22,0) 70%)}
-    #view-overview>.dashboard-sports-bg:after{content:"";position:absolute;width:300px;height:300px;left:18%;bottom:-170px;border-radius:50%;background:radial-gradient(circle,rgba(213,232,74,.09),rgba(213,232,74,0) 70%)}
-    #view-overview>.dashboard-sports-bg~*{position:relative;z-index:1}
-    #view-overview .sports-art{position:absolute;display:block;will-change:transform;filter:drop-shadow(0 12px 15px rgba(80,65,40,.08))}
-    #view-overview .sports-art svg{display:block;width:100%;height:100%}
-    #view-overview .sports-cricket-bat{width:70px;height:205px;right:9%;top:100px;opacity:.12;transform-origin:50% 85%;animation:dashboardBatFloat 8s ease-in-out infinite}
-    #view-overview .sports-cricket-ball{width:70px;height:70px;right:28%;top:75px;opacity:.17;animation:dashboardCricketBall 9s ease-in-out infinite}
-    #view-overview .sports-pickleball{width:88px;height:88px;right:4%;bottom:90px;opacity:.19;animation:dashboardPickleball 10s ease-in-out infinite}
-    #view-overview .sports-pickleball-small{width:46px;height:46px;right:34%;bottom:42px;opacity:.16;animation:dashboardPickleball 12s ease-in-out -3s infinite reverse}
+/* Subtle animated sports artwork for Super Admin management views. */
+     .view.sports-bg-enabled{position:relative;isolation:isolate;overflow:hidden}
+     .view.sports-bg-enabled>.dashboard-sports-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+     .view.sports-bg-enabled>.dashboard-sports-bg:before{content:"";position:absolute;width:420px;height:420px;right:-115px;top:10px;border-radius:50%;background:radial-gradient(circle,rgba(249,115,22,.075),rgba(249,115,22,0) 70%)}
+     .view.sports-bg-enabled>.dashboard-sports-bg:after{content:"";position:absolute;width:300px;height:300px;left:18%;bottom:-170px;border-radius:50%;background:radial-gradient(circle,rgba(213,232,74,.09),rgba(213,232,74,0) 70%)}
+     .view.sports-bg-enabled>.dashboard-sports-bg~*{position:relative;z-index:1}
+     .view.sports-bg-enabled .sports-art{position:absolute;display:block;will-change:transform;filter:drop-shadow(0 12px 15px rgba(80,65,40,.08))}
+     .view.sports-bg-enabled .sports-art svg{display:block;width:100%;height:100%}
+     .view.sports-bg-enabled .sports-cricket-bat{width:70px;height:205px;right:9%;top:100px;opacity:.12;transform-origin:50% 85%;animation:dashboardBatFloat 8s ease-in-out infinite}
+     .view.sports-bg-enabled .sports-cricket-ball{width:70px;height:70px;right:28%;top:75px;opacity:.17;animation:dashboardCricketBall 9s ease-in-out infinite}
+     .view.sports-bg-enabled .sports-pickleball{width:88px;height:88px;right:4%;bottom:90px;opacity:.19;animation:dashboardPickleball 10s ease-in-out infinite}
+     .view.sports-bg-enabled .sports-pickleball-small{width:46px;height:46px;right:34%;bottom:42px;opacity:.16;animation:dashboardPickleball 12s ease-in-out -3s infinite reverse}
     @keyframes dashboardBatFloat{0%,100%{transform:translate3d(0,0,0) rotate(-9deg)}50%{transform:translate3d(-13px,18px,0) rotate(5deg)}}
     @keyframes dashboardCricketBall{0%,100%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(-25px,35px,0) rotate(170deg)}}
     @keyframes dashboardPickleball{0%,100%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(-20px,-24px,0) rotate(180deg)}}
-    @media(max-width:700px){#view-overview .sports-cricket-bat{right:2%;top:135px;width:48px;height:145px}#view-overview .sports-cricket-ball{right:22%;top:95px;width:48px;height:48px}#view-overview .sports-pickleball{right:1%;bottom:65px;width:60px;height:60px}#view-overview .sports-pickleball-small{right:28%;bottom:25px;width:34px;height:34px}}
-    @media(prefers-reduced-motion:reduce){#view-overview .sports-art{animation:none!important}}
-
+    @media(max-width:700px){ .view.sports-bg-enabled .sports-cricket-bat{right:2%;top:135px;width:48px;height:145px} .view.sports-bg-enabled .sports-cricket-ball{right:22%;top:95px;width:48px;height:48px} .view.sports-bg-enabled .sports-pickleball{right:1%;bottom:65px;width:60px;height:60px} .view.sports-bg-enabled .sports-pickleball-small{right:28%;bottom:25px;width:34px;height:34px}}
+    @media(prefers-reduced-motion:reduce){ .view.sports-bg-enabled .sports-art{animation:none!important}}
 </style>
 </head>
 <body>
@@ -273,7 +272,7 @@
         <div class="top-actions"><span class="admin-email" id="adminEmailLabel"></span><button class="refresh" id="refreshButton" type="button"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"/></svg> Refresh</button><button class="ghost" id="logoutButton" type="button">Logout</button></div>
       </header>
       <div class="content">
-        <section class="view" id="view-overview">
+        <section class="view sports-bg-enabled" id="view-overview">
           <div class="dashboard-sports-bg" aria-hidden="true">
             <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
             <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
@@ -291,12 +290,24 @@
           <div class="notice"><strong>Data and feature status</strong>Owner profiles and sports grounds are read directly from Firebase Firestore. Subscription plan records and payment transactions are not yet stored in dedicated Firestore collections, so those sections are shown as setup-required rather than displaying invented figures.</div>
         </section>
 
-        <section class="view hidden" id="view-owners">
+        <section class="view hidden sports-bg-enabled" id="view-owners">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">ACCOUNT DIRECTORY</span><h1>Owner Management</h1><p>Review owner profiles, contact details and current plan information.</p></div></div>
           <div class="panel"><div class="panel-head"><div><h2>All Owners</h2><p id="ownerCountLabel">Loading owner records…</p></div><div class="toolbar"><input id="ownerSearch" type="search" placeholder="Search name, email or mobile…" aria-label="Search owners"></div></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Mobile No.</th><th>Plan</th><th>Subscription</th><th>Registration Date</th><th>Expiry Date</th><th>Actions</th></tr></thead><tbody id="ownerRows"><tr><td colspan="7" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
         </section>
 
-        <section class="view hidden" id="view-plans">
+        <section class="view hidden sports-bg-enabled" id="view-plans">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">PRICING & ACCESS</span><h1>Subscription Plans</h1><p>View every available plan and manually activate a plan for an owner by email ID.</p></div></div>
           <div class="panel">
             <div class="panel-head"><div><h2>Available Plans</h2></div></div>
@@ -319,18 +330,36 @@
           <div class="notice"><strong>Manual activation note</strong>Enter the transaction ID after checking the payment separately. The transaction history records this as a manually verified entry; it does not independently verify money received.</div>
         </section>
 
-        <section class="view hidden" id="view-payments">
+        <section class="view hidden sports-bg-enabled" id="view-payments">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">OWNER TRANSACTIONS</span><h1>Payments</h1><p>Owner subscription payment records.</p></div></div>
           <div class="notice"><strong>Online payment integration is not connected yet</strong>Successful online subscription payments will be connected to Transaction History when a payment gateway is added.</div>
         </section>
-        <section class="view hidden" id="view-transactions">
+        <section class="view hidden sports-bg-enabled" id="view-transactions">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">OWNER SUBSCRIPTION RECORDS</span><h1>Transaction History</h1><p>Review owner plan purchases and manually activated plans.</p></div></div>
           <div class="panel"><div class="panel-head"><div><h2>All Transactions</h2><p id="transactionCountLabel">Loading transaction records…</p></div><div class="toolbar"><input id="transactionSearch" type="search" placeholder="Search Txn ID, owner or plan…" aria-label="Search transactions"></div></div>
             <div class="table-wrap"><table><thead><tr><th>Txn ID</th><th>Owner</th><th>Email</th><th>Plan</th><th>Amount</th><th>Date</th><th>Activation Type</th><th>Status</th></tr></thead><tbody id="transactionRows"><tr><td colspan="8" class="loading">Loading transaction records…</td></tr></tbody></table></div>
           </div>
         </section>
 
-        <section class="view hidden" id="view-grounds">
+        <section class="view hidden sports-bg-enabled" id="view-grounds">
+          <div class="dashboard-sports-bg" aria-hidden="true">
+            <span class="sports-art sports-cricket-bat"><svg viewBox="0 0 72 210" xmlns="http://www.w3.org/2000/svg"><path d="M30 8c0-5 12-5 12 0v45c0 5-12 5-12 0V8Z" fill="#B96A32"/><path d="M23 51c-7 4-10 14-10 28v96c0 16 9 25 23 25s23-9 23-25V79c0-14-3-24-10-28H23Z" fill="#E8B878" stroke="#A85C2C" stroke-width="3"/><path d="M36 59v126" stroke="#fff1d8" stroke-width="3" opacity=".8"/></svg></span>
+            <span class="sports-art sports-cricket-ball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D94841"/><path d="M20 20c17 17 43 43 60 60M80 20C63 37 37 63 20 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4 5" opacity=".9"/></svg></span>
+            <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+            <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
+          </div>
           <div class="page-head"><div><span class="eyebrow">LISTING DIRECTORY</span><h1>Sports Grounds</h1><p>All sports ground listings currently stored in Firebase.</p></div></div>
           <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Listing Status</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="10" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
         </section>
