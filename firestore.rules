@@ -12,6 +12,11 @@ service cloud.firestore {
       allow create, update, delete: if isSuperAdmin();
     }
 
+    match /transactionHistory/{transactionId} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+
     match /owners/{ownerId} {
       allow read: if request.auth != null
         && (request.auth.uid == ownerId || isSuperAdmin());
