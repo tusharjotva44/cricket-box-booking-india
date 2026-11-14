@@ -210,6 +210,7 @@
         <button data-view="owners"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Owner Management</button>
         <button data-view="plans"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M7 15h3"/></svg></span>Subscription Plans</button>
         <button data-view="payments"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span>Payments</button>
+        <button data-view="transactions"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="3"/></svg></span>Transaction History</button>
         <button data-view="grounds"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M3 10h18M8 21v-6h8v6M8 7h.01M16 7h.01"/></svg></span>Sports Grounds</button>
       </nav>
       <div class="side-label">QUICK ACCESS</div>
@@ -257,17 +258,24 @@
                 <label>Select plan<select id="manualPlanSelect" required><option value="">Select a plan</option></select></label>
                 <label>Plan expiry date<input id="manualPlanExpiry" type="date"></label>
                 <label>Allowed grounds<input id="manualPlanGroundLimit" type="number" min="1" max="100" step="1" required value="1" placeholder="Number of grounds"></label>
+                <label>Txn ID<input id="manualPlanTxnId" type="text" required maxlength="120" placeholder="Enter transaction ID" autocomplete="off"></label>
               </div>
               <p class="manual-plan-message" id="manualPlanMessage" role="status" aria-live="polite"></p>
               <div class="manual-plan-actions"><button class="primary manual-plan-submit" type="submit" id="manualPlanSubmit">Activate Plan</button></div>
             </form>
           </div>
-          <div class="notice"><strong>Manual activation note</strong>This action updates the selected owner's plan and expiry in Firestore. It does not collect money or verify a payment. Use it only after confirming the payment separately.</div>
+          <div class="notice"><strong>Manual activation note</strong>Enter the transaction ID after checking the payment separately. The transaction history records this as a manually verified entry; it does not independently verify money received.</div>
         </section>
 
         <section class="view hidden" id="view-payments">
           <div class="page-head"><div><span class="eyebrow">OWNER TRANSACTIONS</span><h1>Payments</h1><p>Owner subscription payment records.</p></div></div>
-          <div class="notice"><strong>Owner payment records are not connected yet</strong>Only payments made by ground owners for their subscriptions will appear here. Customer booking payments are shown only in the Owner Dashboard and are not displayed in Super Admin.</div>
+          <div class="notice"><strong>Online payment integration is not connected yet</strong>Successful online subscription payments will be connected to Transaction History when a payment gateway is added.</div>
+        </section>
+        <section class="view hidden" id="view-transactions">
+          <div class="page-head"><div><span class="eyebrow">OWNER SUBSCRIPTION RECORDS</span><h1>Transaction History</h1><p>Review owner plan purchases and manually activated plans.</p></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Transactions</h2><p id="transactionCountLabel">Loading transaction records…</p></div><div class="toolbar"><input id="transactionSearch" type="search" placeholder="Search Txn ID, owner or plan…" aria-label="Search transactions"></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Txn ID</th><th>Owner</th><th>Email</th><th>Plan</th><th>Amount</th><th>Date</th><th>Activation Type</th><th>Status</th></tr></thead><tbody id="transactionRows"><tr><td colspan="8" class="loading">Loading transaction records…</td></tr></tbody></table></div>
+          </div>
         </section>
 
         <section class="view hidden" id="view-grounds">
@@ -343,14 +351,14 @@
   <script type="module">
     import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { collection, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { collection, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
 
     const $ = id => document.getElementById(id);
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
-    const state = { owners: [], grounds: [], bookings: [], plans: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
+    const state = { owners: [], grounds: [], bookings: [], plans: [], transactions: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
     const DEFAULT_SUBSCRIPTION_PLANS = [
       {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
       {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
@@ -457,6 +465,16 @@
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
         }, error => showError(error,'groundRows',10)),
+        onSnapshot(collection(db,'transactionHistory'), snapshot => {
+          state.transactions = snapshot.docs.map(item => ({id:item.id,...item.data()}));
+          renderTransactionHistory();
+          finish();
+        }, error => {
+          console.error('Transaction history listener failed:', error);
+          $('transactionRows').innerHTML = '<tr><td colspan="8" class="empty">Could not load transaction history. Check Firestore rules.</td></tr>';
+          $('transactionCountLabel').textContent = 'Transaction records unavailable';
+          finish();
+        }),
         onSnapshot(collection(db,'subscriptionPlans'), snapshot => {
           state.plans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((a,b) => Number(a.order || 999) - Number(b.order || 999));
           renderSubscriptionPlans();
@@ -620,7 +638,9 @@
       const plan = state.plans.find(item => item.name === $('manualPlanSelect').value);
       const message = $('manualPlanMessage');
       const allowedGrounds = Number($('manualPlanGroundLimit').value);
-      if (!email || !plan) { message.textContent = 'Enter the owner email ID and select a plan.'; return; }
+      const txnId = $('manualPlanTxnId').value.trim();
+      if (!email || !plan || !txnId) { message.textContent = 'Enter the owner email ID, select a plan and enter the Txn ID.'; return; }
+      if (state.transactions.some(item => String(item.txnId || '').trim().toLowerCase() === txnId.toLowerCase())) { message.textContent = 'This Txn ID already exists in Transaction History.'; return; }
       if (!Number.isInteger(allowedGrounds) || allowedGrounds < 1 || allowedGrounds > 100) { message.textContent = 'Enter a valid ground limit between 1 and 100.'; return; }
       const matches = state.owners.filter(owner =>
         [owner.email,owner.contactEmail].some(value => String(value || '').trim().toLowerCase() === email)
@@ -643,7 +663,10 @@
       button.textContent = 'Activating...';
       message.textContent = 'Updating owner subscription...';
       try {
-        await updateDoc(doc(db,'owners',owner.id), {
+        const ownerRef = doc(db,'owners',owner.id);
+        const transactionRef = doc(collection(db,'transactionHistory'));
+        const batch = writeBatch(db);
+        batch.update(ownerRef, {
           planName: plan.name,
           groundLimit: allowedGrounds,
           subscriptionStatus: status,
@@ -657,8 +680,24 @@
           planActivationMethod: 'manual_super_admin',
           updatedAt: serverTimestamp()
         });
+        batch.set(transactionRef, {
+          txnId,
+          ownerId: owner.id,
+          ownerName: owner.fullName || 'Owner',
+          ownerEmail: email,
+          planId: plan.id,
+          planName: plan.name,
+          amount: Number(plan.price || 0),
+          currency: 'INR',
+          activationType: 'Manual Activation',
+          paymentMethod: 'Manually verified',
+          status: 'Recorded',
+          recordedBy: state.user?.email || SUPER_ADMIN_EMAIL,
+          createdAt: serverTimestamp()
+        });
+        await batch.commit();
         $('manualPlanForm').reset();
-        message.textContent = 'Successfully assigned ' + plan.name + ' to ' + email + ' with permission for ' + allowedGrounds + (allowedGrounds === 1 ? ' ground. ' : ' grounds. ') + 'Expiry: ' + dateLabel(expiry) + '.';
+        message.textContent = 'Successfully assigned ' + plan.name + ' to ' + email + ' and saved Txn ID ' + txnId + ' in Transaction History. Expiry: ' + dateLabel(expiry) + '.';
       } catch (error) {
         console.error('Manual owner plan activation failed:', error);
         message.textContent = error?.code === 'permission-denied'
@@ -668,6 +707,23 @@
         button.disabled = false;
         button.textContent = 'Activate Plan';
       }
+    }
+
+    function renderTransactionHistory() {
+      const query = $('transactionSearch')?.value.trim().toLowerCase() || '';
+      const records = [...state.transactions]
+        .filter(item => [item.txnId,item.ownerName,item.ownerEmail,item.planName,item.activationType,item.status].some(value => String(value || '').toLowerCase().includes(query)))
+        .sort((a,b) => {
+          const av = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+          const bv = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+          return bv - av;
+        });
+      $('transactionCountLabel').textContent = records.length + ' of ' + state.transactions.length + ' transaction records';
+      $('transactionRows').innerHTML = records.length ? records.map(item => {
+        const date = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt || 0);
+        const dateText = Number.isNaN(date.getTime()) || date.getTime() === 0 ? '—' : date.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        return '<tr><td><strong>' + escapeHTML(item.txnId || '—') + '</strong></td><td>' + escapeHTML(item.ownerName || 'Owner') + '</td><td>' + escapeHTML(item.ownerEmail || '—') + '</td><td>' + escapeHTML(item.planName || '—') + '</td><td>' + escapeHTML(money(item.amount)) + '</td><td>' + escapeHTML(dateText) + '</td><td>' + escapeHTML(item.activationType || '—') + '</td><td><span class="pill active">' + escapeHTML(item.status || 'Recorded') + '</span></td></tr>';
+      }).join('') : '<tr><td colspan="8" class="empty">No transaction records found.</td></tr>';
     }
 
     function renderAll() {
@@ -907,7 +963,7 @@
     function openView(name) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
       document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active',button.dataset.view === name));
-      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',grounds:'Sports Grounds'};
+      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',transactions:'Transaction History',grounds:'Sports Grounds'};
       $('breadcrumb').textContent = labels[name] || 'Dashboard';
       $('sidebar').classList.remove('open');
       window.scrollTo({top:0,behavior:'smooth'});
@@ -950,6 +1006,7 @@
     });
     $('refreshButton').addEventListener('click',loadData);
     $('manualPlanForm').addEventListener('submit', activateOwnerPlanByEmail);
+    $('transactionSearch').addEventListener('input', renderTransactionHistory);
     $('manualPlanSelect').addEventListener('change', setManualPlanExpiry);
     $('planEditForm').addEventListener('submit', savePlanDetails);
     $('planEditCancel').addEventListener('click', closePlanEditor);
