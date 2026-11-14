@@ -404,3 +404,8 @@
 #contact .contact-support-item b{color:#475569;font-size:12px}
 #contact .contact-support-item span span{color:#475569;font-size:13px;line-height:1.5}
 #contact .contact-support-item a{width:max-content;color:#c2410c;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+/* Support detail icons — WhatsApp brand mark, calendar and response-time clock */
+#contact .contact-support-icon svg{width:19px;height:19px;display:block}
+#contact .contact-support-icon.whatsapp-brand-icon{background:#25D366;border-color:#25D366;color:#fff}
+#contact .contact-support-icon.whatsapp-brand-icon svg{width:21px;height:21px}
