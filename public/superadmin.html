@@ -258,9 +258,9 @@
           <div class="page-head"><div><span class="eyebrow">PLATFORM OVERVIEW</span><h1>Super Admin Dashboard</h1><p>Monitor registered owners and sports grounds across Box Book India.</p></div></div>
           <div class="cards">
             <article class="metric"><div class="metric-top">Total Owners <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span></div><div class="metric-value" id="metricOwners">—</div><div class="metric-foot">Registered owner profiles</div></article>
-            <article class="metric"><div class="metric-top">Total Sports Grounds <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M3 10h18M8 21v-6h8v6"/></svg></span></div><div class="metric-value" id="metricGrounds">—</div><div class="metric-foot">Ground records in Firestore</div></article>
-            <article class="metric"><div class="metric-top">Trial Owners <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div><div class="metric-value" id="metricTrials">—</div><div class="metric-foot">Owners currently marked as trial</div></article>
-            <article class="metric"><div class="metric-top">Paid Plans <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span></div><div class="metric-value" id="metricPaid">—</div><div class="metric-foot">Paid subscriptions recorded</div></article>
+            <article class="metric"><div class="metric-top">Active Plans <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span></div><div class="metric-value" id="metricActivePlans">—</div><div class="metric-foot">Currently active paid subscriptions</div></article>
+            <article class="metric"><div class="metric-top">Expired Plans <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div><div class="metric-value" id="metricExpiredPlans">—</div><div class="metric-foot">Paid subscriptions past expiry</div></article>
+            <article class="metric"><div class="metric-top">Total Revenue <span class="metric-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span></div><div class="metric-value" id="metricRevenue">—</div><div class="metric-foot">Successful transactions recorded</div></article>
           </div>
           <div class="panel"><div class="panel-head"><div><h2>Recently Registered Owners</h2><p>Latest owner profiles available in the database.</p></div><button class="ghost" type="button" data-open-view="owners">View all owners <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div><div class="table-wrap"><table><thead><tr><th>Owner</th><th>Email</th><th>Mobile</th><th>Plan</th><th>Status</th></tr></thead><tbody id="recentOwners"><tr><td colspan="5" class="loading">Loading owner records…</td></tr></tbody></table></div></div>
           <div class="notice"><strong>Data and feature status</strong>Owner profiles and sports grounds are read directly from Firebase Firestore. Subscription plan records and payment transactions are not yet stored in dedicated Firestore collections, so those sections are shown as setup-required rather than displaying invented figures.</div>
@@ -495,6 +495,7 @@
         onSnapshot(collection(db,'transactionHistory'), snapshot => {
           state.transactions = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderTransactionHistory();
+          renderDashboardStatistics();
           finish();
         }, error => {
           console.error('Transaction history listener failed:', error);
@@ -772,13 +773,43 @@
       }).join('') : '<tr><td colspan="8" class="empty">No transaction records found.</td></tr>';
     }
 
-    function renderAll() {
-      const trials = state.owners.filter(owner => ownerStatus(owner).className === 'trial').length;
-      const paid = state.owners.filter(owner => ['active','paid'].includes(String(owner.subscriptionStatus || '').toLowerCase()) && !String(owner.planName || '').toLowerCase().includes('trial')).length;
+    function renderDashboardStatistics() {
+      const now = Date.now();
+      const paidOwners = state.owners.filter(owner =>
+        ['active','paid','expired'].includes(String(owner.subscriptionStatus || '').toLowerCase())
+        && !String(owner.planName || '').toLowerCase().includes('trial')
+      );
+      const getExpiryTime = owner => {
+        const value = owner.subscriptionExpiry || owner.expiryDate || owner.planExpiry || owner.expiresAt;
+        if (!value) return null;
+        const date = value?.toDate ? value.toDate() : new Date(value);
+        const time = date.getTime();
+        return Number.isNaN(time) ? null : time;
+      };
+      const activePlans = paidOwners.filter(owner => {
+        const status = String(owner.subscriptionStatus || '').toLowerCase();
+        const expiry = getExpiryTime(owner);
+        return status !== 'expired' && (expiry === null || expiry >= now);
+      }).length;
+      const expiredPlans = paidOwners.filter(owner => {
+        const status = String(owner.subscriptionStatus || '').toLowerCase();
+        const expiry = getExpiryTime(owner);
+        return status === 'expired' || (expiry !== null && expiry < now);
+      }).length;
+      const successfulRevenue = state.transactions.reduce((total, transaction) => {
+        const status = String(transaction.status || '').trim().toLowerCase();
+        if (!['success','successful','paid','recorded','completed','verified'].includes(status)) return total;
+        const amount = Number(transaction.amount);
+        return total + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+      }, 0);
       $('metricOwners').textContent = state.owners.length.toLocaleString('en-IN');
-      $('metricGrounds').textContent = state.grounds.length.toLocaleString('en-IN');
-      $('metricTrials').textContent = trials.toLocaleString('en-IN');
-      $('metricPaid').textContent = paid.toLocaleString('en-IN');
+      $('metricActivePlans').textContent = activePlans.toLocaleString('en-IN');
+      $('metricExpiredPlans').textContent = expiredPlans.toLocaleString('en-IN');
+      $('metricRevenue').textContent = money(successfulRevenue);
+    }
+
+    function renderAll() {
+      renderDashboardStatistics();
       renderOwners();
       renderGrounds();
       renderSubscriptionPlans();
