@@ -227,6 +227,9 @@
     const $ = id => document.getElementById(id);
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
+    const SUPER_ADMIN_IDLE_TIMEOUT = 10 * 60 * 1000;
+    let superAdminIdleTimer = null;
+    let inactivityLogoutInProgress = false;
     const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
     const dateLabel = value => {
@@ -246,7 +249,33 @@
       return {label:'Not set',className:''};
     };
     const showMessage = message => { $('loginMessage').textContent = message || ''; };
+    function stopSuperAdminIdleTimer() {
+      if (superAdminIdleTimer !== null) {
+        window.clearTimeout(superAdminIdleTimer);
+        superAdminIdleTimer = null;
+      }
+    }
+    async function logoutForSuperAdminInactivity() {
+      if (!state.user || inactivityLogoutInProgress) return;
+      inactivityLogoutInProgress = true;
+      stopSuperAdminIdleTimer();
+      try {
+        await signOut(superAdminAuth);
+      } catch (error) {
+        console.error('Super Admin inactivity logout failed:', error);
+      } finally {
+        state.user = null;
+        showLogin('You were logged out after 10 minutes of inactivity. Please sign in again.');
+        inactivityLogoutInProgress = false;
+      }
+    }
+    function resetSuperAdminIdleTimer() {
+      if (!state.user || inactivityLogoutInProgress) return;
+      stopSuperAdminIdleTimer();
+      superAdminIdleTimer = window.setTimeout(logoutForSuperAdminInactivity, SUPER_ADMIN_IDLE_TIMEOUT);
+    }
     function showLogin(message='') {
+      stopSuperAdminIdleTimer();
       state.unsubscribers.forEach(unsubscribe => unsubscribe());
       state.unsubscribers = [];
       $('adminApp').classList.add('hidden');
@@ -256,6 +285,7 @@
     }
     function showApp(user) {
       state.user = user;
+      resetSuperAdminIdleTimer();
       $('authLoading').classList.add('hidden');
       $('loginScreen').classList.add('hidden');
       $('adminApp').classList.remove('hidden');
@@ -540,6 +570,9 @@
       }
     });
     $('logoutButton').addEventListener('click', async () => { await signOut(superAdminAuth); state.user = null; showLogin(); });
+    ['pointerdown','pointermove','keydown','touchstart','scroll','click','wheel'].forEach(eventName => {
+      document.addEventListener(eventName, resetSuperAdminIdleTimer, { passive: true });
+    });
     $('refreshButton').addEventListener('click',loadData);
     $('ownerSearch').addEventListener('input',renderOwners);
     $('groundSearch').addEventListener('input',renderGrounds);
