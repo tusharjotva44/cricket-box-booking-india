@@ -210,7 +210,7 @@
           <input id="editOwnerExpiry" type="date">
         </label>
       </div>
-      <p class="owner-edit-note">Contact email is saved in the owner profile only. It does not change the owner's Firebase login email. Plan name/status/expiry are profile records; they do not verify a payment or activate a paid subscription.</p>
+      <p class="owner-edit-note">Changing this email also updates the owner's Firebase login email. The owner must use the new email at the next login. Plan name/status/expiry are profile records; they do not verify a payment or activate a paid subscription.</p>
       <p class="owner-edit-message" id="ownerEditMessage" role="status" aria-live="polite"></p>
       <div class="owner-edit-actions">
         <button type="button" id="ownerEditCancel">Cancel</button>
@@ -223,9 +223,12 @@
     import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
     import { collection, doc, getDocs, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
 
     const $ = id => document.getElementById(id);
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
+    const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
+    const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
     const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
     const SUPER_ADMIN_IDLE_TIMEOUT = 10 * 60 * 1000;
     let superAdminIdleTimer = null;
@@ -480,6 +483,7 @@
       const startedAt = planChanged ? activationDate.toISOString() : (owner.subscriptionStartedAt || owner.trialStartedAt || activationDate.toISOString());
       const changes = {
         mobile,
+        email: contactEmail,
         contactEmail,
         planName,
         subscriptionStatus: statusValue,
@@ -495,13 +499,25 @@
       saveButton.disabled = true;
       saveButton.textContent = 'Saving...';
       $('ownerEditMessage').textContent = 'Saving owner details...';
+      let loginEmailUpdated = false;
       try {
+        const emailResult = await updateOwnerLoginEmail({ ownerUid: ownerId, email: contactEmail });
+        loginEmailUpdated = Boolean(emailResult.data && emailResult.data.emailChanged);
         await updateDoc(doc(db,'owners',ownerId), changes);
-        $('ownerEditMessage').textContent = 'Owner details updated successfully.';
+        $('ownerEditMessage').textContent = 'Owner details and Firebase login email updated successfully.';
         closeOwnerEditor();
       } catch (error) {
         console.error('Super Admin owner update failed:', error);
-        $('ownerEditMessage').textContent = 'Could not save owner details. Check Firestore permissions and try again.';
+        const code = error && error.code ? String(error.code) : '';
+        if (code.includes('already-exists') || code.includes('email-already-in-use')) {
+          $('ownerEditMessage').textContent = 'This email is already used by another Firebase account. No email change was made.';
+        } else if (loginEmailUpdated) {
+          $('ownerEditMessage').textContent = 'Login email was updated, but the remaining owner details could not be saved. Please refresh and check the record.';
+        } else if (code.includes('not-found')) {
+          $('ownerEditMessage').textContent = 'Owner Firebase account was not found. The email could not be changed.';
+        } else {
+          $('ownerEditMessage').textContent = 'Could not update the owner login email. Check the Cloud Function deployment and try again.';
+        }
       } finally {
         saveButton.disabled = false;
         saveButton.textContent = 'Save Changes';
