@@ -217,8 +217,8 @@
         <section class="view hidden" id="view-plans">
           <div class="page-head"><div><span class="eyebrow">PRICING & ACCESS</span><h1>Subscription Plans</h1><p>View every available plan and manually activate a plan for an owner by email ID.</p></div></div>
           <div class="panel">
-            <div class="panel-head"><div><h2>Available Plans</h2><p>Choose one of the current Box Book India owner plans.</p></div></div>
-            <p class="plan-edit-message" id="subscriptionPlanStatus" role="status" aria-live="polite"></p><div class="subscription-plan-grid" id="subscriptionPlanCards"></div>
+            <div class="panel-head"><div><h2>Available Plans</h2></div></div>
+            <div class="subscription-plan-grid" id="subscriptionPlanCards"></div>
           </div>
           <div class="panel">
             <div class="panel-head"><div><h2>Manually Activate Owner Plan</h2><p>Find the registered owner using their email ID, then assign a plan.</p></div></div>
@@ -494,16 +494,9 @@
       return expiry;
     }
     function renderSubscriptionPlans() {
-      $('subscriptionPlanCards').innerHTML = state.plans.length ? state.plans.map(plan => {
-        const priceSet = Number.isFinite(Number(plan.price)) && plan.price !== null && plan.price !== '';
-        const discount = Number(plan.discount || 0);
-        const discounted = priceSet && discount > 0;
-        const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
-        const priceMarkup = !priceSet ? '<div class="plan-price">Price not set</div>' : discounted
-          ? '<div class="plan-price"><span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) + '</div><span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>'
-          : '<div class="plan-price">' + money(plan.price) + '</div>';
-        return '<article class="subscription-plan-card"><h3>' + escapeHTML(plan.name) + '</h3>' + priceMarkup + '<p>Duration: ' + escapeHTML(planDurationLabel(plan)) + '</p><p>Maximum grounds: ' + Number(plan.grounds || 1) + '</p><p>' + escapeHTML(plan.details || 'No plan details added yet.') + '</p><div class="plan-actions"><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit Details</button><button type="button" data-select-plan="' + escapeHTML(plan.name) + '">Select this plan</button></div></article>';
-      }).join('') : '<p class="empty">No available plans found. Refresh after checking the subscriptionPlans collection.</p>';
+      $('subscriptionPlanCards').innerHTML = state.plans.length ? state.plans.map(plan =>
+        '<article class="subscription-plan-card"><h3>' + escapeHTML(plan.name) + '</h3><p>Duration: ' + escapeHTML(planDurationLabel(plan)) + '</p><p>Maximum grounds: ' + Number(plan.grounds || 1) + '</p><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>'
+      ).join('') : '';
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
         '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + ' · ' + escapeHTML(planDurationLabel(plan)) + ' · ' + Number(plan.grounds || 1) + ' ground' + (Number(plan.grounds || 1) > 1 ? 's' : '') + '</option>'
