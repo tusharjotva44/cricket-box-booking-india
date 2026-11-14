@@ -433,15 +433,20 @@
   function renderOwnerSubscriptionPlans() {
     const container = $('ownerSubscriptionPlans');
     if (!container) return;
+    const defaultPlanPrices = {'free-trial-1-ground':0,'monthly-1-ground':199,'monthly-2-grounds':299,'yearly-1-ground':1999,'yearly-2-grounds':2999};
     container.innerHTML = availableSubscriptionPlans.map(plan => {
-      const priceSet = Number.isFinite(Number(plan.price)) && plan.price !== null && plan.price !== '';
+      const rawPrice = plan.price === null || plan.price === undefined || plan.price === '' ? defaultPlanPrices[plan.id] : plan.price;
+      const priceSet = rawPrice !== undefined && Number.isFinite(Number(rawPrice));
       const discount = Number(plan.discount || 0);
       const discounted = priceSet && discount > 0;
-      const finalPrice = priceSet ? Number(plan.price) * (1 - discount / 100) : null;
-      const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) : money(plan.price);
-      const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + Number(plan.grounds || 1) + (Number(plan.grounds || 1) === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
+      const finalPrice = priceSet ? Number(rawPrice) * (1 - discount / 100) : null;
+      const priceMarkup = !priceSet ? 'Price not set' : discounted ? '<span class="plan-original">' + money(rawPrice) + '</span>' + money(finalPrice) : money(rawPrice);
+      const grounds = Number(plan.grounds || 1);
+      const yearlySaving = plan.durationUnit === 'years' && priceSet ? (grounds === 1 ? 199 * 12 : 299 * 12) - Number(finalPrice) : 0;
+      const savingMarkup = yearlySaving > 0 ? '<span class="popular-label">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="popular-label">' + escapeHTML(discount) + '% OFF</span>' : '';
+      const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + grounds + (grounds === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
       const isTrial = plan.kind === 'trial';
-      return '<article class="plan-card' + (discounted ? ' featured-plan' : '') + '">' + (discounted ? '<span class="popular-label">' + escapeHTML(discount) + '% OFF</span>' : '') + '<span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div><ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button class="' + (isTrial ? 'secondary-btn' : 'primary-btn') + ' plan-select" data-plan="' + escapeHTML(plan.name) + '" type="button" disabled>' + (isTrial ? 'Automatic on Signup' : 'Contact Super Admin') + '</button></article>';
+      return '<article class="plan-card' + (discounted ? ' featured-plan' : '') + '">' + savingMarkup + '<span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div><ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button class="' + (isTrial ? 'secondary-btn' : 'primary-btn') + ' plan-select" data-plan="' + escapeHTML(plan.name) + '" type="button" disabled>' + (isTrial ? 'Automatic on Signup' : 'Contact Super Admin') + '</button></article>';
     }).join('');
     syncPlanPreview();
   }
