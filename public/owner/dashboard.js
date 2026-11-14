@@ -515,7 +515,7 @@
   }
   const availabilityDays = [{key:'monday',label:'Monday'},{key:'tuesday',label:'Tuesday'},{key:'wednesday',label:'Wednesday'},{key:'thursday',label:'Thursday'},{key:'friday',label:'Friday'},{key:'saturday',label:'Saturday'},{key:'sunday',label:'Sunday'}];
   let availabilityGroundId = '';
-  function defaultGroundAvailability() { return Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'08:00',end:'03:00'}])); }
+  function defaultGroundAvailability() { return Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'10:00',end:'01:00'}])); }
   function renderAvailabilityGroundOptions() {
     const select = $('availabilityGroundSelect'), previous = availabilityGroundId;
     select.innerHTML = '<option value="">Select your ground</option>' + grounds.map(g => '<option value="' + escapeHTML(g.id) + '">' + escapeHTML(g.name) + '</option>').join('');
@@ -527,11 +527,11 @@
     if (!ground) { editor.innerHTML = '<p class="availability-empty">' + (grounds.length ? 'Select a ground to set its weekly schedule.' : 'Add a ground first to manage its availability.') + '</p>'; actions.classList.add('hidden'); return; }
     const schedule = {...defaultGroundAvailability(),...(ground.availability || {})};
     editor.innerHTML = '<div class="availability-ground-summary"><strong>' + escapeHTML(ground.name) + '</strong><span>' + escapeHTML(ground.sport) + ' · ' + escapeHTML(ground.location) + '</span></div><div class="availability-week">' + availabilityDays.map(day => {
-      const item = schedule[day.key] || {open:false,start:'08:00',end:'03:00'};
+      const item = schedule[day.key] || {open:false,start:'10:00',end:'01:00'};
       const today = new Date();
       const weekDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7) + availabilityDays.indexOf(day));
       const dateLabel = weekDate.toLocaleDateString('en-IN', {day:'numeric',month:'short'});
-      return '<div class="availability-day-row" data-availability-day="' + day.key + '"><label class="availability-day-toggle"><input type="checkbox" data-availability-open ' + (item.open ? 'checked' : '') + '><span>' + day.label + '<small class="availability-date">' + dateLabel + '</small></span></label><label class="availability-time-field">From<input type="time" data-availability-start value="' + escapeHTML(item.start || '08:00') + '" ' + (!item.open?'disabled':'') + '></label><label class="availability-time-field">Until<input type="time" data-availability-end value="' + escapeHTML(item.end || '03:00') + '" ' + (!item.open?'disabled':'') + '></label><span class="availability-closed-label">' + (item.open?'Open':'Closed') + '</span></div>';
+      return '<div class="availability-day-row" data-availability-day="' + day.key + '"><label class="availability-day-toggle"><input type="checkbox" data-availability-open ' + (item.open ? 'checked' : '') + '><span>' + day.label + '<small class="availability-date">' + dateLabel + '</small></span></label><label class="availability-time-field">From<input type="time" data-availability-start value="' + escapeHTML(item.start || '10:00') + '" ' + (!item.open?'disabled':'') + '></label><label class="availability-time-field">Until<input type="time" data-availability-end value="' + escapeHTML(item.end || '01:00') + '" ' + (!item.open?'disabled':'') + '></label><span class="availability-closed-label">' + (item.open?'Open':'Closed') + '</span></div>';
     }).join('') + '</div><p class="availability-note">Switch off a day to close the ground. Overnight hours are supported, for example 8:00 AM to 3:00 AM.</p>';
     actions.classList.remove('hidden');
   }
