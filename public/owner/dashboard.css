@@ -288,3 +288,5 @@
 @media(max-width:650px){.availability-panel{padding:14px}.availability-day-row{grid-template-columns:1fr 1fr;gap:10px}.availability-day-toggle{grid-column:1/-1}.availability-closed-label{text-align:left}.availability-ground-summary{align-items:flex-start;flex-direction:column}.availability-ground-summary span{text-align:left}}
 
 .availability-day-toggle>span{display:flex;flex-direction:column;gap:3px}.availability-date{font-size:10px;font-weight:500;color:var(--muted)}
+
+.plan-card .plan-original{font-size:16px;color:#9ca3af;text-decoration:line-through;margin-right:8px}.plan-card .plan-price{overflow-wrap:anywhere}.plan-card .plan-select{width:100%;opacity:.75;cursor:not-allowed}.plans-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
