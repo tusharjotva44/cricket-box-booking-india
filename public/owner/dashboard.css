@@ -295,3 +295,20 @@
 
 /* Subscription plan card typography: only the plan name is bold. */
 .plan-card .plan-label{font-weight:400}.plan-card .plan-price{font-weight:400}.plan-card .plan-price small{font-weight:400}.plan-card .popular-label{font-weight:400}.plan-card h3{font-weight:700}
+
+/* Make yearly-plan savings stand out clearly. */
+.plan-card .popular-label{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:27px;
+  padding:7px 11px;
+  border:1px solid #ea580c;
+  border-radius:8px;
+  background:#f97316;
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.6px;
+  box-shadow:0 4px 10px rgba(249,115,22,.22);
+}
