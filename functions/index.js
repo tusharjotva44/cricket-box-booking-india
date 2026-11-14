@@ -66,7 +66,7 @@ exports.updateOwnerLoginEmail = onCall(async (request) => {
   if (typeof ownerUid !== "string" || !/^[A-Za-z0-9:_-]{1,128}$/.test(ownerUid)) {
     throw new HttpsError("invalid-argument", "A valid owner account is required.");
   }
-  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new HttpsError("invalid-argument", "Enter a valid email address.");
   }
 
