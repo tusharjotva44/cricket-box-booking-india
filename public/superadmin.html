@@ -510,11 +510,13 @@
         onSnapshot(collection(db,'subscriptionPlans'), snapshot => {
           state.plans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((a,b) => Number(a.order || 999) - Number(b.order || 999));
           renderSubscriptionPlans();
+          renderOwnerPlanOptions($('editOwnerPlan').value);
           finish();
         }, error => {
           console.error('Subscription plans listener failed:', error);
           state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
           renderSubscriptionPlans();
+          renderOwnerPlanOptions($('editOwnerPlan').value);
           finish();
         })
       );
@@ -555,6 +557,7 @@
         if (!state.plans.length) {
           state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
           renderSubscriptionPlans();
+          renderOwnerPlanOptions($('editOwnerPlan').value);
         }
       }
     }
