@@ -396,8 +396,10 @@
       {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
       {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
       {id:'monthly-2-grounds',name:'Monthly - 2 Grounds',price:299,durationValue:1,durationUnit:'months',grounds:2,details:'Monthly access for up to two sports grounds.',kind:'active',order:3,active:true},
-      {id:'yearly-1-ground',name:'Yearly - 1 Ground',price:1999,durationValue:1,durationUnit:'years',grounds:1,details:'Yearly access for one sports ground.',kind:'active',order:4,active:true},
-      {id:'yearly-2-grounds',name:'Yearly - 2 Grounds',price:2999,durationValue:1,durationUnit:'years',grounds:2,details:'Yearly access for up to two sports grounds.',kind:'active',order:5,active:true}
+      {id:'two-month-1-ground',name:'2 Months - 1 Ground',price:399,durationValue:2,durationUnit:'months',grounds:1,details:'Two months access for one sports ground.',kind:'active',order:4,active:true},
+      {id:'two-month-2-grounds',name:'2 Months - 2 Grounds',price:599,durationValue:2,durationUnit:'months',grounds:2,details:'Two months access for up to two sports grounds.',kind:'active',order:5,active:true},
+      {id:'yearly-1-ground',name:'Yearly - 1 Ground',price:1999,durationValue:1,durationUnit:'years',grounds:1,details:'Yearly access for one sports ground.',kind:'active',order:6,active:true},
+      {id:'yearly-2-grounds',name:'Yearly - 2 Grounds',price:2999,durationValue:1,durationUnit:'years',grounds:2,details:'Yearly access for up to two sports grounds.',kind:'active',order:7,active:true}
     ];
     const SUPER_ADMIN_IDLE_TIMEOUT = 10 * 60 * 1000;
     let superAdminIdleTimer = null;
@@ -523,6 +525,13 @@
           await batch.commit();
           return;
         }
+        const existingIds = new Set(existing.docs.map(item => item.id));
+        DEFAULT_SUBSCRIPTION_PLANS.forEach(plan => {
+          if (!existingIds.has(plan.id)) {
+            const {id,...data} = plan;
+            batch.set(doc(db,'subscriptionPlans',id), {...data, createdAt:serverTimestamp(), updatedAt:serverTimestamp()});
+          }
+        });
         const defaultPrices = Object.fromEntries(DEFAULT_SUBSCRIPTION_PLANS.map(plan => [plan.id,plan.price]));
         existing.docs.forEach(item => {
           const current = item.data();
@@ -555,7 +564,7 @@
       return expiry;
     }
     function renderSubscriptionPlans() {
-      const defaultPlanPrices = {'free-trial-1-ground':0,'monthly-1-ground':199,'monthly-2-grounds':299,'yearly-1-ground':1999,'yearly-2-grounds':2999};
+      const defaultPlanPrices = {'free-trial-1-ground':0,'monthly-1-ground':199,'monthly-2-grounds':299,'two-month-1-ground':399,'two-month-2-grounds':599,'yearly-1-ground':1999,'yearly-2-grounds':2999};
       $('subscriptionPlanCards').innerHTML = state.plans.map(plan => {
         const rawPrice = plan.price === null || plan.price === undefined || plan.price === '' ? defaultPlanPrices[plan.id] : plan.price;
         const priceSet = rawPrice !== undefined && Number.isFinite(Number(rawPrice));
@@ -567,7 +576,7 @@
         const yearlySaving = plan.durationUnit === 'years' && priceSet ? (grounds === 1 ? 199 * 12 : 299 * 12) - Number(finalPrice) : 0;
         const savingMarkup = yearlySaving > 0 ? '<span class="plan-discount">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '';
         const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + grounds + (grounds === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
-        return '<article class="subscription-plan-card"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + savingMarkup + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
+        return '<article class="subscription-plan-card"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : Number(plan.durationValue || 1) === 2 ? '2 MONTHS PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + savingMarkup + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit</button></article>';
       }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
