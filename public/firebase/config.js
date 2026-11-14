@@ -19,6 +19,8 @@ const superAdminAuth = getAuth(superAdminApp);
 const auth = getAuth(app);
 const ownerApp = getApps().find(existing => existing.name === "OWNER_AUTH") || initializeApp(firebaseConfig, "OWNER_AUTH");
 const ownerAuth = getAuth(ownerApp);
-const db = getFirestore(app);
+const isOwnerPage = window.location.pathname.startsWith("/owner/");
+const sessionApp = isAdminOwnerPreview ? superAdminApp : isOwnerPage ? ownerApp : app;
+const db = getFirestore(sessionApp);
 
 export { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview };
