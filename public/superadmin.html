@@ -283,6 +283,87 @@
       #view-grounds .sports-pickleball-small{left:3%;right:auto;bottom:145px}
     }
 
+
+    /* Mobile and small-tablet layout refinements for Super Admin. */
+    html,body{width:100%;max-width:100%;overflow-x:hidden}
+    .sidebar{overflow-y:auto;overscroll-behavior:contain}
+    .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+    .table-wrap table{width:100%}
+    @media(max-width:1050px){
+      .main>.topbar{gap:12px}
+      .content{min-width:0}
+      .panel,.metric{min-width:0}
+      .subscription-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:700px){
+      .sidebar{height:100vh;height:100dvh;padding:20px 15px 16px}
+      .sidebar .brand{padding-bottom:22px}
+      .side-label{padding-top:20px}
+      .main>.topbar{height:68px;min-height:68px;padding:0 10px;gap:8px}
+      .crumb{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+      .top-actions{flex:none;gap:6px}
+      .ghost,.refresh,.mobile-menu{padding:8px 9px;font-size:11px;white-space:nowrap}
+      .mobile-menu{width:36px;height:36px;padding:7px;flex:none}
+      .refresh .ui-icon{width:15px;height:15px}
+      .content{padding:21px 12px 38px}
+      .page-head{gap:8px;margin-bottom:20px}
+      .page-head h1{font-size:27px;line-height:1.15;overflow-wrap:anywhere}
+      .page-head p{font-size:12px;line-height:1.55}
+      .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .metric{padding:13px 11px;border-radius:13px}
+      .metric-top{gap:6px;font-size:10px;line-height:1.35}
+      .metric-icon{width:30px;height:30px;flex:none}
+      .metric-value{margin-top:11px;font-size:23px;overflow-wrap:anywhere}
+      .metric-foot{font-size:9px;line-height:1.4}
+      .panel{padding:14px 12px;margin-bottom:14px;border-radius:14px}
+      .panel-head{gap:12px}
+      .panel-head h2{font-size:16px}
+      .panel-head p{font-size:11px;line-height:1.5}
+      .toolbar{width:100%;min-width:0}
+      .toolbar input{width:100%;min-width:0;font-size:12px}
+      .table-wrap{margin-right:-2px}
+      .table-wrap table{width:max-content;min-width:100%}
+      #view-overview .table-wrap table{min-width:610px}
+      #view-owners .table-wrap table{min-width:880px}
+      #view-transactions .table-wrap table{min-width:790px}
+      #view-grounds .table-wrap{overflow-x:auto}
+      #view-grounds .table-wrap table{width:1050px;min-width:1050px;table-layout:auto;white-space:normal}
+      #view-grounds th,#view-grounds td{padding:10px 8px;font-size:10px;overflow-wrap:anywhere}
+      #view-grounds th{font-size:9px;white-space:normal}
+      #view-grounds th:nth-child(n){width:auto}
+      #view-grounds td strong{font-size:11px}
+      .subscription-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .subscription-plan-card{min-width:0;padding:10px}
+      .subscription-plan-card .plan-yearly-art img{max-width:100%;height:auto}
+      .subscription-plan-card h3{font-size:11px;overflow-wrap:anywhere}
+      .subscription-plan-card .plan-price{font-size:16px;overflow-wrap:anywhere}
+      .manual-plan-grid{grid-template-columns:1fr;gap:12px}
+      .manual-plan-actions{justify-content:stretch}
+      .manual-plan-submit{width:100%}
+      .info-grid{grid-template-columns:1fr}
+      .owner-edit-overlay,.plan-edit-overlay{padding:10px;align-items:center}
+      .owner-edit-card,.plan-edit-card{width:100%;max-width:100%;max-height:calc(100dvh - 20px);overflow-y:auto;padding:18px}
+      .owner-edit-grid,.plan-edit-grid{grid-template-columns:1fr}
+      .owner-edit-actions,.plan-edit-actions{display:grid;grid-template-columns:1fr 1fr}
+      .owner-edit-actions button,.plan-edit-actions button{min-width:0;padding:11px 8px}
+      .notice{padding:14px;font-size:11px;line-height:1.6}
+      .login-screen{padding:16px}
+      .login-card{width:100%;padding:25px 19px}
+      .login-card h1{font-size:26px}
+    }
+    @media(max-width:380px){
+      .main>.topbar{padding:0 7px;gap:6px}
+      .top-actions{gap:4px}
+      .ghost,.refresh{padding:8px 7px;font-size:10px}
+      .crumb{font-size:10px}
+      .content{padding-left:9px;padding-right:9px}
+      .cards{gap:7px}
+      .metric{padding:11px 9px}
+      .metric-top{font-size:9px}
+      .metric-value{font-size:21px}
+      .subscription-plan-grid{grid-template-columns:1fr}
+    }
+
 </style>
 </head>
 <body>
