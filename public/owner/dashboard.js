@@ -426,6 +426,15 @@
       storage.setItem(STORE.planExpiry, JSON.stringify(dates));
     } catch {}
   }
+  const DEFAULT_OWNER_SUBSCRIPTION_PLANS = [
+    {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
+    {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
+    {id:'monthly-2-grounds',name:'Monthly - 2 Grounds',price:299,durationValue:1,durationUnit:'months',grounds:2,details:'Monthly access for up to two sports grounds.',kind:'active',order:3,active:true},
+    {id:'two-month-1-ground',name:'2 Months - 1 Ground',price:399,durationValue:2,durationUnit:'months',grounds:1,details:'Two months access for one sports ground.',kind:'active',order:4,active:true},
+    {id:'two-month-2-grounds',name:'2 Months - 2 Grounds',price:599,durationValue:2,durationUnit:'months',grounds:2,details:'Two months access for up to two sports grounds.',kind:'active',order:5,active:true},
+    {id:'yearly-1-ground',name:'Yearly - 1 Ground',price:1999,durationValue:1,durationUnit:'years',grounds:1,details:'Yearly access for one sports ground.',kind:'active',order:6,active:true},
+    {id:'yearly-2-grounds',name:'Yearly - 2 Grounds',price:2999,durationValue:1,durationUnit:'years',grounds:2,details:'Yearly access for up to two sports grounds.',kind:'active',order:7,active:true}
+  ];
   let availableSubscriptionPlans = [];
   function planDurationLabel(plan) {
     const value = Number(plan.durationValue || 1);
@@ -1089,10 +1098,18 @@
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
       const firestore = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
-      firestore.onSnapshot(firestore.collection(db,'subscriptionPlans'), snapshot => {
-        availableSubscriptionPlans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((left,right) => Number(left.order || 999) - Number(right.order || 999));
+      const showDefaultOwnerPlans = () => {
+        availableSubscriptionPlans = DEFAULT_OWNER_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
         renderOwnerSubscriptionPlans();
-      }, error => console.error('Could not load live subscription plans:', error));
+      };
+      firestore.onSnapshot(firestore.collection(db,'subscriptionPlans'), snapshot => {
+        const livePlans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((left,right) => Number(left.order || 999) - Number(right.order || 999));
+        availableSubscriptionPlans = livePlans.length ? livePlans : DEFAULT_OWNER_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
+        renderOwnerSubscriptionPlans();
+      }, error => {
+        console.error('Could not load live subscription plans:', error);
+        showDefaultOwnerPlans();
+      });
       ownerUid = IS_ADMIN_OWNER_PREVIEW ? String(window.adminOwnerPreviewTargetUid || '') : user.uid;
       ownerSyncStep = 'Reading owner profile';
       const remoteProfile = await api.getOwnerProfile(db, ownerUid);
