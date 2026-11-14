@@ -746,6 +746,7 @@
   });
   syncPlanPreview();
   (async () => {
+    let ownerSyncStep = 'Firebase authentication';
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
       const profile = await api.getOwnerProfile(db, ownerUid || user.uid);
@@ -1039,18 +1040,22 @@
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
       ownerUid = IS_ADMIN_OWNER_PREVIEW ? String(window.adminOwnerPreviewTargetUid || '') : user.uid;
+      ownerSyncStep = 'Reading owner profile';
       const remoteProfile = await api.getOwnerProfile(db, ownerUid);
       const signedInEmail = IS_ADMIN_OWNER_PREVIEW ? OWNER_EMAIL : String(user.email || OWNER_EMAIL).trim().toLowerCase();
       ownerProfile = remoteProfile && (!remoteProfile.email || String(remoteProfile.email).trim().toLowerCase() === signedInEmail) ? remoteProfile : {};
       renderOwnerName();
+      ownerSyncStep = 'Reading owner grounds';
       const remoteGrounds = await api.getOwnerGrounds(db, ownerUid);
       if (remoteGrounds.length) {
         grounds = remoteGrounds.map(g => ({...g, sport:g.sport || g.sportType || 'Box Cricket', location:g.location || '', price:Number(g.price || 0)}));
       } else if (grounds.length) {
+        ownerSyncStep = 'Migrating local grounds to Firestore';
         await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
       }
       renderGrounds();
 
+      ownerSyncStep = 'Reading owner bookings';
       const existingBookings = await api.getOwnerBookings(db, ownerUid);
       const existingIds = new Set(existingBookings.map(item => String(item.id)));
       const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
@@ -1058,6 +1063,7 @@
         if (!legacy.id || existingIds.has(String(legacy.id))) continue;
         const migrated = {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')};
         try {
+          ownerSyncStep = 'Migrating legacy booking ' + String(legacy.id);
           await api.saveBooking(db, migrated);
         } catch (migrationError) {
           if (migrationError.code !== 'booking/slot-taken') throw migrationError;
@@ -1065,9 +1071,11 @@
         }
         existingIds.add(String(legacy.id));
       }
+      ownerSyncStep = 'Loading owner bookings after migration';
       remoteBookings = await api.getOwnerBookings(db, ownerUid);
       knownBookingIds = new Set(remoteBookings.map(item => String(item.id)));
       renderBookings();
+      ownerSyncStep = 'Starting live booking listener';
       window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, ownerUid, latest => {
         const incoming = latest.filter(item => !knownBookingIds.has(String(item.id)));
         incoming.forEach(item => {
@@ -1089,7 +1097,7 @@
         toast('Live bookings could not be loaded. Check Firestore permissions.');
       });
     } catch (error) {
-      console.error('Owner data sync failed:', error);
+      console.error('Owner data sync failed during ' + ownerSyncStep + ':', error);
       toast('Owner data could not be synced. Please refresh or check Firebase permissions.');
     }
   })();
