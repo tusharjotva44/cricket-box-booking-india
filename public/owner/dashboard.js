@@ -28,6 +28,7 @@
     } catch { return ''; }
   })();
   let selectedPlanStatus = selectedPlan.startsWith('Free Trial') ? 'trial' : '';
+  let selectedGroundLimit = null;
   let planLoaded = false;
   let toastTimer;
   const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
@@ -370,6 +371,7 @@
     const expiry = getPlanExpiry();
     if (expiry && new Date(expiry).getTime() <= Date.now()) return 0;
     if (selectedPlan.startsWith('Free Trial') && !expiry) return 0;
+    if (Number.isInteger(selectedGroundLimit) && selectedGroundLimit > 0) return selectedGroundLimit;
     return selectedPlan.includes('2 Grounds') ? 2 : selectedPlan.includes('1 Ground') ? 1 : 0;
   }
   function saveSelectedPlan() {
@@ -782,6 +784,7 @@
         const liveProfile = ownerSnapshot.data();
         selectedPlan = typeof liveProfile.planName === 'string' ? liveProfile.planName : '';
         selectedPlanStatus = String(liveProfile.subscriptionStatus || '').toLowerCase();
+        selectedGroundLimit = Number.isInteger(Number(liveProfile.groundLimit)) && Number(liveProfile.groundLimit) > 0 ? Number(liveProfile.groundLimit) : null;
         const liveExpiry = liveProfile.trialExpiresAt || liveProfile.subscriptionExpiry || liveProfile.expiryDate || '';
         const cachedPlans = JSON.parse(storage.getItem(STORE.plan) || '{}');
         if (selectedPlan) cachedPlans[OWNER_EMAIL] = selectedPlan;
@@ -797,6 +800,7 @@
       }, error => console.error('Could not sync live owner plan:', error));
       selectedPlan = profile && typeof profile.planName === 'string' ? profile.planName : '';
       selectedPlanStatus = profile ? String(profile.subscriptionStatus || '').toLowerCase() : '';
+      selectedGroundLimit = profile && Number.isInteger(Number(profile.groundLimit)) && Number(profile.groundLimit) > 0 ? Number(profile.groundLimit) : null;
       const planExpiry = profile ? (profile.trialExpiresAt || profile.subscriptionExpiry || profile.expiryDate || '') : '';
       const savedPlans = JSON.parse(storage.getItem(STORE.plan) || '{}');
       if (selectedPlan) savedPlans[OWNER_EMAIL] = selectedPlan;
