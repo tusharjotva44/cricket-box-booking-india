@@ -218,7 +218,7 @@
           <div class="page-head"><div><span class="eyebrow">PRICING & ACCESS</span><h1>Subscription Plans</h1><p>View every available plan and manually activate a plan for an owner by email ID.</p></div></div>
           <div class="panel">
             <div class="panel-head"><div><h2>Available Plans</h2><p>Choose one of the current Box Book India owner plans.</p></div></div>
-            <div class="subscription-plan-grid" id="subscriptionPlanCards"></div>
+            <p class="plan-edit-message" id="subscriptionPlanStatus" role="status" aria-live="polite"></p><div class="subscription-plan-grid" id="subscriptionPlanCards"></div>
           </div>
           <div class="panel">
             <div class="panel-head"><div><h2>Manually Activate Owner Plan</h2><p>Find the registered owner using their email ID, then assign a plan.</p></div></div>
@@ -450,7 +450,9 @@
           finish();
         }, error => {
           console.error('Subscription plans listener failed:', error);
-          $('subscriptionPlanCards').innerHTML = '<p class="empty">Could not load plans. Check Super Admin Firestore permissions and rules.</p>';
+          state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
+          renderSubscriptionPlans();
+          $('subscriptionPlanStatus').textContent = 'Showing default plan previews. Firestore access failed (' + (error.code || 'unknown error') + '). Updated Firestore rules must be deployed before plan changes can be saved.';
           finish();
         })
       );
@@ -470,6 +472,11 @@
         await batch.commit();
       } catch (error) {
         console.error('Could not initialize default subscription plans:', error);
+        if (!state.plans.length) {
+          state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
+          renderSubscriptionPlans();
+        }
+        $('subscriptionPlanStatus').textContent = 'Default plans are shown as a preview because Firestore could not create the plan records (' + (error.code || 'unknown error') + '). Deploy the updated Firestore rules to save and manage plans.';
       }
     }
     function planDurationLabel(plan) {
@@ -496,7 +503,7 @@
           ? '<div class="plan-price"><span class="plan-original">' + money(plan.price) + '</span>' + money(finalPrice) + '</div><span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>'
           : '<div class="plan-price">' + money(plan.price) + '</div>';
         return '<article class="subscription-plan-card"><h3>' + escapeHTML(plan.name) + '</h3>' + priceMarkup + '<p>Duration: ' + escapeHTML(planDurationLabel(plan)) + '</p><p>Maximum grounds: ' + Number(plan.grounds || 1) + '</p><p>' + escapeHTML(plan.details || 'No plan details added yet.') + '</p><div class="plan-actions"><button type="button" data-edit-plan="' + escapeHTML(plan.id) + '">Edit Details</button><button type="button" data-select-plan="' + escapeHTML(plan.name) + '">Select this plan</button></div></article>';
-      }).join('') : '<p class="empty">Loading available plans…</p>';
+      }).join('') : '<p class="empty">No available plans found. Refresh after checking the subscriptionPlans collection.</p>';
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
         '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + ' · ' + escapeHTML(planDurationLabel(plan)) + ' · ' + Number(plan.grounds || 1) + ' ground' + (Number(plan.grounds || 1) > 1 ? 's' : '') + '</option>'
@@ -550,7 +557,7 @@
       $('planEditMessage').textContent = 'Saving plan details…';
       const changes = {name,price,durationValue,durationUnit,grounds,details:$('planEditDetails').value.trim(),discount,updatedAt:serverTimestamp()};
       try {
-        await updateDoc(doc(db,'subscriptionPlans',planId), changes);
+        await setDoc(doc(db,'subscriptionPlans',planId), {...changes, kind:plan.kind || 'active', order:Number(plan.order || 999), active:true}, {merge:true});
         const oldName = plan.name;
         state.plans = state.plans.map(item => item.id === planId ? {...item,...changes,updatedAt:new Date()} : item);
         renderSubscriptionPlans();
