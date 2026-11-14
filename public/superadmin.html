@@ -691,9 +691,13 @@
           currency: 'INR',
           activationType: 'Manual Activation',
           paymentMethod: 'Manually verified',
+          paymentProvider: null,
+          providerOrderId: null,
+          providerPaymentId: null,
           status: 'Recorded',
           recordedBy: state.user?.email || SUPER_ADMIN_EMAIL,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          verifiedAt: serverTimestamp()
         });
         await batch.commit();
         $('manualPlanForm').reset();
