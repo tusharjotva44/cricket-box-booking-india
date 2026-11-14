@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="28" y1="12" x2="212" y2="142" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4E8"/>
+      <stop offset="1" stop-color="#FFE0C2"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="74" y1="24" x2="168" y2="124" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB923C"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <rect x="52" y="9" width="136" height="132" rx="28" fill="url(#bg)"/>
+  <circle cx="120" cy="75" r="43" fill="url(#orange)"/>
+  <path d="M97 53.5h46a7 7 0 0 1 7 7v35a7 7 0 0 1-7 7H97a7 7 0 0 1-7-7v-35a7 7 0 0 1 7-7Z" fill="white"/>
+  <path d="M104 47v13M136 47v13" stroke="#C2410C" stroke-width="5" stroke-linecap="round"/>
+  <path d="M90 68h60" stroke="#FED7AA" stroke-width="4"/>
+  <path d="m111 85 6 6 13-14" stroke="#F97316" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m174 26 4.5 9.5L188 40l-9.5 4.5L174 54l-4.5-9.5L160 40l9.5-4.5L174 26Z" fill="#FDBA74"/>
+  <path d="m65 103 3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6Z" fill="#FB923C"/>
+  <circle cx="187" cy="105" r="7" fill="#FDBA74"/>
+  <circle cx="71" cy="39" r="4" fill="#FDBA74"/>
+</svg>
