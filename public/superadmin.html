@@ -687,7 +687,7 @@
           ownerEmail: email,
           planId: plan.id,
           planName: plan.name,
-          amount: Number(plan.price || 0),
+          amount: Math.max(0, Number(plan.price || 0) * (1 - Number(plan.discount || 0) / 100)),
           currency: 'INR',
           activationType: 'Manual Activation',
           paymentMethod: 'Manually verified',
