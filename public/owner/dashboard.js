@@ -771,6 +771,25 @@
     try {
       const { user, api, db } = await getOwnerFirebaseContext();
       const profile = await api.getOwnerProfile(db, ownerUid || user.uid);
+      const ownerFirestore = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
+      ownerFirestore.onSnapshot(ownerFirestore.doc(db,'owners',ownerUid || user.uid), ownerSnapshot => {
+        if (!ownerSnapshot.exists()) return;
+        const liveProfile = ownerSnapshot.data();
+        selectedPlan = typeof liveProfile.planName === 'string' ? liveProfile.planName : '';
+        selectedPlanStatus = String(liveProfile.subscriptionStatus || '').toLowerCase();
+        const liveExpiry = liveProfile.trialExpiresAt || liveProfile.subscriptionExpiry || liveProfile.expiryDate || '';
+        const cachedPlans = JSON.parse(storage.getItem(STORE.plan) || '{}');
+        if (selectedPlan) cachedPlans[OWNER_EMAIL] = selectedPlan;
+        else delete cachedPlans[OWNER_EMAIL];
+        storage.setItem(STORE.plan, JSON.stringify(cachedPlans));
+        const cachedDates = JSON.parse(storage.getItem(STORE.planExpiry) || '{}');
+        if (liveExpiry) cachedDates[OWNER_EMAIL] = liveExpiry;
+        else delete cachedDates[OWNER_EMAIL];
+        storage.setItem(STORE.planExpiry, JSON.stringify(cachedDates));
+        planLoaded = true;
+        syncPlanPreview();
+        renderGrounds();
+      }, error => console.error('Could not sync live owner plan:', error));
       selectedPlan = profile && typeof profile.planName === 'string' ? profile.planName : '';
       selectedPlanStatus = profile ? String(profile.subscriptionStatus || '').toLowerCase() : '';
       const planExpiry = profile ? (profile.trialExpiresAt || profile.subscriptionExpiry || profile.expiryDate || '') : '';
