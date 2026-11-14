@@ -290,3 +290,5 @@
 .availability-day-toggle>span{display:flex;flex-direction:column;gap:3px}.availability-date{font-size:10px;font-weight:500;color:var(--muted)}
 
 .plan-card .plan-original{font-size:16px;color:#9ca3af;text-decoration:line-through;margin-right:8px}.plan-card .plan-price{overflow-wrap:anywhere}.plan-card .plan-select{width:100%;opacity:.75;cursor:not-allowed}.plans-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+
+.subscription-plan-card ul{padding-left:17px;margin:12px 0 4px;color:var(--muted);font-size:11px;line-height:1.7}.subscription-plan-card li{margin:3px 0}
