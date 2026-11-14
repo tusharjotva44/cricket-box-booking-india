@@ -299,7 +299,7 @@
 
         <section class="view hidden" id="view-grounds">
           <div class="page-head"><div><span class="eyebrow">LISTING DIRECTORY</span><h1>Sports Grounds</h1><p>All sports ground listings currently stored in Firebase.</p></div></div>
-          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p></div><div class="toolbar"><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Listing Status</th><th>Availability</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="11" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
+          <div class="panel"><div class="panel-head"><div><h2>All Sports Grounds</h2><p id="groundCountLabel">Loading ground records…</p><p id="groundHoursBulkMessage" class="subtle" role="status" aria-live="polite"></p></div><div class="toolbar"><button type="button" class="ground-availability-btn" id="applyDefaultHoursButton">Apply 10 AM – 1 AM to All Grounds</button><input id="groundSearch" type="search" placeholder="Search ground, owner or location…" aria-label="Search sports grounds"></div></div><div class="table-wrap"><table><thead><tr><th>Ground</th><th>Sport</th><th>Location</th><th>Owner</th><th>Mobile</th><th>Hourly Price</th><th>Description</th><th>UPI ID</th><th>Listing Status</th><th>Availability</th><th>Photo / QR URL</th></tr></thead><tbody id="groundRows"><tr><td colspan="11" class="loading">Loading ground records…</td></tr></tbody></table></div></div>
         </section>
       </div>
     </main>
@@ -932,6 +932,46 @@
     let selectedAvailabilityDay = 'monday';
     let availabilityDraft = {};
     const emptyAvailability = () => Object.fromEntries(availabilityDays.map(day => [day.key,{open:true,start:'10:00',end:'01:00'}]));
+
+    async function applyDefaultHoursToAllGrounds() {
+      const grounds = state.grounds.slice();
+      const message = $('groundHoursBulkMessage');
+      const button = $('applyDefaultHoursButton');
+      if (!grounds.length) {
+        message.textContent = 'No ground records are available to update.';
+        return;
+      }
+      const confirmed = window.confirm('Apply 10:00 AM to 1:00 AM (next day) to all ' + grounds.length + ' existing grounds? Each ground’s open/closed days will be preserved. Bookings will not be changed.');
+      if (!confirmed) return;
+      button.disabled = true;
+      button.textContent = 'Updating…';
+      message.textContent = 'Updating saved hours for ' + grounds.length + ' grounds…';
+      let updatedCount = 0;
+      try {
+        for (let index = 0; index < grounds.length; index += 450) {
+          const group = grounds.slice(index, index + 450);
+          const batch = writeBatch(db);
+          group.forEach(ground => {
+            const current = ground.availability && typeof ground.availability === 'object' ? ground.availability : {};
+            const availability = Object.fromEntries(availabilityDays.map(day => {
+              const savedDay = current[day.key] && typeof current[day.key] === 'object' ? current[day.key] : {};
+              return [day.key, {open: savedDay.open === undefined ? true : savedDay.open === true, start:'10:00', end:'01:00'}];
+            }));
+            batch.update(doc(db,'grounds',ground.id), {availability,updatedAt:serverTimestamp()});
+          });
+          await batch.commit();
+          updatedCount += group.length;
+        }
+        message.textContent = 'Updated hours for all ' + updatedCount + ' grounds: 10:00 AM – 1:00 AM (next day). Open/closed days and bookings were preserved.';
+      } catch (error) {
+        console.error('Could not apply default hours to all grounds:', error);
+        message.textContent = 'Update stopped after ' + updatedCount + ' grounds. Please refresh and check Firestore permissions before retrying.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Apply 10 AM – 1 AM to All Grounds';
+      }
+    }
+    $('applyDefaultHoursButton').addEventListener('click', applyDefaultHoursToAllGrounds);
     function renderAvailabilityDayOptions() {
       $('availabilityDayOptions').innerHTML = availabilityDays.map(day => {
         const item = availabilityDraft[day.key] || {open:false,start:'10:00',end:'01:00'};
