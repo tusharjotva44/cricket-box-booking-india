@@ -452,7 +452,6 @@
           console.error('Subscription plans listener failed:', error);
           state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
           renderSubscriptionPlans();
-          $('subscriptionPlanStatus').textContent = 'Showing default plan previews. Firestore access failed (' + (error.code || 'unknown error') + '). Updated Firestore rules must be deployed before plan changes can be saved.';
           finish();
         })
       );
@@ -476,7 +475,6 @@
           state.plans = DEFAULT_SUBSCRIPTION_PLANS.map(plan => ({...plan}));
           renderSubscriptionPlans();
         }
-        $('subscriptionPlanStatus').textContent = 'Default plans are shown as a preview because Firestore could not create the plan records (' + (error.code || 'unknown error') + '). Deploy the updated Firestore rules to save and manage plans.';
       }
     }
     function planDurationLabel(plan) {
