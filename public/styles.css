@@ -329,3 +329,68 @@
   #contact .contact-form-card{padding:22px 18px;border-radius:19px}
   #contact .contact-note{padding:17px}
 }
+
+
+/* Contact Us — subtle animated sports visual in the left panel */
+#contact .contact-info{min-height:100%;overflow:hidden}
+#contact .contact-visual{
+  position:relative;
+  min-height:190px;
+  margin:12px 0 0;
+  display:grid;
+  place-items:center;
+  isolation:isolate;
+}
+#contact .contact-visual-ring{
+  position:absolute;
+  width:156px;
+  height:156px;
+  border:1px solid rgba(253,186,116,.35);
+  border-radius:50%;
+  animation:contactOrbit 13s linear infinite;
+}
+#contact .contact-visual-ring:before,
+#contact .contact-visual-ring:after{
+  content:"";
+  position:absolute;
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  background:#fdba74;
+  box-shadow:0 0 18px rgba(253,186,116,.65);
+}
+#contact .contact-visual-ring:before{top:17px;left:20px}
+#contact .contact-visual-ring:after{right:8px;bottom:35px;width:7px;height:7px;background:#f97316}
+#contact .contact-visual-ring.ring-two{
+  width:112px;
+  height:112px;
+  border-style:dashed;
+  border-color:rgba(255,255,255,.24);
+  animation:contactOrbit 9s linear infinite reverse;
+}
+#contact .contact-visual-ball{
+  position:relative;
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:3px solid #fed7aa;
+  background:radial-gradient(circle at 32% 28%,#fb923c,#c2410c 72%);
+  color:#fff7ed;
+  font-size:23px;
+  box-shadow:0 10px 30px rgba(249,115,22,.28),0 0 0 12px rgba(249,115,22,.08);
+  animation:contactBallFloat 3.2s ease-in-out infinite;
+}
+#contact .contact-visual-caption{
+  position:absolute;
+  bottom:2px;
+  color:#cbd5e1;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:2px;
+}
+@keyframes contactOrbit{to{transform:rotate(360deg)}}
+@keyframes contactBallFloat{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-10px) rotate(8deg)}}
+@media(max-width:800px){#contact .contact-visual{min-height:160px;margin-top:8px}}
+@media(prefers-reduced-motion:reduce){#contact .contact-visual-ring,#contact .contact-visual-ball{animation:none!important}}
