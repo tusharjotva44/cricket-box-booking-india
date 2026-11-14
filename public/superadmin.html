@@ -145,7 +145,6 @@
         <button data-view="owners"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Owner Management</button>
         <button data-view="plans"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M7 15h3"/></svg></span>Subscription Plans</button>
         <button data-view="payments"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span>Payments</button>
-        <button data-view="bookings"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3M16 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg></span>Bookings</button>
         <button data-view="grounds"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M3 10h18M8 21v-6h8v6M8 7h.01M16 7h.01"/></svg></span>Sports Grounds</button>
       </nav>
       <div class="side-label">QUICK ACCESS</div>
@@ -188,11 +187,6 @@
         <section class="view hidden" id="view-payments">
           <div class="page-head"><div><span class="eyebrow">OWNER TRANSACTIONS</span><h1>Payments</h1><p>Owner subscription payment records.</p></div></div>
           <div class="notice"><strong>Owner payment records are not connected yet</strong>Only payments made by ground owners for their subscriptions will appear here. Customer booking payments are shown only in the Owner Dashboard and are not displayed in Super Admin.</div>
-        </section>
-
-        <section class="view hidden" id="view-bookings">
-          <div class="page-head"><div><span class="eyebrow">LIVE RESERVATIONS</span><h1>Bookings</h1><p id="bookingCountLabel">Loading booking records…</p></div><div class="toolbar"><input id="bookingSearch" type="search" placeholder="Search customer, ground, owner or booking ID…" aria-label="Search bookings"></div></div>
-          <div class="panel"><div class="table-wrap"><table><thead><tr><th>Booking</th><th>Customer</th><th>Phone</th><th>Ground</th><th>Owner</th><th>Date & Time</th><th>Amount</th><th>Status</th></tr></thead><tbody id="bookingRows"><tr><td colspan="8" class="loading">Loading booking records…</td></tr></tbody></table></div></div>
         </section>
 
         <section class="view hidden" id="view-grounds">
@@ -271,7 +265,7 @@
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
-    const state = { owners: [], grounds: [], bookings: [], user: null, loading: false, unsubscribers: [] };
+    const state = { owners: [], grounds: [], user: null, loading: false, unsubscribers: [] };
     const SUPER_ADMIN_IDLE_TIMEOUT = 10 * 60 * 1000;
     let superAdminIdleTimer = null;
     let inactivityLogoutInProgress = false;
@@ -368,12 +362,7 @@
         onSnapshot(collection(db,'grounds'), snapshot => {
           state.grounds = snapshot.docs.map(item => ({id:item.id,...item.data()}));
           renderAll(); finish();
-        }, error => showError(error,'groundRows',10)),
-        onSnapshot(collection(db,'bookings'), snapshot => {
-          state.bookings = snapshot.docs.map(item => ({id:item.id,...item.data()}));
-          renderBookings();
-          finish();
-        }, error => showError(error,'bookingRows',8))
+        }, error => showError(error,'groundRows',10))
       );
     }
     function renderAll() {
@@ -566,13 +555,6 @@
       }
     });
 
-    function renderBookings() {
-      const query = $('bookingSearch').value.trim().toLowerCase();
-      const list = [...state.bookings].sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
-        .filter(booking => [booking.id,booking.customerName,booking.phone,booking.groundName,booking.owner,booking.ownerEmail,booking.ownerUid,booking.status,booking.paymentStatus].some(value => String(value || '').toLowerCase().includes(query)));
-      $('bookingCountLabel').textContent = list.length + ' of ' + state.bookings.length + ' booking records';
-      $('bookingRows').innerHTML = list.length ? list.map(booking => '<tr><td><strong>' + escapeHTML(booking.id) + '</strong><br><span class="muted-cell">' + escapeHTML(booking.bookingSource || 'Website') + '</span></td><td>' + escapeHTML(booking.customerName || '—') + '</td><td>' + escapeHTML(booking.phone || '—') + '</td><td>' + escapeHTML(booking.groundName || booking.groundId || '—') + '</td><td>' + escapeHTML(booking.owner || booking.ownerEmail || booking.ownerUid || '—') + '</td><td>' + escapeHTML(booking.date || '—') + '<br><span class="muted-cell">' + escapeHTML(booking.slot || '—') + '</span></td><td>' + escapeHTML(money(booking.amount)) + '</td><td>' + escapeHTML(booking.status || 'Pending') + '</td></tr>').join('') : '<tr><td colspan="8" class="empty">No booking records found.</td></tr>';
-    }
     const availabilityDays = [
       {key:'monday',label:'Monday'},{key:'tuesday',label:'Tuesday'},{key:'wednesday',label:'Wednesday'},
       {key:'thursday',label:'Thursday'},{key:'friday',label:'Friday'},{key:'saturday',label:'Saturday'},{key:'sunday',label:'Sunday'}
@@ -627,7 +609,7 @@
     function openView(name) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden',view.id !== 'view-' + name));
       document.querySelectorAll('.nav button').forEach(button => button.classList.toggle('active',button.dataset.view === name));
-      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',bookings:'Bookings',grounds:'Sports Grounds'};
+      const labels = {overview:'Dashboard',owners:'Owner Management',plans:'Subscription Plans',payments:'Payments',grounds:'Sports Grounds'};
       $('breadcrumb').textContent = labels[name] || 'Dashboard';
       $('sidebar').classList.remove('open');
       window.scrollTo({top:0,behavior:'smooth'});
@@ -734,7 +716,6 @@
       if (event.key === 'Escape' && !$('groundAvailabilityModal').classList.contains('hidden')) closeGroundAvailability();
     });
 
-    $('bookingSearch').addEventListener('input',renderBookings);
     document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click',() => openView(button.dataset.view)));
     document.querySelectorAll('[data-open-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.openView)));
     $('mobileMenu').addEventListener('click',() => $('sidebar').classList.toggle('open'));
