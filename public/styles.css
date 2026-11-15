@@ -535,3 +535,124 @@
   .steps article{transition:none}
   .steps article:hover{transform:none}
 }
+
+
+/* Premium styling — Featured sports ground cards only */
+.grounds-section .ground-card{
+  border:1px solid #e8eaf0;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 8px 24px rgba(23,37,84,.055);
+  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.grounds-section .ground-card:hover{
+  transform:translateY(-7px);
+  border-color:#fed7aa;
+  box-shadow:0 22px 48px rgba(23,37,84,.12);
+}
+.grounds-section .ground-image{
+  height:205px;
+  background:linear-gradient(135deg,#1e3a5f 0%,#315b72 48%,#f97316 150%);
+}
+.grounds-section .ground-image:after{
+  content:"";
+  position:absolute;
+  inset:45% 0 0;
+  background:linear-gradient(180deg,transparent,rgba(15,23,42,.28));
+  pointer-events:none;
+}
+.grounds-section .ground-image img{
+  display:block;
+  transition:transform .45s ease;
+}
+.grounds-section .ground-card:hover .ground-image img{
+  transform:scale(1.045);
+}
+.grounds-section .ground-image .image-placeholder{
+  background:radial-gradient(circle at 72% 22%,rgba(251,146,60,.8),transparent 32%),linear-gradient(135deg,#172554,#334b70 62%,#9a3412);
+}
+.grounds-section .ground-image .tag{
+  z-index:1;
+  top:15px;
+  left:15px;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:999px;
+  background:rgba(255,255,255,.94);
+  color:#9a3412;
+  box-shadow:0 4px 14px rgba(15,23,42,.12);
+  font-size:9px;
+  letter-spacing:.8px;
+}
+.grounds-section .ground-body{
+  padding:21px 21px 19px;
+}
+.grounds-section .ground-body h3{
+  margin:0 0 11px;
+  color:#172554;
+  font-size:20px;
+  line-height:1.3;
+  letter-spacing:-.35px;
+}
+.grounds-section .ground-card .ground-body .ground-location{
+  gap:8px;
+  margin-top:7px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.5;
+}
+.grounds-section .ground-desc{
+  display:-webkit-box;
+  min-height:40px;
+  margin:13px 0 17px;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  color:#718096;
+  font-size:12px;
+  line-height:1.7;
+}
+.grounds-section .ground-bottom{
+  min-height:57px;
+  padding-top:15px;
+  border-top:1px solid #eef0f4;
+  gap:12px;
+}
+.grounds-section .price strong{
+  color:#172554;
+  font-size:23px;
+  letter-spacing:-.6px;
+}
+.grounds-section .price small{
+  color:#94a3b8;
+  font-size:11px;
+}
+.grounds-section .book-btn{
+  padding:12px 15px;
+  border:1px solid #ea580c;
+  border-radius:11px;
+  background:linear-gradient(135deg,#fb923c,#ea580c);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  box-shadow:0 5px 13px rgba(234,88,12,.18);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+.grounds-section .book-btn:hover{
+  background:linear-gradient(135deg,#f97316,#c2410c);
+  transform:translateY(-2px);
+  box-shadow:0 8px 18px rgba(234,88,12,.25);
+}
+@media(max-width:650px){
+  .grounds-section .ground-image{height:215px}
+  .grounds-section .ground-body{padding:19px}
+}
+@media(prefers-reduced-motion:reduce){
+  .grounds-section .ground-card,
+  .grounds-section .ground-image img,
+  .grounds-section .book-btn{transition:none}
+  .grounds-section .ground-card:hover,
+  .grounds-section .ground-card:hover .ground-image img,
+  .grounds-section .book-btn:hover{transform:none}
+}
