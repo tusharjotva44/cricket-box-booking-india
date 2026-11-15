@@ -670,3 +670,19 @@
   .grounds-section .ground-image{height:198px}
   .grounds-section .ground-body{padding:17px}
 }
+
+
+/* More compact featured ground cards */
+.grounds-section .ground-image{height:168px}
+.grounds-section .ground-body{padding:15px 16px 14px}
+.grounds-section .ground-body h3{font-size:18px;margin-bottom:8px}
+.grounds-section .ground-card .ground-body .ground-location{font-size:11px;margin-top:5px}
+.grounds-section .ground-desc{min-height:34px;margin:9px 0 11px;font-size:11px;line-height:1.55}
+.grounds-section .ground-bottom{min-height:46px;padding-top:11px}
+.grounds-section .price strong{font-size:19px}
+.grounds-section .price small{font-size:10px}
+.grounds-section .book-btn{padding:9px 11px;font-size:11px;border-radius:9px}
+@media(max-width:650px){
+  .grounds-section .ground-image{height:180px}
+  .grounds-section .ground-body{padding:14px}
+}
