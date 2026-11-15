@@ -68,15 +68,14 @@
 .owner-cta-points span: first-letter{color:#fdba74}
 .owner-cta-visual{height:290px;position:relative;display:grid;place-items:center;perspective:700px;animation:ownerVisualIn .8s both}
 .owner-visual-glow{position:absolute;width:250px;height:250px;border-radius:50%;background:rgba(249,115,22,.18);filter:blur(30px);animation:ownerGlow 4s ease-in-out infinite alternate}
-.owner-court{position:relative;width:190px;height:270px;border:5px solid #fdba74;border-radius:48%/18%;background:linear-gradient(145deg,#2d8b62,#15543e);box-shadow:0 22px 45px rgba(0,0,0,.24),inset 0 0 0 7px rgba(255,255,255,.09);transform:rotate(12deg);animation:ownerCourtFloat 5s ease-in-out infinite}
-.owner-court-boundary{position:absolute;inset:13px;border:2px dashed rgba(255,255,255,.65);border-radius:48%/18%}
-.owner-court-pitch{position:absolute;width:54px;top:25px;bottom:25px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#d6b77b,#f1dca5,#d6b77b);border:2px solid #fff0c2;border-radius:4px}
-.owner-court-line{position:absolute;left:calc(50% - 35px);width:70px;height:3px;background:#fff4d2}
-.owner-court-line-top{top:68px}.owner-court-line-bottom{bottom:68px}
-.owner-stumps{position:absolute;left:calc(50% - 10px);display:flex;gap:4px}
-.owner-stumps i{display:block;width:3px;height:17px;background:#fff5d8;border-radius:3px}
-.owner-stumps-top{top:51px}.owner-stumps-bottom{bottom:51px}
-.owner-ball{position:absolute;right:19px;top:48px;width:25px;height:25px;border-radius:50%;background:#f97316;border:4px solid #ffcfaa;box-shadow:0 0 0 7px rgba(249,115,22,.2);animation:ownerBallPulse 2.2s ease-in-out infinite}
+.owner-court{position:relative;width:190px;height:270px;border:5px solid #fdba74;border-radius:12px;background:linear-gradient(145deg,#247b9b,#155e75);box-shadow:0 22px 45px rgba(0,0,0,.24),inset 0 0 0 7px rgba(255,255,255,.09);transform:rotate(12deg);animation:ownerCourtFloat 5s ease-in-out infinite}
+.owner-court-boundary{position:absolute;inset:13px;border:2px solid rgba(255,255,255,.85);border-radius:3px}
+.owner-court-center-line{position:absolute;top:50%;left:15px;right:15px;height:2px;background:rgba(255,255,255,.85);transform:translateY(-50%)}
+.owner-court-kitchen{position:absolute;left:15px;right:15px;height:38px;border:2px solid rgba(255,255,255,.85)}
+.owner-court-kitchen-top{top:calc(50% - 57px)}
+.owner-court-kitchen-bottom{bottom:calc(50% - 57px)}
+.owner-court-net{position:absolute;top:50%;left:7px;right:7px;height:5px;background:#f8fafc;border:1px solid #cbd5e1;box-shadow:0 2px 5px rgba(0,0,0,.25);transform:translateY(-50%)}
+.owner-ball{position:absolute;right:27px;top:35px;width:19px;height:19px;border-radius:50%;background:#d9f45b;border:2px solid #f0ffad;box-shadow:0 0 0 6px rgba(217,244,91,.18);animation:ownerBallPulse 2.2s ease-in-out infinite}
 .owner-float-tag{position:absolute;display:flex;align-items:center;gap:9px;padding:12px 15px;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:rgba(255,255,255,.96);color:#172554;box-shadow:0 12px 30px rgba(0,0,0,.16);font-size:11px;font-weight:700;white-space:nowrap;animation:ownerTagFloat 4s ease-in-out infinite}
 .owner-float-tag-top{top:17px;right:-5px}.owner-float-tag-top>span{font-size:9px;color:#f97316}
 .owner-float-tag-bottom{left:-10px;bottom:18px;animation-delay:-1.6s}
