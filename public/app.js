@@ -213,7 +213,7 @@ if (contactForm) {
     const encodedMessage = encodeURIComponent(message)
       .replaceAll('__EMOJI_HAPPY__', '%F0%9F%98%83')
       .replaceAll('__EMOJI_SMILE__', '%F0%9F%98%84');
-    window.open('https://wa.me/919687264932?text=' + encodedMessage, '_blank');
+    window.open('https://api.whatsapp.com/send?phone=919687264932&text=' + encodedMessage, '_blank');
     contactForm.reset();
   });
 }
