@@ -306,8 +306,8 @@
   min-height:48px;
   margin-top:14px;
   border-radius:12px;
-  opacity:.78;
-  cursor:not-allowed;
+  opacity:1;
+  cursor:pointer;
 }
 #contact .contact-form-note{
   margin-top:5px;
