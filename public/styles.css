@@ -686,3 +686,25 @@
   .grounds-section .ground-image{height:180px}
   .grounds-section .ground-body{padding:14px}
 }
+
+
+/* Reduce featured ground card width and overall height */
+.grounds-section .ground-grid{
+  grid-template-columns:repeat(3,minmax(0,280px));
+  justify-content:center;
+  gap:18px;
+}
+.grounds-section .ground-image{height:148px}
+.grounds-section .ground-body{padding:13px 14px 12px}
+.grounds-section .ground-body h3{font-size:17px}
+.grounds-section .ground-desc{min-height:30px;margin:8px 0 9px;font-size:10.5px}
+.grounds-section .ground-bottom{min-height:42px;padding-top:9px}
+.grounds-section .price strong{font-size:18px}
+.grounds-section .book-btn{padding:8px 10px;font-size:10.5px}
+@media(max-width:900px){
+  .grounds-section .ground-grid{grid-template-columns:repeat(2,minmax(0,280px))}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{grid-template-columns:minmax(0,320px)}
+  .grounds-section .ground-image{height:160px}
+}
