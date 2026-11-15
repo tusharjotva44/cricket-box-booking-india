@@ -196,13 +196,21 @@ if (contactForm) {
       return;
     }
     const message = [
-      'Hello Box Book India,',
+      '📩 NEW CONTACT FORM MESSAGE',
+      '━━━━━━━━━━━━━━━━━━━━',
       '',
+      '👤 CUSTOMER DETAILS',
       'Name: ' + $('contactName').value.trim(),
       'Mobile: ' + phone,
+      '',
+      '📌 ENQUIRY DETAILS',
       'Subject: ' + $('contactSubject').value,
-      'Message: ' + $('contactMessage').value.trim()
-    ].join('\\n');
+      'Message:',
+      $('contactMessage').value.trim(),
+      '',
+      '━━━━━━━━━━━━━━━━━━━━',
+      'Sent from Box Book India website'
+    ].join('\n');
     window.open('https://wa.me/919687264932?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
   });
 }
