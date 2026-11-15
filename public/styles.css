@@ -487,3 +487,23 @@
   font-size:13px;
   line-height:1.75;
 }
+
+
+/* Center the step numbers and soften the card interiors */
+.steps article{
+  text-align:center;
+  background:linear-gradient(145deg,#fff1e6 0%,#ffdfc5 100%);
+  border-color:#fdc79f;
+}
+.steps article>span{
+  margin:0 auto;
+  background:#ffffff;
+  border-color:#fed7aa;
+}
+.steps article:hover{
+  background:linear-gradient(145deg,#ffeadb 0%,#ffd5b3 100%);
+}
+.steps p{
+  margin-left:auto;
+  margin-right:auto;
+}
