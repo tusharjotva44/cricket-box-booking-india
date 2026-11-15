@@ -656,3 +656,17 @@
   .grounds-section .ground-card:hover .ground-image img,
   .grounds-section .book-btn:hover{transform:none}
 }
+
+
+/* Slightly more compact featured ground cards */
+.grounds-section .ground-image{height:188px}
+.grounds-section .ground-body{padding:18px}
+.grounds-section .ground-body h3{font-size:19px}
+.grounds-section .ground-desc{margin:11px 0 14px;min-height:38px}
+.grounds-section .ground-bottom{min-height:52px;padding-top:13px}
+.grounds-section .price strong{font-size:21px}
+.grounds-section .book-btn{padding:10px 13px}
+@media(max-width:650px){
+  .grounds-section .ground-image{height:198px}
+  .grounds-section .ground-body{padding:17px}
+}
