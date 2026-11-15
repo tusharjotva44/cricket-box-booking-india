@@ -209,7 +209,7 @@ if (contactForm) {
       '',
       '━━━━━━━━━━━━━━━━━━',
       '__EMOJI_GLOBE__ Sent from Box Book India'
-    ].join('\\n');
+    ].join('\n');
     const encodedMessage = encodeURIComponent(message)
       .replaceAll('__EMOJI_MAIL__', '%F0%9F%93%A9')
       .replaceAll('__EMOJI_PERSON__', '%F0%9F%91%A4')
