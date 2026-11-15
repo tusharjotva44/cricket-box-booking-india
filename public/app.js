@@ -196,19 +196,19 @@ if (contactForm) {
       return;
     }
     const message = [
-      '📩 BOX BOOK INDIA',
+      '\u{1F4E9} BOX BOOK INDIA',
       '━━━━━━━━━━━━━━━━━━',
       '',
-      '👤 CUSTOMER DETAILS',
+      '\u{1F464} CUSTOMER DETAILS',
       'Name: ' + $('contactName').value.trim(),
-      '📱 Mobile: ' + phone,
+      '\u{1F4F1} Mobile: ' + phone,
       '',
-      '📝 ENQUIRY DETAILS',
-      '📌 Subject: ' + $('contactSubject').value,
+      '\u{1F4DD} ENQUIRY DETAILS',
+      '\u{1F4CC} Subject: ' + $('contactSubject').value,
       'Message: ' + $('contactMessage').value.trim(),
       '',
       '━━━━━━━━━━━━━━━━━━',
-      '🌐 Sent from Box Book India'
+      '\u{1F310} Sent from Box Book India'
     ].join('\n');
     window.open('https://wa.me/919687264932?text=' + encodeURIComponent(message), '_blank');
     contactForm.reset();
