@@ -734,3 +734,15 @@
   .grounds-section .ground-grid{max-width:320px}
   .grounds-section .ground-card{flex-basis:320px;width:100%}
 }
+
+
+/* Desktop: four compact featured ground cards per row */
+.grounds-section .ground-grid{max-width:1054px}
+.grounds-section .ground-card{flex:0 1 250px;width:250px}
+@media(max-width:900px){
+  .grounds-section .ground-grid{max-width:518px}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{max-width:320px}
+  .grounds-section .ground-card{flex-basis:320px;width:100%}
+}
