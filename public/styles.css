@@ -774,3 +774,25 @@
   .grounds-section .ground-grid{max-width:320px;gap:18px}
   .grounds-section .ground-card{flex-basis:320px;width:100%}
 }
+
+
+/* Lock featured grounds to exactly four columns on desktop */
+.grounds-section .ground-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+  max-width:1200px;
+  gap:24px;
+}
+.grounds-section .ground-card{
+  width:100%;
+  min-width:0;
+  max-width:none;
+  flex:none;
+}
+@media(max-width:900px){
+  .grounds-section .ground-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{grid-template-columns:minmax(0,1fr);gap:18px}
+}
