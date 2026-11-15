@@ -208,7 +208,6 @@ if (contactForm) {
       'Message: ' + $('contactMessage').value.trim(),
       '',
       '━━━━━━━━━━━━━━━━━━',
-      '🌐 Sent from Box Book India website'
     ].join('\n');
     window.open('https://wa.me/919687264932?text=' + encodeURIComponent(message), '_blank');
     contactForm.reset();
