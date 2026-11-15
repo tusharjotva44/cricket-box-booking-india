@@ -276,7 +276,7 @@
 .availability-ground-summary strong{font:700 14px 'Space Grotesk',sans-serif;color:var(--ink)}
 .availability-ground-summary span{font-size:10px;color:var(--muted);text-align:right}
 .availability-week{display:grid;gap:8px}
-.availability-day-row{display:grid;grid-template-columns:minmax(105px,1fr) minmax(120px,.8fr) minmax(120px,.8fr) 58px;align-items:center;gap:12px;padding:11px 12px;border:1px solid #f1eee9;border-radius:10px;background:#fff}
+.availability-day-row{display:grid;grid-template-columns:minmax(105px,1fr) 58px;align-items:center;gap:12px;padding:11px 12px;border:1px solid #f1eee9;border-radius:10px;background:#fff}
 .availability-day-toggle{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:var(--ink)}
 .availability-day-toggle input{width:16px;height:16px;accent-color:#f97316}
 .availability-time-field{display:grid;gap:5px}
