@@ -760,3 +760,17 @@
   .grounds-section .ground-grid{max-width:320px}
   .grounds-section .ground-card{flex-basis:320px;width:100%}
 }
+
+
+/* Fine-tune featured ground cards: a little larger with more breathing room */
+.grounds-section .ground-grid{max-width:1120px;gap:24px}
+.grounds-section .ground-card{flex-basis:264px;width:264px}
+.grounds-section .ground-image{height:160px}
+.grounds-section .ground-body{padding:15px 16px 14px}
+@media(max-width:900px){
+  .grounds-section .ground-grid{max-width:552px;gap:20px}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{max-width:320px;gap:18px}
+  .grounds-section .ground-card{flex-basis:320px;width:100%}
+}
