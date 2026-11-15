@@ -197,25 +197,30 @@ if (contactForm) {
     }
     const message = [
       '__EMOJI_MAIL__ BOX BOOK INDIA',
-      '━━━━━━━━━━━━━━━━━━',
+      '━━━━━━━━━━━━━━━━━━━━',
       '',
-      '__EMOJI_PERSON__ CUSTOMER DETAILS',
+      '__EMOJI_PERSON__ CUSTOMER INFORMATION',
       'Name: ' + $('contactName').value.trim(),
+      '',
       '__EMOJI_PHONE__ Mobile: ' + phone,
       '',
-      '__EMOJI_NOTE__ ENQUIRY DETAILS',
-      '__EMOJI_PIN__ Subject: ' + $('contactSubject').value,
-      'Message: ' + $('contactMessage').value.trim(),
+      '__EMOJI_CLIPBOARD__ ENQUIRY DETAILS',
       '',
-      '━━━━━━━━━━━━━━━━━━',
+      '__EMOJI_PIN__ Subject: ' + $('contactSubject').value,
+      '',
+      '__EMOJI_CHAT__ Message:',
+      $('contactMessage').value.trim(),
+      '',
+      '━━━━━━━━━━━━━━━━━━━━',
       '__EMOJI_GLOBE__ Sent from Box Book India'
     ].join('\n');
     const encodedMessage = encodeURIComponent(message)
       .replaceAll('__EMOJI_MAIL__', '%F0%9F%93%A9')
       .replaceAll('__EMOJI_PERSON__', '%F0%9F%91%A4')
-      .replaceAll('__EMOJI_PHONE__', '%F0%9F%93%B1')
-      .replaceAll('__EMOJI_NOTE__', '%F0%9F%93%9D')
+      .replaceAll('__EMOJI_PHONE__', '%F0%9F%93%9E')
+      .replaceAll('__EMOJI_CLIPBOARD__', '%F0%9F%93%8B')
       .replaceAll('__EMOJI_PIN__', '%F0%9F%93%8C')
+      .replaceAll('__EMOJI_CHAT__', '%F0%9F%92%AC')
       .replaceAll('__EMOJI_GLOBE__', '%F0%9F%8C%90');
     window.open('https://api.whatsapp.com/send?phone=919687264932&text=' + encodedMessage, '_blank');
     contactForm.reset();
