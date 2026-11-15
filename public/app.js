@@ -196,23 +196,28 @@ if (contactForm) {
       return;
     }
     const message = [
-      '\u{1F4E9} BOX BOOK INDIA',
+      '__EMOJI_MAIL__ BOX BOOK INDIA',
       '━━━━━━━━━━━━━━━━━━',
       '',
-      '\u{1F464} CUSTOMER DETAILS',
+      '__EMOJI_PERSON__ CUSTOMER DETAILS',
       'Name: ' + $('contactName').value.trim(),
-      '\u{1F4F1} Mobile: ' + phone,
+      '__EMOJI_PHONE__ Mobile: ' + phone,
       '',
-      '\u{1F4DD} ENQUIRY DETAILS',
-      '\u{1F4CC} Subject: ' + $('contactSubject').value,
+      '__EMOJI_NOTE__ ENQUIRY DETAILS',
+      '__EMOJI_PIN__ Subject: ' + $('contactSubject').value,
       'Message: ' + $('contactMessage').value.trim(),
       '',
       '━━━━━━━━━━━━━━━━━━',
-      '\u{1F310} Sent from Box Book India'
-    ].join('\n');
-    const whatsappUrl = new URL('https://wa.me/919687264932');
-    whatsappUrl.searchParams.set('text', message);
-    window.open(whatsappUrl.toString(), '_blank');
+      '__EMOJI_GLOBE__ Sent from Box Book India'
+    ].join('\\n');
+    const encodedMessage = encodeURIComponent(message)
+      .replaceAll('__EMOJI_MAIL__', '%F0%9F%93%A9')
+      .replaceAll('__EMOJI_PERSON__', '%F0%9F%91%A4')
+      .replaceAll('__EMOJI_PHONE__', '%F0%9F%93%B1')
+      .replaceAll('__EMOJI_NOTE__', '%F0%9F%93%9D')
+      .replaceAll('__EMOJI_PIN__', '%F0%9F%93%8C')
+      .replaceAll('__EMOJI_GLOBE__', '%F0%9F%8C%90');
+    window.open('https://wa.me/919687264932?text=' + encodedMessage, '_blank');
     contactForm.reset();
   });
 }
