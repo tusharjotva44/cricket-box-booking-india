@@ -708,3 +708,29 @@
   .grounds-section .ground-grid{grid-template-columns:minmax(0,320px)}
   .grounds-section .ground-image{height:160px}
 }
+
+
+/* Final featured grounds layout: centered rows with a fixed column count */
+.grounds-section .ground-grid{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:stretch;
+  gap:18px;
+  width:100%;
+  max-width:876px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.grounds-section .ground-card{
+  flex:0 1 280px;
+  width:280px;
+  max-width:100%;
+}
+@media(max-width:900px){
+  .grounds-section .ground-grid{max-width:578px}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{max-width:320px}
+  .grounds-section .ground-card{flex-basis:320px;width:100%}
+}
