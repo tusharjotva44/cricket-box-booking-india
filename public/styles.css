@@ -795,3 +795,79 @@
 @media(max-width:650px){
   .grounds-section .ground-grid{grid-template-columns:minmax(0,1fr);gap:18px}
 }
+
+
+/* Featured sports grounds: sport-specific placeholders and refined card layout */
+.grounds-section .ground-card{
+  display:flex;
+  flex-direction:column;
+  min-height:100%;
+  overflow:hidden;
+  border:1px solid #e8eaf0;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(23,37,84,.07);
+}
+.grounds-section .ground-image{
+  height:176px;
+  flex:0 0 176px;
+  position:relative;
+  overflow:hidden;
+}
+.grounds-section .ground-image .image-placeholder{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  font-size:inherit;
+  z-index:0;
+}
+.grounds-section .ground-image--cricket .image-placeholder{
+  background:radial-gradient(circle at 72% 20%,rgba(251,146,60,.7),transparent 32%),linear-gradient(135deg,#172554 0%,#29466d 58%,#9a3412 125%);
+}
+.grounds-section .ground-image--pickleball .image-placeholder{
+  background:radial-gradient(circle at 75% 18%,rgba(190,242,100,.55),transparent 30%),linear-gradient(135deg,#123b55 0%,#176b79 58%,#f97316 135%);
+}
+.grounds-section .ground-placeholder-icon{
+  font-size:54px;
+  line-height:1;
+  filter:drop-shadow(0 5px 9px rgba(0,0,0,.2));
+}
+.grounds-section .ground-placeholder-label{
+  color:rgba(255,255,255,.9);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:1.8px;
+}
+.grounds-section .ground-image img{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.grounds-section .ground-image .tag{
+  z-index:3;
+}
+.grounds-section .ground-body{
+  display:flex;
+  flex:1;
+  flex-direction:column;
+}
+.grounds-section .ground-desc{
+  min-height:38px;
+}
+.grounds-section .ground-bottom{
+  margin-top:auto;
+}
+@media(max-width:650px){
+  .grounds-section .ground-image{
+    height:180px;
+    flex-basis:180px;
+  }
+}
