@@ -210,7 +210,9 @@ if (contactForm) {
       '━━━━━━━━━━━━━━━━━━',
       '\u{1F310} Sent from Box Book India'
     ].join('\n');
-    window.open('https://wa.me/919687264932?text=' + encodeURIComponent(message), '_blank');
+    const whatsappUrl = new URL('https://wa.me/919687264932');
+    whatsappUrl.searchParams.set('text', message);
+    window.open(whatsappUrl.toString(), '_blank');
     contactForm.reset();
   });
 }
