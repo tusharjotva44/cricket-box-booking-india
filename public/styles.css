@@ -746,3 +746,17 @@
   .grounds-section .ground-grid{max-width:320px}
   .grounds-section .ground-card{flex-basis:320px;width:100%}
 }
+
+
+/* Slightly enlarge compact featured cards while keeping four across */
+.grounds-section .ground-grid{max-width:1086px}
+.grounds-section .ground-card{flex-basis:258px;width:258px}
+.grounds-section .ground-image{height:155px}
+.grounds-section .ground-body{padding:14px 15px 13px}
+@media(max-width:900px){
+  .grounds-section .ground-grid{max-width:534px}
+}
+@media(max-width:650px){
+  .grounds-section .ground-grid{max-width:320px}
+  .grounds-section .ground-card{flex-basis:320px;width:100%}
+}
