@@ -507,3 +507,31 @@
   margin-left:auto;
   margin-right:auto;
 }
+
+
+/* Three-step cards: replace number badges with branded sport-booking icons */
+.steps article>span.step-icon{
+  width:66px;
+  height:66px;
+  margin:0 auto;
+  display:grid;
+  place-items:center;
+  border:1px solid #fb923c;
+  border-radius:50%;
+  background:linear-gradient(145deg,#fb923c 0%,#ea580c 100%);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(234,88,12,.22),0 0 0 6px rgba(249,115,22,.10);
+}
+.steps article>span.step-icon svg{
+  display:block;
+  width:29px;
+  height:29px;
+  stroke:currentColor;
+}
+.steps article h3{
+  margin-top:23px;
+}
+@media(prefers-reduced-motion:reduce){
+  .steps article{transition:none}
+  .steps article:hover{transform:none}
+}
