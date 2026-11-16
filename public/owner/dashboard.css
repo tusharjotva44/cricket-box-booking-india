@@ -351,14 +351,19 @@
 
 
 /* Owner's current plan summary at the top of the Subscription page */
-.current-owner-plan{margin:0 0 22px;padding:20px 22px;border:1px solid #fed7aa;border-radius:16px;background:linear-gradient(120deg,#fff7ed 0%,#fff 75%);box-shadow:0 6px 20px rgba(154,52,18,.06)}
+.current-owner-plan{position:relative;isolation:isolate;overflow:hidden;margin:0 0 24px;padding:23px 25px;border:1px solid #fed7aa;border-left:5px solid #f97316;border-radius:18px;background:linear-gradient(115deg,#fff7ed 0%,#fff 58%,#fffaf5 100%);box-shadow:0 10px 28px rgba(124,45,18,.07)}
+.current-owner-plan:after{content:"";position:absolute;z-index:-1;right:-48px;top:-76px;width:210px;height:210px;border:28px solid rgba(249,115,22,.055);border-radius:50%;pointer-events:none}
 .current-owner-plan-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.current-owner-plan h2{margin:8px 0 16px;font:700 19px 'Space Grotesk',sans-serif;color:var(--ink)}
-.current-owner-plan-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.current-owner-plan-details>div{display:grid;gap:6px;min-width:0;padding:12px;border:1px solid #f1eee9;border-radius:10px;background:#fff}
-.current-owner-plan-details small{font-size:10px;color:var(--muted)}
-.current-owner-plan-details strong{font:700 13px 'Space Grotesk',sans-serif;overflow-wrap:anywhere;color:var(--ink)}
-.current-owner-plan-status{display:inline-flex;align-items:center;padding:6px 10px;border:1px solid #fed7aa;border-radius:999px;background:#fff;color:#9a3412;font-size:10px;font-weight:800;white-space:nowrap}
+.current-owner-plan-heading .eyebrow{display:inline-flex;align-items:center;gap:7px;color:#c2410c;font-size:10px;letter-spacing:1.5px}
+.current-owner-plan-heading .eyebrow:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#f97316;box-shadow:0 0 0 4px #ffedd5}
+.current-owner-plan h2{margin:10px 0 18px;font:700 21px 'Space Grotesk',sans-serif;letter-spacing:-.35px;color:var(--ink)}
+.current-owner-plan-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.current-owner-plan-details>div{position:relative;display:grid;align-content:center;gap:7px;min-width:0;min-height:76px;padding:13px 15px;border:1px solid #f1e8df;border-radius:12px;background:rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(23,37,84,.025)}
+.current-owner-plan-details small{font-size:10px;font-weight:600;letter-spacing:.35px;color:#8b929e}
+.current-owner-plan-details strong{font:700 14px 'Space Grotesk',sans-serif;line-height:1.4;overflow-wrap:anywhere;color:var(--ink)}
+.current-owner-plan-status{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid #fed7aa;border-radius:999px;background:#fff;color:#9a3412;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 2px 7px rgba(154,52,18,.05)}
+.current-owner-plan-status:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .current-owner-plan-status.is-active{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}
 .current-owner-plan-status.is-inactive{border-color:#fecaca;background:#fef2f2;color:#b91c1c}
-@media(max-width:620px){.current-owner-plan{padding:16px}.current-owner-plan-details{grid-template-columns:1fr;gap:8px}.current-owner-plan-details>div{padding:10px}.current-owner-plan h2{font-size:17px}}
+@media(max-width:760px){.current-owner-plan{padding:19px}.current-owner-plan-details{gap:9px}.current-owner-plan-details>div{padding:11px}}
+@media(max-width:620px){.current-owner-plan{padding:16px;border-radius:15px}.current-owner-plan-heading{align-items:flex-start}.current-owner-plan h2{font-size:18px;margin:9px 0 14px}.current-owner-plan-details{grid-template-columns:1fr;gap:8px}.current-owner-plan-details>div{min-height:64px;padding:10px 12px}.current-owner-plan-details strong{font-size:13px}.current-owner-plan-status{font-size:9px;padding:6px 9px}}
