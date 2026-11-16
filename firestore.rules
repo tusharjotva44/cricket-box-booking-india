@@ -55,13 +55,22 @@ service cloud.firestore {
     match /bookingSlots/{slotId} {
       allow read: if true;
 
-      allow create: if request.resource.data.bookingId is string
+      allow create: if request.auth != null
+        && request.resource.data.bookingId is string
         && request.resource.data.ownerUid is string
         && request.resource.data.groundId is string
         && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
         && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
         && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
-        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId]);
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
+        && (
+          request.auth.uid == request.resource.data.ownerUid
+          || isSuperAdmin()
+          || (
+            request.auth.token.firebase.sign_in_provider == 'anonymous'
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
+          )
+        );
 
       allow update: if (
           request.auth != null
@@ -69,13 +78,16 @@ service cloud.firestore {
           && request.resource.data.ownerUid == resource.data.ownerUid
         )
         || (
-          resource.data.status == 'Pending'
+          request.auth != null
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.status == 'Pending'
           && resource.data.holdExpiresAt <= request.time.toMillis()
           && request.resource.data.bookingId is string
           && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
           && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
           && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
           && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
         );
 
       allow delete: if request.auth != null
@@ -102,7 +114,10 @@ service cloud.firestore {
         && request.resource.data.amount is number
         && (
           (
-            request.resource.data.status == 'Pending'
+            request.auth != null
+            && request.auth.token.firebase.sign_in_provider == 'anonymous'
+            && request.resource.data.customerUid == request.auth.uid
+            && request.resource.data.status == 'Pending'
             && request.resource.data.bookingSource == 'Main website'
           )
           ||
@@ -121,7 +136,12 @@ service cloud.firestore {
           && request.resource.data.status in ['Confirmed', 'Rejected', 'Expired']
         )
         || (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
+          request.auth != null
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.bookingSource == 'Main website'
+          && request.resource.data.customerUid == resource.data.customerUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
           && request.resource.data.paymentStatus == 'Payment submitted — not verified'
           && resource.data.status in ['Pending', 'Confirmed']
         );
