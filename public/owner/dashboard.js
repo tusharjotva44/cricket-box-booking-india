@@ -100,7 +100,7 @@
       if (adminPreviewMode !== 'view') return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
-      const blocked = target.closest('#showGroundForm, [data-open-form], [data-edit-ground], [data-delete], #saveAvailabilityButton, #showOwnerBookingForm, #dashboardNewBookingButton, [data-approve], [data-reject], [data-profile-action="profile"], [data-profile-action="password"]');
+      const blocked = target.closest('#showGroundForm, [data-open-form], [data-edit-ground], [data-delete], #saveAvailabilityButton, [data-availability-bulk], #showOwnerBookingForm, #dashboardNewBookingButton, [data-approve], [data-reject], [data-profile-action="profile"], [data-profile-action="password"]');
       if (!blocked) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -552,6 +552,20 @@
     ground.availability = schedule;
     saveGrounds().then(() => { toast('Ground availability saved.'); renderAvailabilityEditor(); }).catch(() => toast('Could not save availability. Please try again.'));
   });
+  document.querySelectorAll('[data-availability-bulk]').forEach(button => button.addEventListener('click', () => {
+    if (!grounds.length) { toast('Add a ground first to manage availability.'); return; }
+    const open = button.dataset.availabilityBulk === 'open';
+    document.querySelectorAll('[data-availability-bulk]').forEach(item => { item.disabled = true; });
+    grounds.forEach(ground => {
+      ground.availability = Object.fromEntries(availabilityDays.map(day => [day.key,{open}]));
+    });
+    saveGrounds().then(() => {
+      toast(open ? 'All grounds are now Open.' : 'All grounds are now Close.');
+      renderAvailabilityEditor();
+    }).catch(() => toast('Could not update all grounds. Please try again.')).finally(() => {
+      document.querySelectorAll('[data-availability-bulk]').forEach(item => { item.disabled = false; });
+    });
+  }));
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   $('calendarPrev').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()-1, 1); renderBookingCalendar(); });
   $('calendarNext').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()+1, 1); renderBookingCalendar(); });
