@@ -33,33 +33,56 @@
   let toastTimer;
   const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
   const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
+  function readNotificationState() {
+    try {
+      const data = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
+      const saved = data[OWNER_EMAIL];
+      if (Array.isArray(saved)) return Object.fromEntries(saved.map(id => [String(id), Date.now()]));
+      return saved && typeof saved === 'object' ? saved : {};
+    } catch { return {}; }
+  }
   function readAdminNotifications() {
     try {
       const items = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
       return Array.isArray(items) ? items.filter(item => item && (!item.ownerEmail || String(item.ownerEmail).trim().toLowerCase() === OWNER_EMAIL || item.ownerEmail === '*')) : [];
     } catch { return []; }
   }
-  function readNotificationIds() {
+  function cleanupReadNotifications() {
+    const readState = readNotificationState();
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let allItems = [];
     try {
-      const data = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
-      return Array.isArray(data[OWNER_EMAIL]) ? data[OWNER_EMAIL] : [];
-    } catch { return []; }
+      const saved = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
+      allItems = Array.isArray(saved) ? saved : [];
+    } catch {}
+    const expiredIds = new Set(Object.entries(readState).filter(([, readAt]) => Number(readAt) && Number(readAt) <= cutoff).map(([id]) => id));
+    if (expiredIds.size) {
+      allItems = allItems.filter(item => !(item && String(item.ownerEmail || '').trim().toLowerCase() === OWNER_EMAIL && expiredIds.has(String(item.id || item.createdAt || item.title || 'notification'))));
+      try { storage.setItem(NOTIFICATION_STORE, JSON.stringify(allItems)); } catch {}
+    }
+    const remainingState = Object.fromEntries(Object.entries(readState).filter(([, readAt]) => Number(readAt) > cutoff));
+    try {
+      const allRead = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
+      allRead[OWNER_EMAIL] = remainingState;
+      storage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(allRead));
+    } catch {}
+    return remainingState;
   }
   function renderNotifications() {
     const list = $('notificationList');
     if (!list) return;
-    const items = readAdminNotifications().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-    const readIds = readNotificationIds();
-    const unread = items.filter(item => !readIds.includes(String(item.id || item.createdAt || item.title || 'notification'))).length;
+    const readState = cleanupReadNotifications();
+    const items = readAdminNotifications()
+      .filter(item => !readState[String(item.id || item.createdAt || item.title || 'notification')])
+      .sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    const unread = items.length;
     $('notificationBadge').textContent = unread > 99 ? '99+' : String(unread);
     $('notificationBadge').classList.toggle('hidden', unread === 0);
     $('notificationSummary').textContent = unread ? unread + (unread === 1 ? ' unread update' : ' unread updates') : 'You are all caught up';
     list.innerHTML = items.length ? items.map(item => {
-      const id = String(item.id || item.createdAt || item.title || 'notification');
-      const isRead = readIds.includes(id);
       const date = item.createdAt ? new Date(Number(item.createdAt)).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      return '<article class="notification-item' + (isRead ? ' is-read' : ' is-unread') + '"><span class="notification-status-dot" aria-hidden="true"></span><div><strong>' + escapeHTML(item.title || 'BoxBook update') + '</strong><p>' + escapeHTML(item.message || '') + '</p>' + (date ? '<small>' + escapeHTML(date) + '</small>' : '') + '</div></article>';
-    }).join('') : '<p class="notification-empty">No notifications yet. Super Admin updates will appear here.</p>';
+      return '<article class="notification-item is-unread"><span class="notification-status-dot" aria-hidden="true"></span><div><strong>' + escapeHTML(item.title || 'BoxBook update') + '</strong><p>' + escapeHTML(item.message || '') + '</p>' + (date ? '<small>' + escapeHTML(date) + '</small>' : '') + '</div></article>';
+    }).join('') : '<p class="notification-empty">No unread notifications. You are all caught up.</p>';
   }
   function saveBookingNotification(booking, normalized) {
     const id = 'booking-' + String(booking.id || Date.now());
@@ -915,7 +938,12 @@
       const ids = readAdminNotifications().map(item => String(item.id || item.createdAt || item.title || 'notification'));
       try {
         const all = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
-        all[OWNER_EMAIL] = Array.from(new Set([...(Array.isArray(all[OWNER_EMAIL]) ? all[OWNER_EMAIL] : []), ...ids]));
+        const saved = all[OWNER_EMAIL];
+        const readState = Array.isArray(saved)
+          ? Object.fromEntries(saved.map(id => [String(id), Date.now()]))
+          : (saved && typeof saved === 'object' ? saved : {});
+        ids.forEach(id => { readState[id] = Date.now(); });
+        all[OWNER_EMAIL] = readState;
         storage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(all));
       } catch {}
       renderNotifications();
