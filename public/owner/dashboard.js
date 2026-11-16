@@ -515,6 +515,10 @@
       $('dashboardPlanExpiry').textContent = 'Checking your current plan.';
       $('planNoticeTitle').textContent = 'Loading plan details';
       $('planNoticeText').textContent = 'Your current plan is being checked.';
+      $('currentPlanStatus').textContent = 'Checking status…';
+      $('currentPlanName').textContent = 'Loading plan…';
+      $('currentPlanExpiry').textContent = 'Checking expiry…';
+      $('currentPlanGroundLimit').textContent = '—';
       return;
     }
     const expiryValue = getPlanExpiry();
@@ -530,6 +534,20 @@
         : daysLeft === null
           ? 'Expires on ' + expiryText + '.'
           : 'Expires on ' + expiryText + ' (' + daysLeft + (daysLeft === 1 ? ' day left).' : ' days left).');
+    $('currentPlanName').textContent = selectedPlan || 'No plan assigned';
+    $('currentPlanExpiry').textContent = expiryText || 'Not set';
+    $('currentPlanGroundLimit').textContent = selectedGroundLimit
+      ? selectedGroundLimit + (selectedGroundLimit === 1 ? ' Ground' : ' Grounds')
+      : 'Not specified';
+    $('currentPlanStatus').textContent = !selectedPlan
+      ? 'Not assigned'
+      : isExpired
+        ? 'Expired'
+        : isEnabled
+          ? (isTrial ? 'Trial Active' : 'Active')
+          : 'Inactive';
+    $('currentPlanStatus').classList.toggle('is-active', isEnabled);
+    $('currentPlanStatus').classList.toggle('is-inactive', !!selectedPlan && !isEnabled);
     if (!selectedPlan) {
       $('dashboardPlanName').textContent = 'No plan selected';
       $('dashboardPlanExpiry').textContent = 'Please contact Super Admin to assign a plan.';
