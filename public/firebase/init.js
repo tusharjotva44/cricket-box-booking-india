@@ -227,10 +227,11 @@ window.firebaseAuthApi = {
   },
 
   updateBookingPaymentStatus: async (database, bookingId, paymentStatus) => {
+    await auth.authStateReady();
     const user = auth.currentUser;
-    if (!user || !user.isAnonymous) {
-      const error = new Error("The customer booking session is no longer available.");
-      error.code = "auth/anonymous-session-required";
+    if (!user || user.isAnonymous || String(user.email || "").toLowerCase() !== "niklo12@gmail.com") {
+      const error = new Error("Only the authorized testing account can update its booking payment status.");
+      error.code = "auth/test-account-required";
       throw error;
     }
     return updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
