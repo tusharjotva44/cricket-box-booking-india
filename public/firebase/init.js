@@ -8,7 +8,6 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   signOut,
-  signInAnonymously,
   onAuthStateChanged,
   browserLocalPersistence,
   getIdTokenResult,
@@ -58,13 +57,12 @@ window.firebaseAuthApi = {
   signOut,
   onAuthStateChanged,
 
-  ensureAnonymousCustomer: async () => {
+  ensureTestCustomer: async () => {
     await auth.authStateReady();
-    let user = auth.currentUser;
-    if (!user) user = (await signInAnonymously(auth)).user;
-    if (!user || !user.isAnonymous) {
-      const error = new Error("A guest customer session is required for this booking.");
-      error.code = "auth/anonymous-session-required";
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous || String(user.email || "").toLowerCase() !== "niklo12@gmail.com") {
+      const error = new Error("Only the authorized testing account can create bookings.");
+      error.code = "auth/test-account-required";
       throw error;
     }
     return user.uid;
