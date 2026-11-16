@@ -270,6 +270,8 @@
 /* Ground availability management */
 .availability-panel{padding:22px}
 .availability-ground-picker{display:grid;gap:7px;max-width:420px;margin-bottom:20px}
+.availability-bulk-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 17px}.availability-bulk-actions button:disabled{opacity:.6;cursor:wait}
+@media(max-width:650px){.availability-bulk-actions button{flex:1 1 145px}}
 .availability-ground-picker label,.availability-time-field{font-size:11px;font-weight:700;color:var(--ink)}
 .availability-ground-picker select,.availability-time-field input{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;color:var(--ink);font:inherit;font-size:12px}
 .availability-ground-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;margin-bottom:12px;border:1px solid #fed7aa;border-radius:11px;background:#fffaf5}
