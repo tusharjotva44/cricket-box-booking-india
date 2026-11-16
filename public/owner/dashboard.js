@@ -61,6 +61,31 @@
       return '<article class="notification-item' + (isRead ? ' is-read' : ' is-unread') + '"><span class="notification-status-dot" aria-hidden="true"></span><div><strong>' + escapeHTML(item.title || 'BoxBook update') + '</strong><p>' + escapeHTML(item.message || '') + '</p>' + (date ? '<small>' + escapeHTML(date) + '</small>' : '') + '</div></article>';
     }).join('') : '<p class="notification-empty">No notifications yet. Super Admin updates will appear here.</p>';
   }
+  function saveBookingNotification(booking, normalized) {
+    const id = 'booking-' + String(booking.id || Date.now());
+    let items = [];
+    try {
+      const saved = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
+      items = Array.isArray(saved) ? saved : [];
+    } catch {}
+    const alreadySaved = items.some(item =>
+      String(item && item.id || '') === id &&
+      String(item && item.ownerEmail || '').trim().toLowerCase() === OWNER_EMAIL
+    );
+    if (alreadySaved) return;
+    items.unshift({
+      id,
+      ownerEmail: OWNER_EMAIL,
+      title: 'New booking request',
+      message: normalized.customer + ' · ' + normalized.ground + ' · ' + normalized.date + ' · ' + normalized.time,
+      createdAt: Date.now(),
+      type: 'booking'
+    });
+    try {
+      storage.setItem(NOTIFICATION_STORE, JSON.stringify(items.slice(0, 100)));
+    } catch {}
+    renderNotifications();
+  }
   let grounds = groundsForOwner();
   let editingGroundId = null;
   let sampleBookings = bookingsForOwner();
@@ -1162,6 +1187,7 @@
             customer:item.customerName || 'Customer', ground:item.groundName || 'Ground',
             date:item.date || '', time:item.slot || '', id:item.id
           };
+          saveBookingNotification(item, normalized);
           toast('New booking request from ' + normalized.customer + ' for ' + normalized.ground + '.');
           playBookingAlertSound();
           if ('Notification' in window && Notification.permission === 'granted') {
