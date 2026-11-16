@@ -505,9 +505,74 @@
       const savingMarkup = yearlySaving > 0 ? '<span class="popular-label">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="popular-label">' + escapeHTML(discount) + '% OFF</span>' : '';
       const features = [...String(plan.details || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean), 'List and manage up to ' + grounds + (grounds === 1 ? ' ground' : ' grounds'), 'View booking information', 'Owner dashboard access', ...(plan.kind === 'trial' ? ['No payment required'] : [])];
       const isTrial = plan.kind === 'trial';
-      return '<article class="plan-card subscription-plan-card' + (discounted ? ' featured-plan' : '') + '"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (yearlySaving > 0 ? '<span class="plan-discount">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button class="' + (isTrial ? 'secondary-btn' : 'primary-btn') + ' plan-select" data-plan="' + escapeHTML(plan.name) + '" type="button" disabled>' + (isTrial ? 'Automatic on Signup' : 'Contact Super Admin') + '</button></article>';
+      return '<article class="plan-card subscription-plan-card' + (discounted ? ' featured-plan' : '') + '"><div class="plan-yearly-art"><img src="/images/icons/plan-s2.svg" alt="Subscription plan illustration"></div><span class="plan-label">' + escapeHTML(plan.durationUnit === 'years' ? 'YEARLY PLAN' : plan.durationUnit === 'days' ? 'TRIAL PLAN' : 'MONTHLY PLAN') + '</span><h3>' + escapeHTML(plan.name) + '</h3><div class="plan-price">' + priceMarkup + ' <small>/ ' + escapeHTML(planDurationLabel(plan)) + '</small></div>' + (yearlySaving > 0 ? '<span class="plan-discount">SAVE ' + money(yearlySaving) + '</span>' : discounted ? '<span class="plan-discount">' + escapeHTML(discount) + '% OFF</span>' : '') + '<ul>' + features.map(feature => '<li>' + escapeHTML(feature) + '</li>').join('') + '</ul><button class="' + (isTrial ? 'secondary-btn' : 'primary-btn') + ' plan-select" data-plan="' + escapeHTML(plan.name) + '" data-plan-id="' + escapeHTML(plan.id) + '" data-plan-amount="' + (priceSet ? Number(finalPrice) : 0) + '" data-plan-kind="' + (isTrial ? 'trial' : 'paid') + '" type="button"' + (isTrial ? ' disabled' : '') + '>' + (isTrial ? 'Automatic on Signup' : 'Request Plan') + '</button></article>';
     }).join('');
     syncPlanPreview();
+  }
+  let purchaseHistoryUnsubscribe = null;
+  const pendingPlanRequests = new Set();
+  function formatPurchaseHistoryDate(value) {
+    const date = value && typeof value.toDate === 'function' ? value.toDate() : new Date(value || '');
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  function renderPurchaseHistory(snapshot) {
+    const body = $('purchaseHistoryRows');
+    if (!body) return;
+    const records = snapshot.docs.map(item => ({id:item.id,...item.data()})).sort((a,b) => {
+      const aTime = a.createdAt && typeof a.createdAt.toMillis === 'function' ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+      const bTime = b.createdAt && typeof b.createdAt.toMillis === 'function' ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+      return bTime - aTime;
+    });
+    if (!records.length) {
+      body.innerHTML = '<tr><td colspan="5" class="purchase-history-empty">No purchase history yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = records.map(item => {
+      const status = String(item.status || 'Pending');
+      const statusClass = status.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      return '<tr><td>' + escapeHTML(formatPurchaseHistoryDate(item.createdAt)) + '</td><td><strong>' + escapeHTML(item.planName || 'Plan') + '</strong></td><td>' + escapeHTML(money(item.amount)) + '</td><td>' + escapeHTML(item.source || '—') + '</td><td><span class="purchase-history-status ' + escapeHTML(statusClass) + '">' + escapeHTML(status) + '</span></td></tr>';
+    }).join('');
+  }
+  async function recordPlanPurchaseAttempt(button) {
+    if (IS_ADMIN_OWNER_PREVIEW) { toast('Purchase requests can only be submitted from the owner account.'); return; }
+    const planId = String(button.dataset.planId || '');
+    if (!planId || pendingPlanRequests.has(planId)) return;
+    pendingPlanRequests.add(planId);
+    button.disabled = true;
+    button.textContent = 'Sending…';
+    try {
+      const { user, db } = await getOwnerFirebaseContext();
+      const firestore = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
+      await firestore.addDoc(firestore.collection(db,'owners',ownerUid || user.uid,'purchaseHistory'), {
+        ownerUid: ownerUid || user.uid,
+        ownerEmail: String(user.email || OWNER_EMAIL).trim().toLowerCase(),
+        planId,
+        planName: String(button.dataset.plan || 'Plan'),
+        amount: Number(button.dataset.planAmount || 0),
+        source: 'Owner Dashboard',
+        status: 'Pending',
+        createdAt: firestore.serverTimestamp()
+      });
+      toast('Your plan request was added to Purchase History.');
+    } catch (error) {
+      console.error('Could not save plan purchase request:', error);
+      toast('Could not save your plan request. Please try again.');
+    } finally {
+      pendingPlanRequests.delete(planId);
+      if (button.isConnected) {
+        button.disabled = false;
+        button.textContent = 'Request Plan';
+      }
+    }
+  }
+  function watchPurchaseHistory(db, firestore) {
+    if (purchaseHistoryUnsubscribe) purchaseHistoryUnsubscribe();
+    const historyRef = firestore.collection(db,'owners',ownerUid,'purchaseHistory');
+    purchaseHistoryUnsubscribe = firestore.onSnapshot(historyRef, renderPurchaseHistory, error => {
+      console.error('Could not load purchase history:', error);
+      const body = $('purchaseHistoryRows');
+      if (body) body.innerHTML = '<tr><td colspan="5" class="purchase-history-empty">Purchase history could not be loaded. Please refresh.</td></tr>';
+    });
   }
   function syncPlanPreview() {
     if (!planLoaded) {
@@ -566,9 +631,10 @@
       $('planNoticeText').textContent = 'Your plan is active. ' + expiryDetails;
     }
     document.querySelectorAll('.plan-select').forEach(button => {
-      button.disabled = true;
-      button.textContent = button.dataset.plan.startsWith('Free Trial') ? 'Automatic on Signup' : 'Coming Soon';
-      button.setAttribute('aria-disabled', 'true');
+      const isTrialButton = button.dataset.planKind === 'trial';
+      button.disabled = isTrialButton;
+      button.textContent = isTrialButton ? 'Automatic on Signup' : 'Request Plan';
+      button.setAttribute('aria-disabled', String(isTrialButton));
     });
     renderPlanExpiryAlert();
   }
@@ -641,6 +707,11 @@
     if (!day) return;
     calendarSelectedDate = day.dataset.calendarDate;
     renderBookingCalendar();
+  });
+  $('ownerSubscriptionPlans').addEventListener('click', event => {
+    const button = event.target.closest('.plan-select');
+    if (!button || button.disabled || button.dataset.planKind === 'trial') return;
+    recordPlanPurchaseAttempt(button);
   });
   $('renewPlanButton').addEventListener('click', () => showView('subscription'));
   $('closePlanExpiryAlert').addEventListener('click', () => {
@@ -1190,6 +1261,7 @@
         showDefaultOwnerPlans();
       });
       ownerUid = IS_ADMIN_OWNER_PREVIEW ? String(window.adminOwnerPreviewTargetUid || '') : user.uid;
+      watchPurchaseHistory(db, firestore);
       ownerSyncStep = 'Reading owner profile';
       const remoteProfile = await api.getOwnerProfile(db, ownerUid);
       const signedInEmail = IS_ADMIN_OWNER_PREVIEW ? OWNER_EMAIL : String(user.email || OWNER_EMAIL).trim().toLowerCase();
