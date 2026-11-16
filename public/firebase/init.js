@@ -8,6 +8,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   signOut,
+  signInAnonymously,
   onAuthStateChanged,
   browserLocalPersistence,
   getIdTokenResult,
@@ -56,6 +57,18 @@ window.firebaseAuthApi = {
   EmailAuthProvider,
   signOut,
   onAuthStateChanged,
+
+  ensureAnonymousCustomer: async () => {
+    await auth.authStateReady();
+    let user = auth.currentUser;
+    if (!user) user = (await signInAnonymously(auth)).user;
+    if (!user || !user.isAnonymous) {
+      const error = new Error("A guest customer session is required for this booking.");
+      error.code = "auth/anonymous-session-required";
+      throw error;
+    }
+    return user.uid;
+  },
 
   saveOwnerProfile: (database, uid, profile) =>
     setDoc(doc(database, "owners", uid), {
@@ -215,11 +228,18 @@ window.firebaseAuthApi = {
     });
   },
 
-  updateBookingPaymentStatus: (database, bookingId, paymentStatus) =>
-    updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
+  updateBookingPaymentStatus: async (database, bookingId, paymentStatus) => {
+    const user = auth.currentUser;
+    if (!user || !user.isAnonymous) {
+      const error = new Error("The customer booking session is no longer available.");
+      error.code = "auth/anonymous-session-required";
+      throw error;
+    }
+    return updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
       paymentStatus,
       updatedAt: serverTimestamp()
-    })
+    });
+  }
 };
 
 if (isAdminOwnerPreview) {
