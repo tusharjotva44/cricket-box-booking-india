@@ -115,8 +115,7 @@ service cloud.firestore {
         && request.resource.data.endTime is string
         && request.resource.data.customerName is string
         && request.resource.data.phone is string
-        && request.resource.data.amount is number
-;
+        && request.resource.data.amount is number;
 
       allow update: if (
           request.auth != null
