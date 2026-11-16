@@ -30,6 +30,27 @@ service cloud.firestore {
           )
         );
       allow delete: if request.auth != null && isSuperAdmin();
+
+      match /purchaseHistory/{historyId} {
+        allow read: if request.auth != null
+          && (request.auth.uid == ownerId || isSuperAdmin());
+        allow create: if request.auth != null
+          && request.auth.uid == ownerId
+          && request.resource.data.ownerUid == ownerId
+          && request.resource.data.ownerEmail is string
+          && request.resource.data.planId is string
+          && request.resource.data.planName is string
+          && request.resource.data.amount is number
+          && request.resource.data.source == 'Owner Dashboard'
+          && request.resource.data.status == 'Pending'
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.keys().hasOnly(['ownerUid','ownerEmail','planId','planName','amount','source','status','createdAt']);
+        allow update: if isSuperAdmin()
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','source','updatedAt'])
+          && request.resource.data.status in ['Pending','Paid','Rejected'];
+        allow delete: if isSuperAdmin();
+      }
     }
 
     match /grounds/{groundId} {
