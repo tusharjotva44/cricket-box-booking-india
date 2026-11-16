@@ -64,12 +64,9 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
         && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
         && (
-          request.auth.uid == request.resource.data.ownerUid
-          || isSuperAdmin()
-          || (
-            request.auth.token.firebase.sign_in_provider == 'anonymous'
-            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
-          )
+          request.auth.token.email == 'niklo12@gmail.com'
+          && request.auth.token.firebase.sign_in_provider == 'password'
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
         );
 
       allow update: if (
@@ -79,7 +76,8 @@ service cloud.firestore {
         )
         || (
           request.auth != null
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && request.auth.token.email == 'niklo12@gmail.com'
+          && request.auth.token.firebase.sign_in_provider == 'password'
           && resource.data.status == 'Pending'
           && resource.data.holdExpiresAt <= request.time.toMillis()
           && request.resource.data.bookingId is string
@@ -101,7 +99,13 @@ service cloud.firestore {
           || isSuperAdmin()
         );
 
-      allow create: if request.resource.data.ownerUid is string
+      allow create: if request.auth != null
+        && request.auth.token.email == 'niklo12@gmail.com'
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.bookingSource == 'Main website'
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.ownerUid is string
         && request.resource.data.groundId is string
         && exists(/databases/$(database)/documents/grounds/$(request.resource.data.groundId))
         && get(/databases/$(database)/documents/grounds/$(request.resource.data.groundId)).data.ownerUid == request.resource.data.ownerUid
@@ -112,21 +116,7 @@ service cloud.firestore {
         && request.resource.data.customerName is string
         && request.resource.data.phone is string
         && request.resource.data.amount is number
-        && (
-          (
-            request.auth != null
-            && request.auth.token.firebase.sign_in_provider == 'anonymous'
-            && request.resource.data.customerUid == request.auth.uid
-            && request.resource.data.status == 'Pending'
-            && request.resource.data.bookingSource == 'Main website'
-          )
-          ||
-          (
-            request.auth != null
-            && (request.auth.uid == request.resource.data.ownerUid || isSuperAdmin())
-            && request.resource.data.status in ['Pending', 'Confirmed', 'Rejected', 'Expired', 'Cancelled']
-          )
-        );
+;
 
       allow update: if (
           request.auth != null
@@ -137,7 +127,8 @@ service cloud.firestore {
         )
         || (
           request.auth != null
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && request.auth.token.email == 'niklo12@gmail.com'
+          && request.auth.token.firebase.sign_in_provider == 'password'
           && resource.data.customerUid == request.auth.uid
           && resource.data.bookingSource == 'Main website'
           && request.resource.data.customerUid == resource.data.customerUid
