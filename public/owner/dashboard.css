@@ -348,3 +348,17 @@
 #ownerSubscriptionPlans .subscription-plan-card li{margin:2px 0}
 #ownerSubscriptionPlans .subscription-plan-card .plan-select{align-self:flex-start;width:100%;margin-top:auto;padding:9px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:10px;font-weight:800;opacity:.75;cursor:not-allowed}
 @media(max-width:760px){#ownerSubscriptionPlans .subscription-plan-card{padding:12px}}
+
+
+/* Owner's current plan summary at the top of the Subscription page */
+.current-owner-plan{margin:0 0 22px;padding:20px 22px;border:1px solid #fed7aa;border-radius:16px;background:linear-gradient(120deg,#fff7ed 0%,#fff 75%);box-shadow:0 6px 20px rgba(154,52,18,.06)}
+.current-owner-plan-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.current-owner-plan h2{margin:8px 0 16px;font:700 19px 'Space Grotesk',sans-serif;color:var(--ink)}
+.current-owner-plan-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.current-owner-plan-details>div{display:grid;gap:6px;min-width:0;padding:12px;border:1px solid #f1eee9;border-radius:10px;background:#fff}
+.current-owner-plan-details small{font-size:10px;color:var(--muted)}
+.current-owner-plan-details strong{font:700 13px 'Space Grotesk',sans-serif;overflow-wrap:anywhere;color:var(--ink)}
+.current-owner-plan-status{display:inline-flex;align-items:center;padding:6px 10px;border:1px solid #fed7aa;border-radius:999px;background:#fff;color:#9a3412;font-size:10px;font-weight:800;white-space:nowrap}
+.current-owner-plan-status.is-active{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}
+.current-owner-plan-status.is-inactive{border-color:#fecaca;background:#fef2f2;color:#b91c1c}
+@media(max-width:620px){.current-owner-plan{padding:16px}.current-owner-plan-details{grid-template-columns:1fr;gap:8px}.current-owner-plan-details>div{padding:10px}.current-owner-plan h2{font-size:17px}}
