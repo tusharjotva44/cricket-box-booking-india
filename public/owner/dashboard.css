@@ -382,3 +382,12 @@
 .purchase-history-status.paid,.purchase-history-status.success,.purchase-history-status.completed{background:#dcfce7;color:#166534}
 .purchase-history-status.rejected,.purchase-history-status.failed,.purchase-history-status.cancelled{background:#fee2e2;color:#991b1b}
 @media(max-width:760px){.purchase-history-panel{padding:15px}.purchase-history-table{min-width:650px}}
+
+/* Individual open/close control for the selected ground */
+.availability-ground-summary-copy{display:grid;gap:5px;min-width:0}
+.availability-ground-toggle-btn{flex:0 0 auto;min-height:34px;padding:8px 13px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#9a3412;font:700 10px 'DM Sans',sans-serif;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease}
+.availability-ground-toggle-btn.is-open{border-color:#86efac;background:#f0fdf4;color:#166534}
+.availability-ground-toggle-btn.is-close{border-color:#fdba74;background:#fff7ed;color:#9a3412}
+.availability-ground-toggle-btn:disabled{opacity:.6;cursor:wait}
+@media(max-width:650px){.availability-ground-toggle-btn{width:100%}}
+
