@@ -509,3 +509,25 @@
   background:#fee2e2;
   color:#991b1b;
 }
+
+/* Ground Availability bulk actions: Open green, Close red. */
+.availability-bulk-actions [data-availability-bulk="open"]{
+  border-color:#16a34a;
+  background:#16a34a;
+  color:#fff;
+}
+.availability-bulk-actions [data-availability-bulk="open"]:hover{
+  border-color:#15803d;
+  background:#15803d;
+  color:#fff;
+}
+.availability-bulk-actions [data-availability-bulk="close"]{
+  border-color:#dc2626;
+  background:#dc2626;
+  color:#fff;
+}
+.availability-bulk-actions [data-availability-bulk="close"]:hover{
+  border-color:#b91c1c;
+  background:#b91c1c;
+  color:#fff;
+}
