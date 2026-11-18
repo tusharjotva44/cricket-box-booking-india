@@ -165,7 +165,7 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === 'view-' + name));
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.view === name));
-    const labels = {overview:'Overview',grounds:'My Grounds',availability:'Ground Availability',bookings:'Booking Control Center',calendar:'Booking Calendar',revenue:'Revenue Report',subscription:'Subscription'};
+    const labels = {overview:'Overview',grounds:'My Grounds',availability:'Ground Availability',bookings:'Booking Control Center',calendar:'Booking Calendar',revenue:'Revenue Report',subscription:'Subscription','purchase-history':'Purchase History'};
     $('breadcrumbTitle').textContent = labels[name] || 'Overview';
     $('sidebar').classList.remove('open');
     window.scrollTo({top:0,behavior:'smooth'});
