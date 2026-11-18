@@ -658,7 +658,8 @@
     const ground = grounds.find(g => g.id === availabilityGroundId), editor = $('availabilityEditor'), actions = $('availabilityActions');
     if (!ground) { editor.innerHTML = '<p class="availability-empty">' + (grounds.length ? 'Select a ground to set its weekly schedule.' : 'Add a ground first to manage its availability.') + '</p>'; actions.classList.add('hidden'); return; }
     const schedule = {...defaultGroundAvailability(),...(ground.availability || {})};
-    editor.innerHTML = '<div class="availability-ground-summary"><strong>' + escapeHTML(ground.name) + '</strong><span>' + escapeHTML(ground.sport) + ' · ' + escapeHTML(ground.location) + '</span></div><div class="availability-week">' + availabilityDays.map(day => {
+    const allDaysOpen = availabilityDays.every(day => Boolean((schedule[day.key] || {}).open));
+    editor.innerHTML = '<div class="availability-ground-summary"><div class="availability-ground-summary-copy"><strong>' + escapeHTML(ground.name) + '</strong><span>' + escapeHTML(ground.sport) + ' · ' + escapeHTML(ground.location) + '</span></div><button type="button" class="availability-ground-toggle-btn ' + (allDaysOpen ? 'is-close' : 'is-open') + '" data-ground-availability-toggle ' + (editor.dataset.savingGroundAvailability === 'true' ? 'disabled' : '') + '>' + (allDaysOpen ? 'Close Ground' : 'Open Ground') + '</button></div><div class="availability-week">' + availabilityDays.map(day => {
       const item = schedule[day.key] || {open:false};
       const today = new Date();
       const weekDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7) + availabilityDays.indexOf(day));
@@ -668,6 +669,31 @@
     actions.classList.remove('hidden');
   }
   $('availabilityGroundSelect').addEventListener('change', () => { availabilityGroundId = $('availabilityGroundSelect').value; renderAvailabilityEditor(); });
+  $('availabilityEditor').addEventListener('click', event => {
+    const button = event.target.closest('[data-ground-availability-toggle]');
+    if (!button || button.disabled) return;
+    const ground = grounds.find(g => g.id === availabilityGroundId);
+    if (!ground) return;
+    const schedule = {...defaultGroundAvailability(),...(ground.availability || {})};
+    const allDaysOpen = availabilityDays.every(day => Boolean((schedule[day.key] || {}).open));
+    const open = !allDaysOpen;
+    const previousAvailability = ground.availability;
+    ground.availability = Object.fromEntries(availabilityDays.map(day => [day.key,{open}]));
+    const editor = $('availabilityEditor');
+    editor.dataset.savingGroundAvailability = 'true';
+    button.disabled = true;
+    button.textContent = open ? 'Opening…' : 'Closing…';
+    saveGrounds().then(() => {
+      toast(open ? 'Ground is now Open.' : 'Ground is now Close.');
+      renderAvailabilityEditor();
+    }).catch(() => {
+      ground.availability = previousAvailability;
+      toast('Could not update this ground. Please try again.');
+      renderAvailabilityEditor();
+    }).finally(() => {
+      delete editor.dataset.savingGroundAvailability;
+    });
+  });
   $('availabilityEditor').addEventListener('change', event => {
     const row = event.target.closest('[data-availability-day]');
     if (!row || !event.target.matches('[data-availability-open]')) return;
