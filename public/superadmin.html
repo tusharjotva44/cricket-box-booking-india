@@ -803,7 +803,7 @@
       }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
-        '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + (new RegExp('\\b' + Math.max(1, Number(plan.grounds || 1)) + '\\s*grounds?\\b', 'i').test(plan.name) ? '' : ' · ' + Math.max(1, Number(plan.grounds || 1)) + (Number(plan.grounds || 1) === 1 ? ' Ground' : ' Grounds')) + '</option>'
+        '<option value="' + escapeHTML(plan.name) + '">' + Math.max(1, Number(plan.durationValue || 1)) + '-' + escapeHTML(String(plan.durationUnit || 'months').replace(/s$/, '').replace(/^./, letter => letter.toUpperCase())) + ' · ' + Math.max(1, Number(plan.grounds || 1)) + (Number(plan.grounds || 1) === 1 ? ' Ground' : ' Grounds') + '</option>'
       ).join('');
       if (state.plans.some(plan => plan.name === selected)) $('manualPlanSelect').value = selected;
     }
