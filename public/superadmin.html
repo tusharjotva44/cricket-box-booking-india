@@ -897,6 +897,8 @@
           planActivationMethod: 'manual_super_admin',
           updatedAt: serverTimestamp()
         });
+        const purchaseHistoryRef = doc(collection(db,'owners',owner.id,'purchaseHistory'));
+        const planAmount = Math.max(0, Number(plan.price || 0) * (1 - Number(plan.discount || 0) / 100));
         batch.set(transactionRef, {
           txnId,
           ownerId: owner.id,
@@ -904,7 +906,7 @@
           ownerEmail: email,
           planId: plan.id,
           planName: plan.name,
-          amount: Math.max(0, Number(plan.price || 0) * (1 - Number(plan.discount || 0) / 100)),
+          amount: planAmount,
           currency: 'INR',
           activationType: 'Manual Activation',
           paymentMethod: 'Manually verified',
@@ -915,6 +917,16 @@
           recordedBy: state.user?.email || SUPER_ADMIN_EMAIL,
           createdAt: serverTimestamp(),
           verifiedAt: serverTimestamp()
+        });
+        batch.set(purchaseHistoryRef, {
+          ownerUid: owner.id,
+          ownerEmail: email,
+          planId: plan.id,
+          planName: plan.name,
+          amount: planAmount,
+          source: 'Super Admin',
+          status: plan.kind === 'trial' ? 'Active' : 'Paid',
+          createdAt: serverTimestamp()
         });
         await batch.commit();
         $('manualPlanForm').reset();
