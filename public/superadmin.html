@@ -1492,4 +1492,72 @@
       const row = event.target.closest('tr[data-transaction-id]');
       if (!row) return;
       event.preventDefault();
-      openTransactionDetails(row.dataset.transactionId);
+      openTransactionDetails(row.dataset.transactionId);    });
+    $('transactionDetailClose').addEventListener('click', closeTransactionDetails);
+    $('transactionDetailModal').addEventListener('click', event => {
+      if (event.target === $('transactionDetailModal')) closeTransactionDetails();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !$('transactionDetailModal').classList.contains('hidden')) closeTransactionDetails();
+    });
+    $('manualPlanSelect').addEventListener('change', setManualPlanExpiry);
+    $('planEditForm').addEventListener('submit', savePlanDetails);
+    $('planEditCancel').addEventListener('click', closePlanEditor);
+    $('planEditModal').addEventListener('click', event => {
+      if (event.target === $('planEditModal')) closePlanEditor();
+    });
+    $('subscriptionPlanCards').addEventListener('click', event => {
+      const button = event.target.closest('[data-select-plan]');
+      if (!button) {
+        const editButton = event.target.closest('[data-edit-plan]');
+        if (editButton) openPlanEditor(editButton.dataset.editPlan);
+        return;
+      }
+      $('manualPlanSelect').value = button.dataset.selectPlan;
+      setManualPlanExpiry();
+      $('manualPlanMessage').textContent = '';
+      $('manualPlanEmail').focus();
+    });
+    $('ownerSearch').addEventListener('input',renderOwners);
+    $('exportOwnersCsv').addEventListener('click',downloadOwnersCsv);
+    $('exportTransactionsCsv').addEventListener('click',downloadTransactionsCsv);
+    $('reportsToggle').addEventListener('click',() => {
+      const expanded = $('reportsToggle').getAttribute('aria-expanded') === 'true';
+      const nextExpanded = !expanded;
+      $('reportsSubnav').classList.toggle('hidden',!nextExpanded);
+      $('reportsToggle').setAttribute('aria-expanded',String(nextExpanded));
+      $('reportsToggle').classList.toggle('active',nextExpanded || ['owners','transactions'].includes(document.querySelector('.view:not(.hidden)')?.id?.replace('view-','')));
+    });
+    $('groundSearch').addEventListener('input',renderGrounds);
+    $('activitySearch').addEventListener('input',renderOwnerActivityLog);
+    $('activityTypeFilter').addEventListener('change',renderOwnerActivityLog);
+    $('groundRows').addEventListener('click', event => {
+      const toggleButton = event.target.closest('[data-ground-toggle]');
+      if (toggleButton) toggleGroundListing(toggleButton.dataset.groundToggle, toggleButton);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !$('planEditModal').classList.contains('hidden')) closePlanEditor();
+    });
+
+    document.querySelectorAll('.nav button[data-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.view)));
+    document.querySelectorAll('[data-open-view]').forEach(button => button.addEventListener('click',() => openView(button.dataset.openView)));
+    $('mobileMenu').addEventListener('click',() => $('sidebar').classList.toggle('open'));
+    document.addEventListener('click',event => {
+      if (window.innerWidth <= 700 && $('sidebar').classList.contains('open') && !$('sidebar').contains(event.target) && !$('mobileMenu').contains(event.target)) $('sidebar').classList.remove('open');
+    });
+    await setPersistence(superAdminAuth, browserLocalPersistence);
+    await superAdminAuth.authStateReady();
+    onAuthStateChanged(superAdminAuth,async user => {
+      if (!user) { showLogin(); return; }
+      try {
+        const allowed = await verifySuperAdmin(user);
+        if (!allowed) { await signOut(superAdminAuth); showLogin('Access denied. This account is not assigned the Super Admin role.'); return; }
+        showApp(user);
+      } catch (error) {
+        console.error('Super Admin role verification failed:',error);
+        await signOut(superAdminAuth); showLogin('Could not verify administrator permissions. Please sign in again.');
+      }
+    });
+  </script>
+</body>
+</html>
