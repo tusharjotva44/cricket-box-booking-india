@@ -803,7 +803,7 @@
       }).join('');
       const selected = $('manualPlanSelect').value;
       $('manualPlanSelect').innerHTML = '<option value="">Select a plan</option>' + state.plans.map(plan =>
-        '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + ' · ' + escapeHTML(planDurationLabel(plan)) + ' · ' + Number(plan.grounds || 1) + ' ground' + (Number(plan.grounds || 1) > 1 ? 's' : '') + '</option>'
+        '<option value="' + escapeHTML(plan.name) + '">' + escapeHTML(plan.name) + (new RegExp('\\b' + Math.max(1, Number(plan.grounds || 1)) + '\\s*grounds?\\b', 'i').test(plan.name) ? '' : ' · ' + Math.max(1, Number(plan.grounds || 1)) + (Number(plan.grounds || 1) === 1 ? ' Ground' : ' Grounds')) + '</option>'
       ).join('');
       if (state.plans.some(plan => plan.name === selected)) $('manualPlanSelect').value = selected;
     }
