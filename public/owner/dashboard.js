@@ -18,6 +18,8 @@
   const readList = (key) => { try { const data = JSON.parse(storage.getItem(key)); return Array.isArray(data) ? data : []; } catch { return []; } };
   const groundsForOwner = () => readList(STORE.grounds).filter(g => g.owner === OWNER_EMAIL).map(g => ({...g, sport:g.sportType || g.sport || 'Box Cricket', location:g.location || [g.area,g.city].filter(Boolean).join(', '), price:Number(g.price || 0)}));
   let remoteBookings = [];
+  let allBookingsPage = 1;
+  const ALL_BOOKINGS_PAGE_SIZE = 10;
   let ownerUid = '';
   let knownBookingIds = new Set();
   const bookingsForOwner = () => remoteBookings.map(b => ({...b, id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
@@ -328,7 +330,23 @@
       (!selectedDate || b.date === selectedDate) &&
       (!query || [b.id,b.customer,b.email,b.ground].some(value => String(value || '').toLowerCase().includes(query)))
     );
-    $('bookingRows').innerHTML = list.length ? list.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="7">No bookings match these filters.</td></tr>';
+    const pageCount = Math.max(1, Math.ceil(list.length / ALL_BOOKINGS_PAGE_SIZE));
+    allBookingsPage = Math.min(allBookingsPage, pageCount);
+    const pageStart = (allBookingsPage - 1) * ALL_BOOKINGS_PAGE_SIZE;
+    const pageBookings = list.slice(pageStart, pageStart + ALL_BOOKINGS_PAGE_SIZE);
+    $('bookingRows').innerHTML = pageBookings.length ? pageBookings.map(b => bookingRow(b, true)).join('') : '<tr><td colspan="7">No bookings match these filters.</td></tr>';
+    const pagination = $('bookingPagination');
+    if (pagination) {
+      const firstShown = list.length ? pageStart + 1 : 0;
+      const lastShown = Math.min(pageStart + ALL_BOOKINGS_PAGE_SIZE, list.length);
+      pagination.innerHTML = list.length > ALL_BOOKINGS_PAGE_SIZE
+        ? '<div class="booking-pagination-summary">Showing ' + firstShown + '–' + lastShown + ' of ' + list.length + ' bookings</div><div class="booking-pagination-controls">' +
+          '<button type="button" class="secondary-btn" data-booking-page="' + (allBookingsPage - 1) + '"' + (allBookingsPage === 1 ? ' disabled' : '') + '>Previous</button>' +
+          Array.from({length:pageCount}, (_, index) => index + 1).map(page => '<button type="button" class="' + (page === allBookingsPage ? 'primary-btn' : 'secondary-btn') + '" data-booking-page="' + page + '" aria-current="' + (page === allBookingsPage ? 'page' : 'false') + '">' + page + '</button>').join('') +
+          '<button type="button" class="secondary-btn" data-booking-page="' + (allBookingsPage + 1) + '"' + (allBookingsPage === pageCount ? ' disabled' : '') + '>Next</button></div>'
+        : '';
+      pagination.classList.toggle('hidden', list.length <= ALL_BOOKINGS_PAGE_SIZE);
+    }
     $('recentBookingRows').innerHTML = newestFirst.slice(0, 3).map(b => bookingRow(b, false)).join('') || '<tr><td colspan="5">No bookings yet. New requests will appear here.</td></tr>';
     $('statBookings').textContent = String(sampleBookings.length);
     const pendingCount = sampleBookings.filter(b => b.status === 'Pending').length;
@@ -906,9 +924,17 @@
   });
   $('revenuePeriod').addEventListener('change', renderRevenueReport);
   $('downloadPaymentReport').addEventListener('click', downloadPaymentReceivedCSV);
-  $('bookingFilter').addEventListener('change', renderBookings);
-  $('bookingSearch').addEventListener('input', renderBookings);
-  $('bookingDateFilter').addEventListener('change', renderBookings);
+  $('bookingFilter').addEventListener('change', () => { allBookingsPage = 1; renderBookings(); });
+  $('bookingSearch').addEventListener('input', () => { allBookingsPage = 1; renderBookings(); });
+  $('bookingDateFilter').addEventListener('change', () => { allBookingsPage = 1; renderBookings(); });
+  $('bookingPagination').addEventListener('click', event => {
+    const button = event.target.closest('[data-booking-page]');
+    if (!button || button.disabled) return;
+    const nextPage = Number(button.dataset.bookingPage);
+    if (!Number.isInteger(nextPage) || nextPage < 1) return;
+    allBookingsPage = nextPage;
+    renderBookings();
+  });
   $('bookingRows').addEventListener('click', async event => {
     const approveButton = event.target.closest('[data-approve]');
     const rejectButton = event.target.closest('[data-reject]');
