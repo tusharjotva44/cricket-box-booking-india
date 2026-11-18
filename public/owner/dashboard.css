@@ -391,3 +391,96 @@
 .availability-ground-toggle-btn:disabled{opacity:.6;cursor:wait}
 @media(max-width:650px){.availability-ground-toggle-btn{width:100%}}
 
+
+
+/* My Grounds cards — visual polish only; preserve the existing card dimensions and layout. */
+.ground-card{
+  border-color:#e9e4de;
+  border-radius:16px;
+  box-shadow:0 4px 14px rgba(23,37,84,.045);
+  transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.ground-card:hover{
+  border-color:#fdba74;
+  box-shadow:0 12px 26px rgba(23,37,84,.09);
+  transform:translateY(-3px);
+}
+.ground-art{
+  position:relative;
+  isolation:isolate;
+  background:radial-gradient(circle at 78% 22%,rgba(249,115,22,.2),transparent 28%),linear-gradient(135deg,#fff7ed 0%,#ffedd5 52%,#fffaf5 100%);
+  color:#ea580c;
+  text-shadow:0 3px 9px rgba(194,65,12,.12);
+}
+.ground-art:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:76px;
+  height:76px;
+  border:1px solid rgba(249,115,22,.16);
+  border-radius:22px;
+  transform:rotate(22deg);
+}
+.ground-card .sport-tag{
+  border:1px solid #fed7aa;
+  background:#fff7ed;
+  color:#c2410c;
+  border-radius:7px;
+  letter-spacing:.65px;
+}
+.ground-card h3{
+  color:#172554;
+  letter-spacing:-.25px;
+  line-height:1.3;
+}
+.ground-card p{
+  color:#64748b;
+  overflow-wrap:anywhere;
+}
+.ground-card .ground-meta{
+  border-top-color:#f1e8df;
+}
+.ground-card .ground-meta>strong{
+  color:#172554;
+  letter-spacing:-.2px;
+}
+.ground-card .ground-meta>strong small{
+  color:#94a3b8;
+  font-weight:500;
+}
+.ground-card .ground-meta .demo-pill{
+  border-color:#fed7aa;
+  background:#fff7ed;
+  color:#9a3412;
+  white-space:nowrap;
+}
+.ground-card .ground-actions{
+  gap:8px;
+}
+.ground-card .ground-actions>small{
+  line-height:1.45;
+}
+.ground-card .ground-action-buttons .secondary-btn{
+  border-color:#fed7aa;
+  background:#fff7ed;
+  color:#9a3412;
+  transition:background .18s ease,border-color .18s ease,color .18s ease;
+}
+.ground-card .ground-action-buttons .secondary-btn:hover{
+  border-color:#fb923c;
+  background:#ffedd5;
+  color:#9a3412;
+}
+.ground-card .ground-action-buttons .delete-btn{
+  border-radius:8px;
+  transition:background .18s ease,color .18s ease;
+}
+.ground-card .ground-action-buttons .delete-btn:hover{
+  background:#fef2f2;
+  color:#991b1b;
+}
+@media(prefers-reduced-motion:reduce){
+  .ground-card,.ground-card .ground-action-buttons .secondary-btn,.ground-card .ground-action-buttons .delete-btn{transition:none}
+  .ground-card:hover{transform:none}
+}
