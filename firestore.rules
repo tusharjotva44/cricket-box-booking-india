@@ -122,6 +122,34 @@ service cloud.firestore {
         && (request.auth.uid == resource.data.ownerUid || isSuperAdmin());
     }
 
+    match /ownerActivityLogs/{activityId} {
+      allow read: if isSuperAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.actorEmail == request.auth.token.email
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerEmail is string
+        && request.resource.data.ownerName is string
+        && request.resource.data.activityType in ['Ground Added', 'Ground Edited', 'Ground Deleted']
+        && request.resource.data.groundId is string
+        && request.resource.data.groundName is string
+        && request.resource.data.sport is string
+        && request.resource.data.location is string
+        && request.resource.data.actorName is string
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'ownerEmail', 'ownerName',
+          'actorUid', 'actorEmail', 'actorName',
+          'activityType', 'groundId', 'groundName',
+          'sport', 'location', 'createdAt'
+        ])
+        && (
+          request.resource.data.ownerUid == request.auth.uid
+          || isSuperAdmin()
+        );
+      allow update, delete: if false;
+    }
+
     match /bookings/{bookingId} {
       allow read: if request.auth != null
         && (
