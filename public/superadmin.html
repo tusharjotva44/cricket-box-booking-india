@@ -1082,8 +1082,8 @@
       $('activityRows').innerHTML = records.length ? records.map(item => {
         const activityClass = item.activityType === 'Ground Added' ? 'active' : item.activityType === 'Ground Deleted' ? 'inactive' : 'trial';
         const groundDetails = [item.sport,item.location].filter(Boolean).join(' · ');
-        const performedByName = item.actorName && item.actorEmail && String(item.actorName).toLowerCase() === String(item.actorEmail).toLowerCase() ? (item.ownerName || 'Owner') : (item.actorName || 'Owner');
-        return '<tr><td>' + escapeHTML(transactionDateTimeLabel(item.createdAt)) + '</td><td><span class="pill ' + activityClass + '">' + escapeHTML(item.activityType || '—') + '</span></td><td><strong>' + escapeHTML(item.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(item.groundId || '—') + (groundDetails ? ' · ' + escapeHTML(groundDetails) : '') + '</span></td><td>' + escapeHTML(item.ownerName || 'Owner') + '<br><span class="muted-cell">' + escapeHTML(item.ownerEmail || item.ownerUid || '—') + '</span></td><td>' + escapeHTML(performedByName) + '<br><span class="muted-cell">' + escapeHTML(item.actorEmail || '—') + '</span></td></tr>';
+        const performedByName = item.actorName || 'Owner';
+        return '<tr><td>' + escapeHTML(transactionDateTimeLabel(item.createdAt)) + '</td><td><span class="pill ' + activityClass + '">' + escapeHTML(item.activityType || '—') + '</span></td><td><strong>' + escapeHTML(item.groundName || 'Sports Ground') + '</strong><br><span class="muted-cell">ID: ' + escapeHTML(item.groundId || '—') + (groundDetails ? ' · ' + escapeHTML(groundDetails) : '') + '</span></td><td>' + escapeHTML(item.ownerName || 'Owner') + '<br><span class="muted-cell">' + escapeHTML(item.ownerEmail || item.ownerUid || '—') + '</span></td><td>' + escapeHTML(performedByName) + '</span></td></tr>';
       }).join('') : '<tr><td colspan="5" class="empty">No owner activity records found.</td></tr>';
     }
 
