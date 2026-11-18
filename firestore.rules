@@ -51,7 +51,7 @@ service cloud.firestore {
             || (
               isSuperAdmin()
               && request.resource.data.source in ['Super Admin','Payment Gateway']
-              && request.resource.data.status == 'Paid'
+              && request.resource.data.status in ['Paid','Active']
             )
           );
         allow update: if isSuperAdmin()
