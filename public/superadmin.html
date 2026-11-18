@@ -501,7 +501,8 @@
           <div class="page-head"><div><span class="eyebrow">DATA EXPORT REPORT</span><h1>Owners Report</h1><p>Export the complete owner directory as a CSV file that opens in Excel.</p></div></div>
           <div class="panel">
             <div class="panel-head"><div><h2>Owner Records</h2><p id="ownersReportCount">Loading owner records…</p></div><button class="export-btn" id="exportOwnersCsv" type="button">↓ CSV Download</button></div>
-            <p class="report-note">The CSV includes all loaded owner records, registration details, subscription information, expiry dates and ground counts. Search filters in Owner Management do not affect this export.</p>
+            <p class="report-note">This report shows all owner records, registration details, subscription information, expiry dates and ground counts. Search filters in Owner Management do not affect this report or export.</p>
+            <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Mobile No.</th><th>Plan</th><th>Subscription</th><th>Registration Date</th><th>Expiry Date</th><th>Ground Count</th></tr></thead><tbody id="ownersReportRows"><tr><td colspan="8" class="loading">Loading owner records…</td></tr></tbody></table></div>
           </div>
         </section>
         <section class="view hidden sports-bg-enabled" id="view-transactions">
@@ -1135,6 +1136,7 @@
     function renderAll() {
       renderDashboardStatistics();
       renderOwners();
+      renderOwnersReport();
       renderGrounds();
       renderSubscriptionPlans();
       renderOwnerPlanOptions($('editOwnerPlan').value);
@@ -1229,6 +1231,24 @@
         const expiry = owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate;
         return '<tr><td><strong>' + (index + 1) + '. ' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(owner.contactEmail || owner.email || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(owner.createdAt)) + '</td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td><div class="owner-row-actions"><button type="button" class="owner-edit-btn" data-edit-owner="' + escapeHTML(owner.id) + '">Edit</button><button type="button" class="owner-login-btn" data-login-owner="' + escapeHTML(owner.id) + '">Login</button></div></td></tr>';
       }).join('') : '<tr><td colspan="8" class="empty">No matching owner records.</td></tr>';
+    }
+
+    function renderOwnersReport() {
+      const owners = [...state.owners].sort((a,b) => String(a.fullName || '').localeCompare(String(b.fullName || '')));
+      $('ownersReportCount').textContent = owners.length + ' owner records available';
+      $('ownersReportRows').innerHTML = owners.length ? owners.map(owner => {
+        const ownerEmail = owner.contactEmail || owner.email || '';
+        const ownerUid = String(owner.id || '');
+        const groundCount = state.grounds.filter(ground => {
+          const groundOwnerUid = String(ground.ownerUid || ground.ownerId || ground.uid || '');
+          const groundOwnerEmail = String(ground.ownerEmail || ground.email || ground.owner || '');
+          return (ownerUid && groundOwnerUid === ownerUid)
+            || (ownerEmail && groundOwnerEmail.toLowerCase() === String(ownerEmail).toLowerCase());
+        }).length;
+        const expiry = owner.trialExpiresAt || owner.subscriptionExpiry || owner.expiryDate;
+        const status = ownerStatus(owner);
+        return '<tr><td><strong>' + escapeHTML(owner.fullName || 'Owner') + '</strong><br><span class="muted-cell">UID: ' + escapeHTML(owner.id) + '</span></td><td>' + escapeHTML(ownerEmail || '—') + '</td><td>' + escapeHTML(owner.mobile || '—') + '</td><td>' + escapeHTML(owner.planName || 'Not selected') + '</td><td><span class="pill ' + status.className + '">' + escapeHTML(status.label) + '</span></td><td>' + escapeHTML(dateLabel(owner.createdAt)) + '</td><td>' + escapeHTML(dateLabel(expiry)) + '</td><td>' + groundCount.toLocaleString('en-IN') + '</td></tr>';
+      }).join('') : '<tr><td colspan="8" class="empty">No owner records found.</td></tr>';
     }
 
     function ownerDateInputValue(value) {
