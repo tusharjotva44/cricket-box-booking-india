@@ -28,7 +28,8 @@ import {
   setDoc as firestoreSetDoc,
   deleteDoc,
   onSnapshot,
-  runTransaction
+  runTransaction,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const isOwnerPage = window.location.pathname.startsWith("/owner/");
@@ -90,10 +91,43 @@ window.firebaseAuthApi = {
     return result.docs.map(item => ({ id: item.id, ...item.data() }));
   },
 
-  saveOwnerGrounds: async (database, uid, email, grounds) => {
+  saveOwnerGrounds: async (database, uid, email, grounds, activity = null) => {
     const ref = collection(database, "grounds");
     const existing = await getDocs(query(ref, where("ownerUid", "==", uid)));
     const keep = new Set(grounds.map(ground => String(ground.id)));
+    if (activity) {
+      const batch = writeBatch(database);
+      for (const item of existing.docs) {
+        if (!keep.has(item.id)) batch.delete(firestoreDoc(database, "grounds", item.id));
+      }
+      for (const ground of grounds) {
+        const id = String(ground.id);
+        const { id: ignoredId, ...data } = ground;
+        batch.set(firestoreDoc(database, "grounds", id), {
+          ...data,
+          ownerUid: uid,
+          owner: email,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+      const activityRef = firestoreDoc(collection(database, "ownerActivityLogs"));
+      batch.set(activityRef, {
+        ownerUid: uid,
+        ownerEmail: email,
+        ownerName: String(activity.ownerName || "Owner"),
+        actorUid: String(activity.actorUid || ""),
+        actorEmail: String(activity.actorEmail || ""),
+        actorName: String(activity.actorName || activity.actorEmail || "Owner"),
+        activityType: String(activity.activityType || ""),
+        groundId: String(activity.groundId || ""),
+        groundName: String(activity.groundName || "Sports Ground"),
+        sport: String(activity.sport || ""),
+        location: String(activity.location || ""),
+        createdAt: serverTimestamp()
+      });
+      await batch.commit();
+      return;
+    }
     for (const item of existing.docs) {
       if (!keep.has(item.id)) await deleteDoc(firestoreDoc(database, "grounds", item.id));
     }
