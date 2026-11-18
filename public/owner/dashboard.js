@@ -121,7 +121,7 @@
       ownerName: String(ownerProfile.fullName || ownerProfile.yourName || 'Owner'),
       actorUid: user.uid,
       actorEmail: String(user.email || OWNER_EMAIL).trim(),
-      actorName: String(user.displayName || user.email || 'Owner')
+      actorName: String(user.displayName || ownerProfile.fullName || ownerProfile.yourName || 'Owner')
     } : null;
     await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})), activityRecord);
     try {
