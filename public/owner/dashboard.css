@@ -484,3 +484,15 @@
   .ground-card,.ground-card .ground-action-buttons .secondary-btn,.ground-card .ground-action-buttons .delete-btn{transition:none}
   .ground-card:hover{transform:none}
 }
+
+
+/* Improve My Grounds text readability inside the same card dimensions. */
+.ground-card .sport-tag{font-size:10px}
+.ground-card h3{font-size:19px;line-height:1.3}
+.ground-card p{font-size:14px;line-height:1.65}
+.ground-card .ground-meta>strong{font-size:16px}
+.ground-card .ground-meta>strong small{font-size:12px}
+.ground-card .ground-meta .demo-pill{font-size:10px}
+.ground-card .ground-actions>small{font-size:11px!important}
+.ground-card .ground-action-buttons .secondary-btn,
+.ground-card .ground-action-buttons .delete-btn{font-size:12px}
