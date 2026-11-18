@@ -496,3 +496,16 @@
 .ground-card .ground-actions>small{font-size:11px!important}
 .ground-card .ground-action-buttons .secondary-btn,
 .ground-card .ground-action-buttons .delete-btn{font-size:12px}
+
+
+/* My Grounds Remove button — clear red styling. */
+.ground-card .ground-action-buttons .delete-btn{
+  border:1px solid #fecaca;
+  background:#fef2f2;
+  color:#b91c1c;
+}
+.ground-card .ground-action-buttons .delete-btn:hover{
+  border-color:#f87171;
+  background:#fee2e2;
+  color:#991b1b;
+}
