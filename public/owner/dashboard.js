@@ -114,9 +114,16 @@
   let grounds = groundsForOwner();
   let editingGroundId = null;
   let sampleBookings = bookingsForOwner();
-  const saveGrounds = async () => {
+  const saveGrounds = async (activity = null) => {
     const { user, api, db } = await getOwnerFirebaseContext();
-    await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})));
+    const activityRecord = activity ? {
+      ...activity,
+      ownerName: String(ownerProfile.fullName || ownerProfile.yourName || 'Owner'),
+      actorUid: user.uid,
+      actorEmail: String(user.email || OWNER_EMAIL).trim().toLowerCase(),
+      actorName: String(user.displayName || user.email || 'Owner')
+    } : null;
+    await api.saveOwnerGrounds(db, ownerUid || user.uid, OWNER_EMAIL, grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL})), activityRecord);
     try {
       const all = readList(STORE.grounds).filter(g => g.owner !== OWNER_EMAIL);
       storage.setItem(STORE.grounds, JSON.stringify([...all, ...grounds.map(g => ({...g, sportType:g.sport, owner:OWNER_EMAIL}))]));
@@ -806,7 +813,8 @@
       const index = grounds.findIndex(g => g.id === editingGroundId);
       if (index < 0) { toast('Ground could not be found.'); resetGroundForm(); return; }
       grounds[index] = {...grounds[index],...updatedFields};
-      try { await saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground details updated and synced.'); }
+      const editedGround = grounds[index];
+      try { await saveGrounds({activityType:'Ground Edited',groundId:editedGround.id,groundName:editedGround.name,sport:editedGround.sport,location:editedGround.location}); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground details updated and synced.'); }
       catch (error) { toast('Ground update failed. Check your connection and try again.'); }
       return;
     }
@@ -815,7 +823,7 @@
     if (grounds.length >= limit) { toast('Your selected plan allows up to ' + limit + (limit === 1 ? ' ground.' : ' grounds.') + ' Choose a 2 Grounds plan to add another.'); showView('subscription'); return; }
     const newGround = {id:'ground-' + Date.now(),...updatedFields,owner:OWNER_EMAIL,slots:[]};
     grounds.push(newGround);
-    try { await saveGrounds(); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground added and shared with all visitors.'); }
+    try { await saveGrounds({activityType:'Ground Added',groundId:newGround.id,groundName:newGround.name,sport:newGround.sport,location:newGround.location}); renderGrounds(); resetGroundForm(); $('groundFormPanel').classList.add('hidden'); toast('Ground added and shared with all visitors.'); }
     catch (error) { grounds = grounds.filter(g => g.id !== newGround.id); renderGrounds(); toast('Ground could not be synced. Please try again.'); }
   });
   $('groundsGrid').addEventListener('click', async event => {
@@ -823,8 +831,9 @@
     if (editButton) { editGround(editButton.dataset.editGround); return; }
     const button = event.target.closest('[data-delete]'); if (!button) return;
     const previous = grounds;
+    const deletedGround = grounds.find(g => g.id === button.dataset.delete);
     grounds = grounds.filter(g => g.id !== button.dataset.delete);
-    try { await saveGrounds(); renderGrounds(); toast('Ground removed from the live listing.'); }
+    try { await saveGrounds({activityType:'Ground Deleted',groundId:deletedGround?.id || button.dataset.delete,groundName:deletedGround?.name || 'Sports Ground',sport:deletedGround?.sport || deletedGround?.sportType || '',location:deletedGround?.location || ''}); renderGrounds(); toast('Ground removed from the live listing.'); }
     catch (error) { grounds = previous; renderGrounds(); toast('Could not remove ground. Please try again.'); }
   });
   function timeLabel(value) {
