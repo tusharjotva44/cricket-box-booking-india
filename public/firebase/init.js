@@ -28,6 +28,8 @@ import {
   setDoc as firestoreSetDoc,
   deleteDoc,
   onSnapshot,
+  orderBy,
+  limit,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
@@ -213,6 +215,24 @@ window.firebaseAuthApi = {
       onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
       onError
     ),
+
+  watchOwnerNotifications: (database, uid, onChange, onError) =>
+    onSnapshot(query(
+      collection(database, "ownerNotifications", String(uid), "items"),
+      orderBy("createdAt", "desc"),
+      limit(100)
+    ), snapshot =>
+      onChange(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
+      onError
+    ),
+
+  markOwnerNotificationsRead: async (database, uid, notificationIds) => {
+    const ids = Array.from(new Set((notificationIds || []).map(String))).filter(Boolean);
+    await Promise.all(ids.map(id => updateDoc(
+      firestoreDoc(database, "ownerNotifications", String(uid), "items", id),
+      { read: true, readAt: serverTimestamp() }
+    )));
+  },
 
   watchAllBookings: (database, onChange, onError) =>
     onSnapshot(collection(database, "bookings"), snapshot =>
