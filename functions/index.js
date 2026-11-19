@@ -3,6 +3,7 @@ const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
 initializeApp();
 setGlobalOptions({ region: "asia-south1", maxInstances: 3 });
@@ -230,4 +231,47 @@ exports.updateOwnerLoginEmail = onCall(async (request) => {
   }
 
   return { email, emailChanged };
+});
+
+
+// Persist a server-side notification whenever a customer submits a new booking.
+exports.notifyOwnerOnNewBooking = onDocumentCreated("bookings/{bookingId}", async (event) => {
+  const booking = event.data && event.data.data();
+  if (!booking || booking.bookingSource !== "Main website" || booking.notificationSuppressed === true) return;
+
+  const ownerUid = String(booking.ownerUid || "").trim();
+  if (!ownerUid) {
+    console.warn("Booking notification skipped: ownerUid is missing.", event.params.bookingId);
+    return;
+  }
+
+  const bookingId = String(event.params.bookingId || "");
+  const safeBookingId = bookingId.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 120)
+    || String(event.id).replace(/[^A-Za-z0-9_-]/g, "_");
+  const notificationRef = getFirestore()
+    .collection("ownerNotifications")
+    .doc(ownerUid)
+    .collection("items")
+    .doc(safeBookingId + "_new_booking");
+
+  try {
+    await notificationRef.create({
+      ownerUid,
+      bookingId,
+      type: "booking_created",
+      title: "New booking request",
+      message: [
+        String(booking.customerName || "Customer"),
+        String(booking.groundName || "Ground"),
+        String(booking.date || ""),
+        String(booking.slot || "")
+      ].filter(Boolean).join(" · "),
+      status: String(booking.status || "Pending"),
+      read: false,
+      createdAt: FieldValue.serverTimestamp()
+    });
+  } catch (error) {
+    if (error && (error.code === 6 || error.code === "already-exists")) return;
+    throw error;
+  }
 });
