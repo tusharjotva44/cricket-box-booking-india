@@ -150,6 +150,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /ownerNotifications/{ownerId}/items/{notificationId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == ownerId || isSuperAdmin());
+      allow create, delete: if false;
+      allow update: if request.auth != null
+        && (request.auth.uid == ownerId || isSuperAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt'])
+        && request.resource.data.read == true;
+    }
+
     match /bookings/{bookingId} {
       allow read: if request.auth != null
         && (
