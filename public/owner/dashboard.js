@@ -33,83 +33,26 @@
   let selectedGroundLimit = null;
   let planLoaded = false;
   let toastTimer;
-  const NOTIFICATION_STORE = 'boxbook_admin_notifications_v1';
-  const NOTIFICATION_READ_STORE = 'boxbook_owner_notifications_read_v1';
-  function readNotificationState() {
-    try {
-      const data = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
-      const saved = data[OWNER_EMAIL];
-      if (Array.isArray(saved)) return Object.fromEntries(saved.map(id => [String(id), Date.now()]));
-      return saved && typeof saved === 'object' ? saved : {};
-    } catch { return {}; }
-  }
-  function readAdminNotifications() {
-    try {
-      const items = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
-      return Array.isArray(items) ? items.filter(item => item && (!item.ownerEmail || String(item.ownerEmail).trim().toLowerCase() === OWNER_EMAIL || item.ownerEmail === '*')) : [];
-    } catch { return []; }
-  }
-  function cleanupReadNotifications() {
-    const readState = readNotificationState();
-    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    let allItems = [];
-    try {
-      const saved = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
-      allItems = Array.isArray(saved) ? saved : [];
-    } catch {}
-    const expiredIds = new Set(Object.entries(readState).filter(([, readAt]) => Number(readAt) && Number(readAt) <= cutoff).map(([id]) => id));
-    if (expiredIds.size) {
-      allItems = allItems.filter(item => !(item && String(item.ownerEmail || '').trim().toLowerCase() === OWNER_EMAIL && expiredIds.has(String(item.id || item.createdAt || item.title || 'notification'))));
-      try { storage.setItem(NOTIFICATION_STORE, JSON.stringify(allItems)); } catch {}
-    }
-    const remainingState = Object.fromEntries(Object.entries(readState).filter(([, readAt]) => Number(readAt) > cutoff));
-    try {
-      const allRead = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
-      allRead[OWNER_EMAIL] = remainingState;
-      storage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(allRead));
-    } catch {}
-    return remainingState;
-  }
+  let ownerNotifications = [];
+  let knownNotificationIds = new Set();
+  let notificationsInitialized = false;
   function renderNotifications() {
     const list = $('notificationList');
     if (!list) return;
-    const readState = cleanupReadNotifications();
-    const items = readAdminNotifications()
-      .filter(item => !readState[String(item.id || item.createdAt || item.title || 'notification')])
-      .sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    const items = ownerNotifications.filter(item => item && item.read !== true);
     const unread = items.length;
     $('notificationBadge').textContent = unread > 99 ? '99+' : String(unread);
     $('notificationBadge').classList.toggle('hidden', unread === 0);
     $('notificationSummary').textContent = unread ? unread + (unread === 1 ? ' unread update' : ' unread updates') : 'You are all caught up';
     list.innerHTML = items.length ? items.map(item => {
-      const date = item.createdAt ? new Date(Number(item.createdAt)).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      const createdAt = item.createdAt && typeof item.createdAt.toDate === 'function'
+        ? item.createdAt.toDate()
+        : item.createdAt ? new Date(item.createdAt) : null;
+      const date = createdAt && !Number.isNaN(createdAt.getTime())
+        ? createdAt.toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+        : '';
       return '<article class="notification-item is-unread"><span class="notification-status-dot" aria-hidden="true"></span><div><strong>' + escapeHTML(item.title || 'BoxBook update') + '</strong><p>' + escapeHTML(item.message || '') + '</p>' + (date ? '<small>' + escapeHTML(date) + '</small>' : '') + '</div></article>';
     }).join('') : '<p class="notification-empty">No unread notifications. You are all caught up.</p>';
-  }
-  function saveBookingNotification(booking, normalized) {
-    const id = 'booking-' + String(booking.id || Date.now());
-    let items = [];
-    try {
-      const saved = JSON.parse(storage.getItem(NOTIFICATION_STORE) || '[]');
-      items = Array.isArray(saved) ? saved : [];
-    } catch {}
-    const alreadySaved = items.some(item =>
-      String(item && item.id || '') === id &&
-      String(item && item.ownerEmail || '').trim().toLowerCase() === OWNER_EMAIL
-    );
-    if (alreadySaved) return;
-    items.unshift({
-      id,
-      ownerEmail: OWNER_EMAIL,
-      title: 'New booking request',
-      message: normalized.customer + ' · ' + normalized.ground + ' · ' + normalized.date + ' · ' + normalized.time,
-      createdAt: Date.now(),
-      type: 'booking'
-    });
-    try {
-      storage.setItem(NOTIFICATION_STORE, JSON.stringify(items.slice(0, 100)));
-    } catch {}
-    renderNotifications();
   }
   let grounds = groundsForOwner();
   let editingGroundId = null;
@@ -1084,19 +1027,20 @@
       notificationTrigger.setAttribute('aria-expanded', String(opening));
       closeProfileMenuIfAvailable();
     });
-    $('markNotificationsRead').addEventListener('click', () => {
-      const ids = readAdminNotifications().map(item => String(item.id || item.createdAt || item.title || 'notification'));
+    $('markNotificationsRead').addEventListener('click', async () => {
+      const ids = ownerNotifications.filter(item => item && item.read !== true).map(item => String(item.id));
+      if (!ids.length) return;
+      const button = $('markNotificationsRead');
+      button.disabled = true;
       try {
-        const all = JSON.parse(storage.getItem(NOTIFICATION_READ_STORE) || '{}');
-        const saved = all[OWNER_EMAIL];
-        const readState = Array.isArray(saved)
-          ? Object.fromEntries(saved.map(id => [String(id), Date.now()]))
-          : (saved && typeof saved === 'object' ? saved : {});
-        ids.forEach(id => { readState[id] = Date.now(); });
-        all[OWNER_EMAIL] = readState;
-        storage.setItem(NOTIFICATION_READ_STORE, JSON.stringify(all));
-      } catch {}
-      renderNotifications();
+        const { api, db } = await getOwnerFirebaseContext();
+        await api.markOwnerNotificationsRead(db, ownerUid, ids);
+      } catch (error) {
+        console.error('Could not mark owner notifications as read:', error);
+        toast('Notifications could not be marked as read. Please try again.');
+      } finally {
+        button.disabled = false;
+      }
     });
     document.addEventListener('click', event => {
       if (!event.target.closest('.notification-wrap')) {
@@ -1344,7 +1288,7 @@
       const legacyBookings = readList(STORE.bookings).filter(item => String(item.owner || '').trim().toLowerCase() === OWNER_EMAIL);
       for (const legacy of legacyBookings) {
         if (!legacy.id || existingIds.has(String(legacy.id))) continue;
-        const migrated = {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')};
+        const migrated = {...legacy, status:legacy.status || 'Pending', owner:OWNER_EMAIL, ownerUid, notificationSuppressed:true, bookingSource:legacy.bookingSource || ((legacy.status || 'Pending') === 'Pending' ? 'Main website' : 'Owner dashboard')};
         try {
           ownerSyncStep = 'Migrating legacy booking ' + String(legacy.id);
           await api.saveBooking(db, migrated);
@@ -1358,21 +1302,31 @@
       remoteBookings = await api.getOwnerBookings(db, ownerUid);
       knownBookingIds = new Set(remoteBookings.map(item => String(item.id)));
       renderBookings();
+      ownerSyncStep = 'Starting live server notifications';
+      window.ownerNotificationsUnsubscribe = api.watchOwnerNotifications(db, ownerUid, latest => {
+        const incoming = latest.filter(item => !knownNotificationIds.has(String(item.id)));
+        if (notificationsInitialized) {
+          incoming.filter(item => item.read !== true).forEach(item => {
+            toast(item.title || 'New BoxBook notification');
+            playBookingAlertSound();
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(item.title || 'BoxBook notification', {
+                body: item.message || '',
+                tag: String(item.id || 'boxbook-notification')
+              });
+            }
+          });
+        }
+        ownerNotifications = latest;
+        knownNotificationIds = new Set(latest.map(item => String(item.id)));
+        notificationsInitialized = true;
+        renderNotifications();
+      }, error => {
+        console.error('Live owner notification listener failed:', error);
+        toast('Server notifications could not be loaded. Check Firestore permissions.');
+      });
       ownerSyncStep = 'Starting live booking listener';
       window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, ownerUid, latest => {
-        const incoming = latest.filter(item => !knownBookingIds.has(String(item.id)));
-        incoming.forEach(item => {
-          const normalized = bookingsForOwner().find(booking => booking.id === item.id) || {
-            customer:item.customerName || 'Customer', ground:item.groundName || 'Ground',
-            date:item.date || '', time:item.slot || '', id:item.id
-          };
-          saveBookingNotification(item, normalized);
-          toast('New booking request from ' + normalized.customer + ' for ' + normalized.ground + '.');
-          playBookingAlertSound();
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('New BoxBook booking request', {body: normalized.customer + ' · ' + normalized.ground + ' · ' + normalized.date + ' · ' + normalized.time, tag:String(item.id || 'boxbook-booking')});
-          }
-        });
         remoteBookings = latest;
         knownBookingIds = new Set(latest.map(item => String(item.id)));
         renderBookings();
@@ -1386,7 +1340,6 @@
     }
   })();
   window.addEventListener('storage', event => {
-    if (event.key === NOTIFICATION_STORE) renderNotifications();
     if (event.key === STORE.grounds) { grounds = groundsForOwner(); renderGrounds(); }
   });
 })();
