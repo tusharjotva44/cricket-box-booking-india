@@ -21,7 +21,6 @@
   let allBookingsPage = 1;
   const ALL_BOOKINGS_PAGE_SIZE = 10;
   let ownerUid = '';
-  let knownBookingIds = new Set();
   const bookingsForOwner = () => remoteBookings.map(b => ({...b, id:b.id, customer:b.customerName || 'Customer', email:b.phone || '', ground:b.groundName || 'Ground', date:b.date || '', time:b.slot || '', amount:Number(b.amount||0), paymentStatus:b.paymentStatus||'', status:((!b.status||b.status==='Pending')&&b.holdExpiresAt&&Number(b.holdExpiresAt)<=Date.now())?'Expired':(b.status || 'Pending')}));
   let selectedPlan = (() => {
     try {
@@ -1300,7 +1299,6 @@
       }
       ownerSyncStep = 'Loading owner bookings after migration';
       remoteBookings = await api.getOwnerBookings(db, ownerUid);
-      knownBookingIds = new Set(remoteBookings.map(item => String(item.id)));
       renderBookings();
       ownerSyncStep = 'Starting live server notifications';
       window.ownerNotificationsUnsubscribe = api.watchOwnerNotifications(db, ownerUid, latest => {
@@ -1328,7 +1326,6 @@
       ownerSyncStep = 'Starting live booking listener';
       window.ownerBookingsUnsubscribe = api.watchOwnerBookings(db, ownerUid, latest => {
         remoteBookings = latest;
-        knownBookingIds = new Set(latest.map(item => String(item.id)));
         renderBookings();
       }, error => {
         console.error('Live booking listener failed:', error);
