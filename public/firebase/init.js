@@ -1,5 +1,6 @@
 
 import { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -35,6 +36,7 @@ import {
 
 const isOwnerPage = window.location.pathname.startsWith("/owner/");
 const sessionAuth = isAdminOwnerPreview ? superAdminAuth : isOwnerPage ? ownerAuth : auth;
+const functions = getFunctions(sessionAuth.app, "asia-south1");
 
 // Let the owner dashboard wait until Firebase setup and Super Admin preview verification finish.
 window.firebaseReadyPromise = new Promise(resolve => {
@@ -59,12 +61,12 @@ window.firebaseAuthApi = {
   signOut,
   onAuthStateChanged,
 
-  ensureTestCustomer: async () => {
+  ensureCustomerSignedIn: async () => {
     await auth.authStateReady();
     const user = auth.currentUser;
-    if (!user || user.isAnonymous || String(user.email || "").toLowerCase() !== "niklo12@gmail.com") {
-      const error = new Error("Only the authorized testing account can create bookings.");
-      error.code = "auth/test-account-required";
+    if (!user || user.isAnonymous) {
+      const error = new Error("Please sign in with a customer account before booking.");
+      error.code = "auth/customer-sign-in-required";
       throw error;
     }
     return user.uid;
@@ -142,68 +144,33 @@ window.firebaseAuthApi = {
     ),
 
   saveBooking: async (database, booking) => {
-    const start = /^\d{2}:\d{2}$/.test(booking.startTime || '') ? Number(booking.startTime.slice(0,2)) * 60 + Number(booking.startTime.slice(3,5)) : null;
-    const rawEnd = /^\d{2}:\d{2}$/.test(booking.endTime || '') ? Number(booking.endTime.slice(0,2)) * 60 + Number(booking.endTime.slice(3,5)) : null;
-    const end = start === null || rawEnd === null ? null : (rawEnd <= start ? rawEnd + 1440 : rawEnd);
-    const slotIds = [];
-    const slotMinutes = [];
-    if (start !== null && end !== null && end > start && (end - start) <= 1440 && (end - start) % 30 === 0) {
-      const baseDate = new Date(String(booking.date) + 'T00:00:00Z');
-      for (let minute = start; minute < end; minute += 30) {
-        const day = new Date(baseDate);
-        day.setUTCDate(day.getUTCDate() + Math.floor(minute / 1440));
-        const dateKey = day.toISOString().slice(0,10);
-        const minuteOfDay = minute % 1440;
-        const slotId = encodeURIComponent(String(booking.groundId)) + '_' + dateKey + '_' + String(minuteOfDay).padStart(4,'0');
-        slotIds.push(slotId);
-        slotMinutes.push({slotId,date:dateKey,minute:minuteOfDay});
-      }
+    await sessionAuth.authStateReady();
+    const user = sessionAuth.currentUser;
+    if (!user || user.isAnonymous) {
+      const error = new Error("Please sign in before creating a booking.");
+      error.code = "auth/customer-sign-in-required";
+      throw error;
     }
-    const bookingRef = firestoreDoc(database, "bookings", String(booking.id));
-    if (!slotIds.length) {
-      await firestoreSetDoc(bookingRef, {...booking,createdAt:Number(booking.createdAt || Date.now()),updatedAt:serverTimestamp()});
-      return;
+    try {
+      const result = await httpsCallable(functions, "createBooking")({
+        groundId:String(booking.groundId || ""), date:String(booking.date || ""),
+        startTime:String(booking.startTime || ""), endTime:String(booking.endTime || ""),
+        customerName:String(booking.customerName || ""), phone:String(booking.phone || "")
+      });
+      Object.assign(booking, {
+        id:result.data.bookingId, amount:result.data.amount, status:result.data.status,
+        paymentStatus:result.data.paymentStatus, bookingSource:result.data.bookingSource,
+        customerUid:result.data.customerUid || undefined, createdAt:result.data.createdAt,
+        holdExpiresAt:result.data.holdExpiresAt, slotIds:result.data.slotIds
+      });
+      return result.data;
+    } catch (error) {
+      if (error.code === "functions/already-exists") error.code = "booking/slot-taken";
+      throw error;
     }
-    await runTransaction(database, async transaction => {
-      const slotRefs = slotIds.map(id => firestoreDoc(database,"bookingSlots",id));
-      const snapshots = await Promise.all(slotRefs.map(ref => transaction.get(ref)));
-      const conflict = snapshots.some(snapshot => {
-        if (!snapshot.exists() || snapshot.data().bookingId === String(booking.id)) return false;
-        const slot = snapshot.data();
-        return !(slot.status === "Pending" && Number(slot.holdExpiresAt || 0) <= Date.now());
-      });
-      if (conflict) {
-        const error = new Error("This time slot is already booked. Please choose another time.");
-        error.code = "booking/slot-taken";
-        throw error;
-      }
-      transaction.set(bookingRef, {
-        ...booking,
-        slotIds,
-        createdAt:Number(booking.createdAt || Date.now()),
-        updatedAt:serverTimestamp()
-      });
-      slotMinutes.forEach(slot => {
-        transaction.set(firestoreDoc(database,"bookingSlots",slot.slotId), {
-          bookingId:String(booking.id),
-          groundId:String(booking.groundId),
-          ownerUid:String(booking.ownerUid),
-          date:slot.date,
-          minute:slot.minute,
-          status:booking.status || "Pending",
-          holdExpiresAt:Number(booking.holdExpiresAt || 0),
-          updatedAt:serverTimestamp()
-        });
-      });
-    });
   },
 
-  saveBookingRecord: (database, booking) =>
-    firestoreSetDoc(firestoreDoc(database, "bookings", String(booking.id)), {
-      ...booking,
-      createdAt: Number(booking.createdAt || Date.now()),
-      updatedAt: serverTimestamp()
-    }),
+  saveBookingRecord: (database, booking) => window.firebaseAuthApi.saveBooking(database, booking),
 
   getOwnerBookings: async (database, uid) => {
     const result = await getDocs(query(collection(database, "bookings"), where("ownerUid", "==", uid)));
@@ -273,9 +240,9 @@ window.firebaseAuthApi = {
   updateBookingPaymentStatus: async (database, bookingId, paymentStatus) => {
     await auth.authStateReady();
     const user = auth.currentUser;
-    if (!user || user.isAnonymous || String(user.email || "").toLowerCase() !== "niklo12@gmail.com") {
-      const error = new Error("Only the authorized testing account can update its booking payment status.");
-      error.code = "auth/test-account-required";
+    if (!user || user.isAnonymous) {
+      const error = new Error("Please sign in with the customer account used for this booking.");
+      error.code = "auth/customer-sign-in-required";
       throw error;
     }
     return updateDoc(firestoreDoc(database, "bookings", String(bookingId)), {
