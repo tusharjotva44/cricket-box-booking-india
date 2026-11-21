@@ -156,7 +156,9 @@ exports.createBooking = onCall(async (request) => {
   if (!groundSnapshot.exists) bookingError("not-found", "This ground is no longer available.");
   const ground = groundSnapshot.data() || {}, ownerUid = String(ground.ownerUid || "").trim();
   if (!ownerUid || ground.isActive === false) bookingError("failed-precondition", "This ground is currently unavailable for booking.");
-  const isOwnerBooking = request.auth.uid === ownerUid;
+  const requestedMode = input.bookingMode === "owner" ? "owner" : "customer";
+  const isOwnerBooking = requestedMode === "owner";
+  if (isOwnerBooking && request.auth.uid !== ownerUid) bookingError("permission-denied", "Only the ground owner can create an owner dashboard booking.");
   if (!isOwnerBooking && request.auth.token.superAdmin === true) bookingError("permission-denied", "A Super Admin session cannot submit a customer booking.");
   const weekday = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][dateObject.getUTCDay()];
   if (ground.availability && ground.availability[weekday] && ground.availability[weekday].open === false) bookingError("failed-precondition", "This ground is closed on the selected date.");
