@@ -1293,7 +1293,7 @@
           await api.saveBooking(db, migrated);
         } catch (migrationError) {
           if (migrationError.code !== 'booking/slot-taken') throw migrationError;
-          await api.saveBookingRecord(db, migrated);
+          console.warn('Legacy booking was skipped because its slot is already occupied:', legacy.id);
         }
         existingIds.add(String(legacy.id));
       }
