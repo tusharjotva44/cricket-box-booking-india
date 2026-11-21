@@ -155,7 +155,8 @@ window.firebaseAuthApi = {
       const result = await httpsCallable(functions, "createBooking")({
         groundId:String(booking.groundId || ""), date:String(booking.date || ""),
         startTime:String(booking.startTime || ""), endTime:String(booking.endTime || ""),
-        customerName:String(booking.customerName || ""), phone:String(booking.phone || "")
+        customerName:String(booking.customerName || ""), phone:String(booking.phone || ""),
+        bookingMode:booking.bookingSource === "Owner dashboard" ? "owner" : "customer"
       });
       Object.assign(booking, {
         id:result.data.bookingId, amount:result.data.amount, status:result.data.status,
