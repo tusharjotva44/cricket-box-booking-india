@@ -83,41 +83,15 @@ service cloud.firestore {
     }
 
     match /bookingSlots/{slotId} {
+      // Slot availability is public; only the server booking transaction can create locks.
       allow read: if true;
-
-      allow create: if request.auth != null
-        && request.resource.data.bookingId is string
-        && request.resource.data.ownerUid is string
-        && request.resource.data.groundId is string
-        && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
-        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
-        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
-        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
-        && (
-          request.auth.token.email == 'niklo12@gmail.com'
-          && request.auth.token.firebase.sign_in_provider == 'password'
-          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
-        );
-
-      allow update: if (
-          request.auth != null
-          && (request.auth.uid == resource.data.ownerUid || isSuperAdmin())
-          && request.resource.data.ownerUid == resource.data.ownerUid
-        )
-        || (
-          request.auth != null
-          && request.auth.token.email == 'niklo12@gmail.com'
-          && request.auth.token.firebase.sign_in_provider == 'password'
-          && resource.data.status == 'Pending'
-          && resource.data.holdExpiresAt <= request.time.toMillis()
-          && request.resource.data.bookingId is string
-          && existsAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId))
-          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.ownerUid == request.resource.data.ownerUid
-          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.groundId == request.resource.data.groundId
-          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotIds.hasAny([slotId])
-          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.customerUid == request.auth.uid
-        );
-
+      allow create: if false;
+      allow update: if request.auth != null
+        && (request.auth.uid == resource.data.ownerUid || isSuperAdmin())
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'holdExpiresAt', 'updatedAt'])
+        && request.resource.data.status == 'Confirmed'
+        && request.resource.data.holdExpiresAt == 0;
       allow delete: if request.auth != null
         && (request.auth.uid == resource.data.ownerUid || isSuperAdmin());
     }
@@ -162,28 +136,12 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
       allow read: if request.auth != null
-        && (
-          request.auth.uid == resource.data.ownerUid
-          || isSuperAdmin()
-        );
+        && (request.auth.uid == resource.data.ownerUid
+          || request.auth.uid == resource.data.customerUid
+          || isSuperAdmin());
 
-      allow create: if request.auth != null
-        && request.auth.token.email == 'niklo12@gmail.com'
-        && request.auth.token.firebase.sign_in_provider == 'password'
-        && request.resource.data.customerUid == request.auth.uid
-        && request.resource.data.bookingSource == 'Main website'
-        && request.resource.data.status == 'Pending'
-        && request.resource.data.ownerUid is string
-        && request.resource.data.groundId is string
-        && exists(/databases/$(database)/documents/grounds/$(request.resource.data.groundId))
-        && get(/databases/$(database)/documents/grounds/$(request.resource.data.groundId)).data.ownerUid == request.resource.data.ownerUid
-        && request.resource.data.id == bookingId
-        && request.resource.data.date is string
-        && request.resource.data.startTime is string
-        && request.resource.data.endTime is string
-        && request.resource.data.customerName is string
-        && request.resource.data.phone is string
-        && request.resource.data.amount is number;
+      // All creates are performed by the validated createBooking Cloud Function.
+      allow create: if false;
 
       allow update: if (
           request.auth != null
@@ -194,10 +152,7 @@ service cloud.firestore {
         )
         || (
           request.auth != null
-          && request.auth.token.email == 'niklo12@gmail.com'
-          && request.auth.token.firebase.sign_in_provider == 'password'
           && resource.data.customerUid == request.auth.uid
-          && resource.data.bookingSource == 'Main website'
           && request.resource.data.customerUid == resource.data.customerUid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'updatedAt'])
           && request.resource.data.paymentStatus == 'Payment submitted — not verified'
