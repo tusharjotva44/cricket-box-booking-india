@@ -112,6 +112,96 @@ async function activateOwnerPlanAfterVerifiedPayment({
   });
 }
 
+
+function bookingError(code, message) {
+  throw new HttpsError(code, message);
+}
+function indiaDateString(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
+}
+function parseBookingTime(value) {
+  if (typeof value !== "string" || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+  const [hour, minute] = value.split(":").map(Number);
+  return minute % 30 === 0 ? hour * 60 + minute : null;
+}
+function formatBookingTime(minutes) {
+  const minuteOfDay = minutes % 1440, hour = Math.floor(minuteOfDay / 60), minute = minuteOfDay % 60;
+  return (hour % 12 || 12) + ":" + String(minute).padStart(2,"0") + (hour >= 12 ? " PM" : " AM");
+}
+
+exports.createBooking = onCall(async (request) => {
+  if (!request.auth || !request.auth.uid) bookingError("unauthenticated", "Please sign in before creating a booking.");
+  const input = request.data || {};
+  const groundId = typeof input.groundId === "string" ? input.groundId.trim() : "";
+  const date = typeof input.date === "string" ? input.date : "";
+  const customerName = typeof input.customerName === "string" ? input.customerName.trim() : "";
+  const phone = typeof input.phone === "string" ? input.phone.trim() : "";
+  if (!groundId || groundId.length > 180 || !/^[A-Za-z0-9_-]+$/.test(groundId)) bookingError("invalid-argument", "Select a valid ground.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) bookingError("invalid-argument", "Choose a valid booking date.");
+  const dateObject = new Date(date + "T00:00:00.000Z");
+  if (Number.isNaN(dateObject.getTime()) || dateObject.toISOString().slice(0,10) !== date || date < indiaDateString()) {
+    bookingError("invalid-argument", "Choose today or a future booking date.");
+  }
+  if (!customerName || customerName.length > 80 || !/^[0-9]{10}$/.test(phone)) bookingError("invalid-argument", "Enter a valid customer name and 10-digit mobile number.");
+  const startRaw = parseBookingTime(input.startTime), endRaw = parseBookingTime(input.endTime);
+  if (startRaw === null || endRaw === null) bookingError("invalid-argument", "Booking times must use valid 30-minute intervals.");
+  let start = startRaw, end = endRaw;
+  if (startRaw < 180) { start += 1440; end += 1440; }
+  else if (endRaw <= startRaw) end += 1440;
+  const duration = end - start;
+  if (start < 480 || end > 1620 || duration <= 0 || duration > 480) bookingError("invalid-argument", "Choose a valid time between 8:00 AM and 3:00 AM, up to 8 hours.");
+
+  const db = getFirestore(), groundRef = db.collection("grounds").doc(groundId);
+  const groundSnapshot = await groundRef.get();
+  if (!groundSnapshot.exists) bookingError("not-found", "This ground is no longer available.");
+  const ground = groundSnapshot.data() || {}, ownerUid = String(ground.ownerUid || "").trim();
+  if (!ownerUid || ground.isActive === false) bookingError("failed-precondition", "This ground is currently unavailable for booking.");
+  const isOwnerBooking = request.auth.uid === ownerUid;
+  if (!isOwnerBooking && request.auth.token.superAdmin === true) bookingError("permission-denied", "A Super Admin session cannot submit a customer booking.");
+  const weekday = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][dateObject.getUTCDay()];
+  if (ground.availability && ground.availability[weekday] && ground.availability[weekday].open === false) bookingError("failed-precondition", "This ground is closed on the selected date.");
+  const hourlyPrice = Number(ground.price);
+  if (!Number.isFinite(hourlyPrice) || hourlyPrice <= 0) bookingError("failed-precondition", "This ground does not have a valid booking price.");
+
+  const bookingRef = db.collection("bookings").doc(), bookingId = bookingRef.id;
+  const createdAt = Date.now(), holdExpiresAt = isOwnerBooking ? 0 : createdAt + 30 * 60 * 1000;
+  const slotEntries = [];
+  for (let minute = start; minute < end; minute += 30) {
+    const day = new Date(date + "T00:00:00.000Z");
+    day.setUTCDate(day.getUTCDate() + Math.floor(minute / 1440));
+    const dateKey = day.toISOString().slice(0,10), minuteOfDay = minute % 1440;
+    slotEntries.push({slotId:encodeURIComponent(groundId)+"_"+dateKey+"_"+String(minuteOfDay).padStart(4,"0"),date:dateKey,minute:minuteOfDay});
+  }
+  const booking = {
+    id:bookingId, groundId, groundName:String(ground.name || ground.groundName || "Sports Ground"),
+    owner:String(ground.owner || ground.ownerEmail || ""), ownerUid, customerName, phone, date,
+    slot:formatBookingTime(start)+" - "+formatBookingTime(end), startTime:input.startTime, endTime:input.endTime,
+    amount:Math.round(hourlyPrice*duration/60), status:isOwnerBooking?"Confirmed":"Pending",
+    paymentStatus:isOwnerBooking?"Pay at venue":"Awaiting payment",
+    bookingSource:isOwnerBooking?"Owner dashboard":"Main website", createdAt, holdExpiresAt,
+    slotIds:slotEntries.map(item=>item.slotId)
+  };
+  if (!isOwnerBooking) booking.customerUid = request.auth.uid;
+  await db.runTransaction(async transaction => {
+    const slotRefs = slotEntries.map(item=>db.collection("bookingSlots").doc(item.slotId));
+    const snapshots = await Promise.all(slotRefs.map(ref=>transaction.get(ref)));
+    const now = Date.now();
+    if (snapshots.some(snapshot=>{
+      if(!snapshot.exists)return false;
+      const existing=snapshot.data()||{};
+      return !(existing.status==="Pending" && Number(existing.holdExpiresAt||0)<=now);
+    })) bookingError("already-exists","This time slot is already booked. Please choose another time.");
+    transaction.create(bookingRef,{...booking,updatedAt:FieldValue.serverTimestamp()});
+    slotEntries.forEach((item,index)=>transaction.set(slotRefs[index],{
+      bookingId,groundId,ownerUid,date:item.date,minute:item.minute,status:booking.status,
+      holdExpiresAt,updatedAt:FieldValue.serverTimestamp()
+    }));
+  });
+  return {bookingId,amount:booking.amount,status:booking.status,paymentStatus:booking.paymentStatus,
+    bookingSource:booking.bookingSource,customerUid:booking.customerUid||null,createdAt,holdExpiresAt,
+    slotIds:booking.slotIds};
+});
+
 exports.createOwnerDashboardSession = onCall(
   {
     cors: [
