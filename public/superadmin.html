@@ -618,14 +618,13 @@
   <script type="module">
     import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { collection, collectionGroup, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp, writeBatch, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp, writeBatch, runTransaction, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
 
     const $ = id => document.getElementById(id);
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
-    const reviewOwnerPlanRequest = httpsCallable(superAdminFunctions, 'reviewOwnerPlanRequest');
     const state = { owners: [], grounds: [], bookings: [], plans: [], transactions: [], purchaseRequests: [], activities: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
     const DEFAULT_SUBSCRIPTION_PLANS = [
       {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
@@ -1041,23 +1040,149 @@
       const ownerId = button.dataset.ownerId;
       const requestId = button.dataset.requestId;
       if (!ownerId || !requestId || !['approve','reject'].includes(action)) return;
+
       let txnId = '';
       let reviewNote = '';
       if (action === 'approve') {
-        txnId = window.prompt('Enter the payment transaction ID after verifying the payment:') || '';
-        if (!txnId.trim()) return;
+        txnId = (window.prompt('Enter the payment transaction ID after verifying the payment:') || '').trim();
+        if (!txnId) return;
+        if (txnId.length > 120 || !/^[A-Za-z0-9._/-]+$/.test(txnId)) {
+          window.alert('Enter a valid payment transaction ID.');
+          return;
+        }
       } else {
         if (!window.confirm('Reject this owner plan request?')) return;
-        reviewNote = window.prompt('Optional rejection reason:') || '';
+        reviewNote = (window.prompt('Optional rejection reason:') || '').trim().slice(0, 500);
       }
+
       button.disabled = true;
       try {
-        const result = await reviewOwnerPlanRequest({ ownerId, requestId, action, txnId: txnId.trim(), reviewNote: reviewNote.trim() });
-        if (action === 'approve') {
-          window.alert('Payment verified and plan activated. Expiry: ' + dateLabel(result.data.expiryDate));
-        } else {
-          window.alert('Plan request rejected.');
+        const ownerRef = doc(db, 'owners', ownerId);
+        const requestRef = doc(db, 'owners', ownerId, 'purchaseHistory', requestId);
+        const requestSnapshot = await getDoc(requestRef);
+        if (!requestSnapshot.exists()) throw new Error('The purchase request was not found.');
+        const purchase = requestSnapshot.data() || {};
+        if (purchase.ownerUid !== ownerId) throw new Error('The purchase request owner does not match.');
+        if (String(purchase.status || '').toLowerCase() !== 'pending') {
+          throw new Error('This purchase request has already been reviewed.');
         }
+
+        const reviewerEmail = String(state.user?.email || SUPER_ADMIN_EMAIL);
+        if (action === 'reject') {
+          await updateDoc(requestRef, {
+            status: 'Rejected',
+            source: 'Super Admin',
+            reviewNote,
+            reviewedAt: serverTimestamp(),
+            reviewedBy: reviewerEmail
+          });
+          window.alert('Plan request rejected.');
+          return;
+        }
+
+        let plan = purchase.planSnapshot && typeof purchase.planSnapshot === 'object' ? {
+          name: purchase.planSnapshot.name,
+          durationValue: purchase.planSnapshot.durationValue,
+          durationUnit: purchase.planSnapshot.durationUnit,
+          grounds: purchase.planSnapshot.groundLimit
+        } : null;
+        let amount = Number(purchase.planSnapshot && purchase.planSnapshot.amount);
+        if (!plan || !Number.isFinite(amount) || amount <= 0) {
+          const planSnapshot = await getDoc(doc(db, 'subscriptionPlans', String(purchase.planId || '')));
+          if (!planSnapshot.exists()) throw new Error('The requested subscription plan no longer exists.');
+          const currentPlan = planSnapshot.data() || {};
+          if (currentPlan.active === false || currentPlan.kind === 'trial') {
+            throw new Error('Only an active paid subscription plan can be approved.');
+          }
+          const basePrice = Number(currentPlan.price);
+          const discount = Number(currentPlan.discount || 0);
+          amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
+          plan = {
+            name: currentPlan.name,
+            durationValue: currentPlan.durationValue || 1,
+            durationUnit: currentPlan.durationUnit || 'months',
+            grounds: currentPlan.grounds || 1
+          };
+        }
+
+        const durationValue = Number(plan.durationValue || 1);
+        const durationUnit = String(plan.durationUnit || 'months');
+        const groundLimit = Number(plan.grounds || 1);
+        if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120
+            || !['days', 'months', 'years'].includes(durationUnit)
+            || !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100
+            || !Number.isFinite(amount) || amount <= 0) {
+          throw new Error('The saved subscription plan details are invalid.');
+        }
+
+        const safeTxnId = txnId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 120);
+        const transactionRef = doc(db, 'transactionHistory', 'manual_' + safeTxnId);
+        const now = new Date();
+        const expiry = new Date(now);
+        if (durationUnit === 'days') expiry.setDate(expiry.getDate() + durationValue);
+        else if (durationUnit === 'years') expiry.setFullYear(expiry.getFullYear() + durationValue);
+        else expiry.setMonth(expiry.getMonth() + durationValue);
+        const expiryIso = expiry.toISOString();
+
+        await runTransaction(db, async transaction => {
+          const [ownerSnapshot, latestRequest, existingTransaction] = await Promise.all([
+            transaction.get(ownerRef),
+            transaction.get(requestRef),
+            transaction.get(transactionRef)
+          ]);
+          if (!ownerSnapshot.exists()) throw new Error('The owner profile was not found.');
+          if (!latestRequest.exists() || String(latestRequest.data().status || '').toLowerCase() !== 'pending') {
+            throw new Error('This purchase request has already been reviewed.');
+          }
+          if (existingTransaction.exists()) throw new Error('This transaction ID has already been recorded.');
+
+          const latestPurchase = latestRequest.data() || {};
+          if (latestPurchase.ownerUid !== ownerId) throw new Error('The purchase request owner does not match.');
+          transaction.update(ownerRef, {
+            planName: String(plan.name || 'Subscription'),
+            groundLimit,
+            subscriptionStatus: 'active',
+            trialStartedAt: null,
+            trialExpiresAt: null,
+            subscriptionStartedAt: now.toISOString(),
+            subscriptionExpiry: expiryIso,
+            expiryDate: expiryIso,
+            planAssignedAt: serverTimestamp(),
+            planAssignedBy: reviewerEmail,
+            planActivationMethod: 'manual_payment_verification',
+            updatedAt: serverTimestamp()
+          });
+          transaction.update(requestRef, {
+            status: 'Paid',
+            source: 'Super Admin',
+            amount,
+            txnId,
+            reviewNote,
+            reviewedAt: serverTimestamp(),
+            reviewedBy: reviewerEmail
+          });
+          transaction.set(transactionRef, {
+            txnId,
+            ownerId,
+            ownerName: String(ownerSnapshot.data().fullName || 'Owner'),
+            ownerEmail: String(ownerSnapshot.data().email || ownerSnapshot.data().contactEmail || purchase.ownerEmail || ''),
+            planId: String(purchase.planId),
+            planName: String(plan.name || 'Subscription'),
+            amount,
+            currency: 'INR',
+            activationType: 'Manual Payment Verification',
+            paymentMethod: 'Manually verified',
+            paymentProvider: null,
+            providerOrderId: null,
+            providerPaymentId: null,
+            status: 'Success',
+            recordedBy: reviewerEmail,
+            createdAt: serverTimestamp(),
+            verifiedAt: serverTimestamp()
+          });
+        });
+
+        window.alert('Payment verified and plan activated. Expiry: ' + dateLabel(expiryIso));
       } catch (error) {
         console.error('Purchase request review failed:', error);
         window.alert(error?.message || 'Could not review this purchase request. Please refresh and try again.');
@@ -1065,7 +1190,6 @@
         button.disabled = false;
       }
     }
-
     function transactionStatusDisplay(value) {
       const raw = String(value || '').trim().toLowerCase();
       if (['success','successful','paid','recorded','completed','verified'].includes(raw)) {
