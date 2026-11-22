@@ -37,25 +37,89 @@ service cloud.firestore {
         );
       allow delete: if request.auth != null && isSuperAdmin();
 
+      function isValidOwnerPlanRequest() {
+        let planPath = /databases/$(database)/documents/subscriptionPlans/$(request.resource.data.planId);
+        let ownerPath = /databases/$(database)/documents/owners/$(ownerId);
+        let planExists = exists(planPath);
+        let ownerExists = exists(ownerPath);
+        let plan = planExists ? get(planPath).data : {};
+        let owner = ownerExists ? get(ownerPath).data : {};
+        let durationValue = plan.get('durationValue', 1);
+        let durationUnit = plan.get('durationUnit', 'months');
+        let groundLimit = plan.get('grounds', 1);
+        let discount = plan.get('discount', 0);
+        let expectedAmount = plan.get('price', 0) * (100 - discount) / 100;
+        let snapshot = request.resource.data.planSnapshot;
+        return request.auth != null
+          && request.auth.uid == ownerId
+          && planExists
+          && ownerExists
+          && request.resource.data.keys().hasOnly([
+            'ownerUid','ownerEmail','ownerName','planId','planName','amount',
+            'planSnapshot','source','status','createdAt'
+          ])
+          && request.resource.data.ownerUid == ownerId
+          && request.resource.data.ownerEmail is string
+          && request.resource.data.ownerEmail.size() <= 254
+          && request.resource.data.ownerName == owner.get('fullName', 'Owner')
+          && request.resource.data.planId is string
+          && request.resource.data.planId.size() > 0
+          && request.resource.data.planName == plan.get('name', '')
+          && plan.get('active', true) != false
+          && plan.get('kind', 'active') != 'trial'
+          && plan.get('price', 0) is number
+          && plan.get('price', 0) > 0
+          && discount is number
+          && discount >= 0
+          && discount <= 100
+          && durationValue is int
+          && durationValue >= 1
+          && durationValue <= 120
+          && durationUnit in ['days', 'months', 'years']
+          && groundLimit is int
+          && groundLimit >= 1
+          && groundLimit <= 100
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.amount >= expectedAmount - 0.01
+          && request.resource.data.amount <= expectedAmount + 0.01
+          && snapshot is map
+          && snapshot.keys().hasAll(['name','durationValue','durationUnit','groundLimit','amount'])
+          && snapshot.keys().hasOnly(['name','durationValue','durationUnit','groundLimit','amount'])
+          && snapshot.name == plan.get('name', '')
+          && snapshot.durationValue == durationValue
+          && snapshot.durationUnit == durationUnit
+          && snapshot.groundLimit == groundLimit
+          && snapshot.amount == request.resource.data.amount
+          && request.resource.data.source == 'Owner Dashboard'
+          && request.resource.data.status == 'Pending'
+          && request.resource.data.createdAt == request.time;
+      }
+
       match /purchaseHistory/{historyId} {
         allow read: if request.auth != null
           && (request.auth.uid == ownerId || isSuperAdmin());
-        // Owners submit requests through the trusted server function.
+        // Owners may create only a validated pending request for an active paid plan.
         // Super Admin may still create its own manual activation history rows.
-        allow create: if isSuperAdmin()
-          && request.resource.data.ownerUid == ownerId
-          && request.resource.data.ownerEmail is string
-          && request.resource.data.planId is string
-          && request.resource.data.planName is string
-          && request.resource.data.amount is number
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.keys().hasOnly(['ownerUid','ownerEmail','planId','planName','amount','source','status','createdAt'])
-          && request.resource.data.source == 'Super Admin'
-          && request.resource.data.status in ['Paid','Active'];
+        allow create: if isValidOwnerPlanRequest()
+          || (isSuperAdmin()
+            && request.resource.data.ownerUid == ownerId
+            && request.resource.data.ownerEmail is string
+            && request.resource.data.planId is string
+            && request.resource.data.planName is string
+            && request.resource.data.amount is number
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.keys().hasOnly(['ownerUid','ownerEmail','planId','planName','amount','source','status','createdAt'])
+            && request.resource.data.source == 'Super Admin'
+            && request.resource.data.status in ['Paid','Active']);
         allow update: if isSuperAdmin()
           && request.resource.data.ownerUid == resource.data.ownerUid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','source','updatedAt'])
-          && request.resource.data.status in ['Pending','Paid','Rejected'];
+          && resource.data.status == 'Pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status','source','amount','txnId','reviewNote','reviewedAt','reviewedBy'
+          ])
+          && request.resource.data.status in ['Paid','Rejected']
+          && request.resource.data.source == 'Super Admin';
         allow delete: if isSuperAdmin();
       }
     }
