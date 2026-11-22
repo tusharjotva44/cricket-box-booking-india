@@ -173,6 +173,7 @@ exports.createOwnerProfile = onCall(async (request) => {
     email,
     planName: "Free Trial - 1 Ground",
     groundLimit: 1,
+    groundCount: 0,
     subscriptionStatus: "trial",
     trialStartedAt: now.toISOString(),
     trialExpiresAt: trialExpiry.toISOString(),
@@ -244,6 +245,11 @@ exports.saveOwnerGrounds = onCall(async (request) => {
         owner: ownerEmail,
         updatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
+    });
+    // A write to the owner document serializes concurrent ground-save requests.
+    transaction.update(ownerRef, {
+      groundCount: requestedGrounds.length,
+      groundCountUpdatedAt: FieldValue.serverTimestamp()
     });
   });
 
