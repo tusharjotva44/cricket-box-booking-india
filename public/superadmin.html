@@ -494,8 +494,12 @@
             <span class="sports-art sports-pickleball"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
             <span class="sports-art sports-pickleball-small"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#D5E84A" stroke="#A8BE24" stroke-width="3"/><g fill="#788B16"><circle cx="34" cy="29" r="4.5"/><circle cx="59" cy="25" r="4.5"/><circle cx="74" cy="43" r="4.5"/><circle cx="63" cy="67" r="4.5"/><circle cx="38" cy="72" r="4.5"/><circle cx="25" cy="50" r="4.5"/></g></svg></span>
           </div>
-          <div class="page-head"><div><span class="eyebrow">OWNER TRANSACTIONS</span><h1>Payments</h1><p>Owner subscription payment records.</p></div></div>
-          <div class="notice"><strong>Online payment integration is not connected yet</strong>Successful online subscription payments will be connected to Transaction History when a payment gateway is added.</div>
+          <div class="page-head"><div><span class="eyebrow">OWNER TRANSACTIONS</span><h1>Payments</h1><p>Review owner subscription requests and verify payments manually.</p></div></div>
+          <div class="notice"><strong>Manual payment verification</strong>Check the payment in your payment account before approving a request. Approval activates the selected plan and records the transaction. No online payment gateway is connected.</div>
+          <div class="panel">
+            <div class="panel-head"><div><h2>Owner Plan Requests</h2><p id="purchaseRequestCount">Loading purchase requests…</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Owner</th><th>Email</th><th>Plan</th><th>Amount</th><th>Requested</th><th>Status</th><th>Review</th></tr></thead><tbody id="purchaseRequestRows"><tr><td colspan="7" class="loading">Loading purchase requests…</td></tr></tbody></table></div>
+          </div>
         </section>
         <section class="view hidden" id="view-owners-report">
           <div class="page-head"><div><span class="eyebrow">DATA EXPORT REPORT</span><h1>Owners Report</h1><p>Export the complete owner directory as a CSV file that opens in Excel.</p></div></div>
@@ -614,14 +618,15 @@
   <script type="module">
     import { app, superAdminAuth, db } from './firebase/config.js';
     import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getIdTokenResult, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
-    import { collection, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp, writeBatch, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+    import { collection, collectionGroup, doc, getDocs, onSnapshot, updateDoc, setDoc, serverTimestamp, writeBatch, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js';
 
     const $ = id => document.getElementById(id);
     const SUPER_ADMIN_EMAIL = 'tusharjotva44@gmail.com';
     const superAdminFunctions = getFunctions(superAdminAuth.app, 'asia-south1');
     const updateOwnerLoginEmail = httpsCallable(superAdminFunctions, 'updateOwnerLoginEmail');
-    const state = { owners: [], grounds: [], bookings: [], plans: [], transactions: [], activities: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
+    const reviewOwnerPlanRequest = httpsCallable(superAdminFunctions, 'reviewOwnerPlanRequest');
+    const state = { owners: [], grounds: [], bookings: [], plans: [], transactions: [], purchaseRequests: [], activities: [], user: null, loading: false, unsubscribers: [], planSeedAttempted: false };
     const DEFAULT_SUBSCRIPTION_PLANS = [
       {id:'free-trial-1-ground',name:'Free Trial - 1 Ground',price:0,durationValue:10,durationUnit:'days',grounds:1,details:'Free trial access for one sports ground.',kind:'trial',order:1,active:true},
       {id:'monthly-1-ground',name:'Monthly - 1 Ground',price:199,durationValue:1,durationUnit:'months',grounds:1,details:'Monthly access for one sports ground.',kind:'active',order:2,active:true},
@@ -747,6 +752,16 @@
           console.error('Transaction history listener failed:', error);
           $('transactionRows').innerHTML = '<tr><td colspan="8" class="empty">Could not load transaction history. Check Firestore rules.</td></tr>';
           $('transactionCountLabel').textContent = 'Transaction records unavailable';          finish();
+        }),
+        onSnapshot(collectionGroup(db,'purchaseHistory'), snapshot => {
+          state.purchaseRequests = snapshot.docs.map(item => ({id:item.id, ownerId:item.ref.parent.parent?.id || '', ...item.data()}));
+          renderPaymentRequests();
+          finish();
+        }, error => {
+          console.error('Owner purchase request listener failed:', error);
+          $('purchaseRequestRows').innerHTML = '<tr><td colspan="7" class="empty">Could not load purchase requests. Check Super Admin Firestore permissions.</td></tr>';
+          $('purchaseRequestCount').textContent = 'Purchase requests unavailable';
+          finish();
         }),
         onSnapshot(collection(db,'subscriptionPlans'), snapshot => {
           state.plans = snapshot.docs.map(item => ({id:item.id,...item.data()})).filter(plan => plan.active !== false).sort((a,b) => Number(a.order || 999) - Number(b.order || 999));
@@ -996,6 +1011,60 @@
         button.disabled = false;
         button.textContent = 'Activate Plan';
       }    }
+
+    function renderPaymentRequests() {
+      const body = $('purchaseRequestRows');
+      if (!body) return;
+      const records = [...state.purchaseRequests].sort((a,b) => {
+        const aTime = a.createdAt && typeof a.createdAt.toMillis === 'function' ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+        const bTime = b.createdAt && typeof b.createdAt.toMillis === 'function' ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
+      const pending = records.filter(item => String(item.status || 'Pending').toLowerCase() === 'pending').length;
+      $('purchaseRequestCount').textContent = records.length + ' requests · ' + pending + ' pending';
+      body.innerHTML = records.length ? records.map(item => {
+        const owner = state.owners.find(record => record.id === item.ownerId) || {};
+        const status = String(item.status || 'Pending');
+        const canReview = status.toLowerCase() === 'pending' && item.ownerId;
+        return '<tr><td><strong>' + escapeHTML(owner.fullName || item.ownerName || 'Owner') + '</strong></td>' +
+          '<td>' + escapeHTML(item.ownerEmail || owner.email || owner.contactEmail || '—') + '</td>' +
+          '<td>' + escapeHTML(item.planName || 'Plan') + '</td>' +
+          '<td>' + money(item.amount) + '</td>' +
+          '<td>' + escapeHTML(transactionDateTimeLabel(item.createdAt)) + '</td>' +
+          '<td><span class="pill ' + (status.toLowerCase() === 'paid' ? 'transaction-success' : status.toLowerCase() === 'rejected' ? 'transaction-fail' : 'transaction-pending') + '">' + escapeHTML(status) + '</span></td>' +
+          '<td>' + (canReview ? '<button class="export-btn" type="button" data-review-request="approve" data-owner-id="' + escapeHTML(item.ownerId) + '" data-request-id="' + escapeHTML(item.id) + '">Verify & Activate</button> <button class="export-btn" type="button" data-review-request="reject" data-owner-id="' + escapeHTML(item.ownerId) + '" data-request-id="' + escapeHTML(item.id) + '">Reject</button>' : escapeHTML(item.reviewNote || item.txnId || '—')) + '</td></tr>';
+      }).join('') : '<tr><td colspan="7" class="empty">No owner plan requests found.</td></tr>';
+    }
+
+    async function handlePurchaseRequestReview(button) {
+      const action = button.dataset.reviewRequest;
+      const ownerId = button.dataset.ownerId;
+      const requestId = button.dataset.requestId;
+      if (!ownerId || !requestId || !['approve','reject'].includes(action)) return;
+      let txnId = '';
+      let reviewNote = '';
+      if (action === 'approve') {
+        txnId = window.prompt('Enter the payment transaction ID after verifying the payment:') || '';
+        if (!txnId.trim()) return;
+      } else {
+        if (!window.confirm('Reject this owner plan request?')) return;
+        reviewNote = window.prompt('Optional rejection reason:') || '';
+      }
+      button.disabled = true;
+      try {
+        const result = await reviewOwnerPlanRequest({ ownerId, requestId, action, txnId: txnId.trim(), reviewNote: reviewNote.trim() });
+        if (action === 'approve') {
+          window.alert('Payment verified and plan activated. Expiry: ' + dateLabel(result.data.expiryDate));
+        } else {
+          window.alert('Plan request rejected.');
+        }
+      } catch (error) {
+        console.error('Purchase request review failed:', error);
+        window.alert(error?.message || 'Could not review this purchase request. Please refresh and try again.');
+      } finally {
+        button.disabled = false;
+      }
+    }
 
     function transactionStatusDisplay(value) {
       const raw = String(value || '').trim().toLowerCase();
@@ -1502,6 +1571,10 @@
     });
     $('refreshButton').addEventListener('click',loadData);
     $('manualPlanForm').addEventListener('submit', activateOwnerPlanByEmail);
+    $('purchaseRequestRows').addEventListener('click', event => {
+      const button = event.target.closest('[data-review-request]');
+      if (button) handlePurchaseRequestReview(button);
+    });
     $('transactionSearch').addEventListener('input', renderTransactionHistory);
     $('transactionRows').addEventListener('click', event => {
       const row = event.target.closest('tr[data-transaction-id]');
