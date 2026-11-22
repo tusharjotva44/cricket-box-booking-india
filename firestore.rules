@@ -40,26 +40,9 @@ service cloud.firestore {
       match /purchaseHistory/{historyId} {
         allow read: if request.auth != null
           && (request.auth.uid == ownerId || isSuperAdmin());
-        allow create: if request.auth != null
-          && request.resource.data.ownerUid == ownerId
-          && request.resource.data.ownerEmail is string
-          && request.resource.data.planId is string
-          && request.resource.data.planName is string
-          && request.resource.data.amount is number
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.keys().hasOnly(['ownerUid','ownerEmail','planId','planName','amount','source','status','createdAt'])
-          && (
-            (
-              request.auth.uid == ownerId
-              && request.resource.data.source == 'Owner Dashboard'
-              && request.resource.data.status == 'Pending'
-            )
-            || (
-              isSuperAdmin()
-              && request.resource.data.source in ['Super Admin','Payment Gateway']
-              && request.resource.data.status in ['Paid','Active']
-            )
-          );
+        // Purchase requests are created by the trusted server function so
+        // the plan price and duration snapshot cannot be changed by a client.
+        allow create: if false;
         allow update: if isSuperAdmin()
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','source','updatedAt'])
