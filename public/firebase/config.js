@@ -29,7 +29,7 @@ if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
   [auth, superAdminAuth, ownerAuth].forEach(authInstance => {
     connectAuthEmulator(authInstance, "http://127.0.0.1:9099", { disableWarnings: true });
   });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectFirestoreEmulator(db, "127.0.0.1", 8081);
 }
 
 export { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview };
