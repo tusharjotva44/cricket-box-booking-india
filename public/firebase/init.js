@@ -72,11 +72,18 @@ window.firebaseAuthApi = {
     return user.uid;
   },
 
-  saveOwnerProfile: (database, uid, profile) =>
-    setDoc(doc(database, "owners", uid), {
-      ...profile,
-      createdAt: serverTimestamp()
-    }),
+  saveOwnerProfile: async (database, uid, profile) => {
+    await sessionAuth.authStateReady();
+    const user = sessionAuth.currentUser;
+    if (!user || user.uid !== String(uid)) {
+      throw new Error("The signed-in account does not match this owner profile.");
+    }
+    const result = await httpsCallable(functions, "createOwnerProfile")({
+      fullName: String(profile && profile.fullName || ""),
+      mobile: String(profile && profile.mobile || "")
+    });
+    return result.data;
+  },
 
   getOwnerProfile: async (database, uid) => {
     const snapshot = await getDoc(doc(database, "owners", uid));
@@ -95,46 +102,16 @@ window.firebaseAuthApi = {
   },
 
   saveOwnerGrounds: async (database, uid, email, grounds, activity = null) => {
-    const ref = collection(database, "grounds");
-    const existing = await getDocs(query(ref, where("ownerUid", "==", uid)));
-    const keep = new Set(grounds.map(ground => String(ground.id)));
-    // Save grounds independently so an Activity Log permission issue cannot block Ground Add/Edit/Delete.
-    for (const item of existing.docs) {
-      if (!keep.has(item.id)) await deleteDoc(firestoreDoc(database, "grounds", item.id));
+    await sessionAuth.authStateReady();
+    const user = sessionAuth.currentUser;
+    if (!user || user.uid !== String(uid)) {
+      throw new Error("The signed-in account does not match this owner profile.");
     }
-    for (const ground of grounds) {
-      const id = String(ground.id);
-      const { id: ignoredId, ...data } = ground;
-      await firestoreSetDoc(firestoreDoc(database, "grounds", id), {
-        ...data,
-        ownerUid: uid,
-        owner: email,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    }
-
-    // Activity logging is separate and must never undo or block a successful ground save.
-    if (activity) {
-      try {
-        const activityRef = firestoreDoc(collection(database, "ownerActivityLogs"));
-        await firestoreSetDoc(activityRef, {
-          ownerUid: uid,
-          ownerEmail: email,
-          ownerName: String(activity.ownerName || "Owner"),
-          actorUid: String(activity.actorUid || ""),
-          actorEmail: String(activity.actorEmail || ""),
-          actorName: String(activity.actorName || activity.actorEmail || "Owner"),
-          activityType: String(activity.activityType || ""),
-          groundId: String(activity.groundId || ""),
-          groundName: String(activity.groundName || "Sports Ground"),
-          sport: String(activity.sport || ""),
-          location: String(activity.location || ""),
-          createdAt: serverTimestamp()
-        });
-      } catch (error) {
-        console.error("Owner Activity Log could not be saved:", error);
-      }
-    }
+    const result = await httpsCallable(functions, "saveOwnerGrounds")({
+      grounds: Array.isArray(grounds) ? grounds : [],
+      activity: activity || null
+    });
+    return result.data;
   },
 
   watchPublicGrounds: (database, onChange, onError) =>
