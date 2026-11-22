@@ -151,7 +151,7 @@ exports.createOwnerProfile = onCall(async (request) => {
   const mobile = String(request.data && request.data.mobile || "").trim();
   const email = String(request.auth.token.email || "").trim().toLowerCase();
   if (!fullName || fullName.length > 80 || !/^[0-9]{10}$/.test(mobile) ||
-      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new HttpsError("invalid-argument", "Enter a valid name, email address and 10-digit mobile number.");
   }
 
