@@ -37,7 +37,9 @@ import {
 const isOwnerPage = window.location.pathname.startsWith("/owner/");
 const sessionAuth = isAdminOwnerPreview ? superAdminAuth : isOwnerPage ? ownerAuth : auth;
 const functions = getFunctions(sessionAuth.app, "asia-south1");
-if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+const useFirebaseEmulators = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  && new URLSearchParams(window.location.search).get("useEmulators") === "1";
+if (useFirebaseEmulators) {
   connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 }
 
