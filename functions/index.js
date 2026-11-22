@@ -423,6 +423,136 @@ exports.createOwnerDashboardSession = onCall(
   }
 );
 
+exports.reviewOwnerPlanRequest = onCall(async (request) => {
+  if (!request.auth
+      || request.auth.token.superAdmin !== true
+      || String(request.auth.token.email || "").trim().toLowerCase() !== "tusharjotva44@gmail.com") {
+    throw new HttpsError("permission-denied", "Only the authorized Super Admin can review plan requests.");
+  }
+
+  const ownerId = String(request.data && request.data.ownerId || "").trim();
+  const requestId = String(request.data && request.data.requestId || "").trim();
+  const action = String(request.data && request.data.action || "").trim().toLowerCase();
+  const txnId = String(request.data && request.data.txnId || "").trim();
+  const reviewNote = String(request.data && request.data.reviewNote || "").trim().slice(0, 500);
+  if (!/^[A-Za-z0-9:_-]{1,128}$/.test(ownerId) || !/^[A-Za-z0-9_-]{1,180}$/.test(requestId)) {
+    throw new HttpsError("invalid-argument", "A valid owner and purchase request are required.");
+  }
+  if (!["approve", "reject"].includes(action)) {
+    throw new HttpsError("invalid-argument", "Choose approve or reject.");
+  }
+  if (action === "approve" && (!txnId || txnId.length > 120 || !/^[A-Za-z0-9._/-]+$/.test(txnId))) {
+    throw new HttpsError("invalid-argument", "Enter a valid payment transaction ID.");
+  }
+
+  const db = getFirestore();
+  const ownerRef = db.collection("owners").doc(ownerId);
+  const requestRef = ownerRef.collection("purchaseHistory").doc(requestId);
+  const requestSnapshot = await requestRef.get();
+  if (!requestSnapshot.exists) throw new HttpsError("not-found", "The purchase request was not found.");
+  const purchase = requestSnapshot.data() || {};
+  if (purchase.ownerUid !== ownerId) throw new HttpsError("permission-denied", "The purchase request owner does not match.");
+  if (String(purchase.status || "").toLowerCase() !== "pending") {
+    throw new HttpsError("failed-precondition", "This purchase request has already been reviewed.");
+  }
+
+  if (action === "reject") {
+    await requestRef.update({
+      status: "Rejected",
+      reviewNote,
+      reviewedAt: FieldValue.serverTimestamp(),
+      reviewedBy: request.auth.token.email
+    });
+    return { status: "Rejected" };
+  }
+
+  const planRef = db.collection("subscriptionPlans").doc(String(purchase.planId || ""));
+  const planSnapshot = await planRef.get();
+  if (!planSnapshot.exists) throw new HttpsError("not-found", "The requested subscription plan no longer exists.");
+  const plan = planSnapshot.data() || {};
+  if (plan.active === false || plan.kind === "trial") {
+    throw new HttpsError("failed-precondition", "Only an active paid subscription plan can be approved.");
+  }
+  const durationValue = Number(plan.durationValue || 1);
+  const durationUnit = String(plan.durationUnit || "months");
+  const groundLimit = Number(plan.grounds || 1);
+  const basePrice = Number(plan.price);
+  const discount = Number(plan.discount || 0);
+  const amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
+  if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120
+      || !["days", "months", "years"].includes(durationUnit)
+      || !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100
+      || !Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError("failed-precondition", "The selected plan has invalid price or duration settings.");
+  }
+
+  const safeTxnId = txnId.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 120);
+  const transactionRef = db.collection("transactionHistory").doc("manual_" + safeTxnId);
+  const now = new Date();
+  const expiry = new Date(now);
+  if (durationUnit === "days") expiry.setDate(expiry.getDate() + durationValue);
+  else if (durationUnit === "years") expiry.setFullYear(expiry.getFullYear() + durationValue);
+  else expiry.setMonth(expiry.getMonth() + durationValue);
+  const expiryIso = expiry.toISOString();
+
+  await db.runTransaction(async transaction => {
+    const [ownerSnapshot, latestRequest, existingTransaction] = await Promise.all([
+      transaction.get(ownerRef),
+      transaction.get(requestRef),
+      transaction.get(transactionRef)
+    ]);
+    if (!ownerSnapshot.exists) throw new HttpsError("not-found", "The owner profile was not found.");
+    if (!latestRequest.exists || String(latestRequest.data().status || "").toLowerCase() !== "pending") {
+      throw new HttpsError("failed-precondition", "This purchase request has already been reviewed.");
+    }
+    if (existingTransaction.exists) throw new HttpsError("already-exists", "This transaction ID has already been recorded.");
+    const owner = ownerSnapshot.data() || {};
+    transaction.update(ownerRef, {
+      planName: String(plan.name || "Subscription"),
+      groundLimit,
+      subscriptionStatus: "active",
+      trialStartedAt: null,
+      trialExpiresAt: null,
+      subscriptionStartedAt: now.toISOString(),
+      subscriptionExpiry: expiryIso,
+      expiryDate: expiryIso,
+      planAssignedAt: FieldValue.serverTimestamp(),
+      planAssignedBy: request.auth.token.email,
+      planActivationMethod: "manual_payment_verification",
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    transaction.update(requestRef, {
+      status: "Paid",
+      source: "Super Admin",
+      amount,
+      txnId,
+      reviewNote,
+      reviewedAt: FieldValue.serverTimestamp(),
+      reviewedBy: request.auth.token.email
+    });
+    transaction.create(transactionRef, {
+      txnId,
+      ownerId,
+      ownerName: String(owner.fullName || "Owner"),
+      ownerEmail: String(owner.email || owner.contactEmail || purchase.ownerEmail || ""),
+      planId: String(purchase.planId),
+      planName: String(plan.name || "Subscription"),
+      amount,
+      currency: "INR",
+      activationType: "Manual Payment Verification",
+      paymentMethod: "Manually verified",
+      paymentProvider: null,
+      providerOrderId: null,
+      providerPaymentId: null,
+      status: "Success",
+      recordedBy: request.auth.token.email,
+      createdAt: FieldValue.serverTimestamp(),
+      verifiedAt: FieldValue.serverTimestamp()
+    });
+  });
+  return { status: "Paid", expiryDate: expiryIso };
+});
+
 exports.updateOwnerLoginEmail = onCall(async (request) => {
   if (
     !request.auth
