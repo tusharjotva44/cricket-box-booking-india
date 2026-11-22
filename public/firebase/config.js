@@ -8,8 +8,8 @@ const firebaseConfig = {
   measurementId: "G-EQBZ6K59PV"
 };
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const isAdminOwnerPreview = new URLSearchParams(window.location.search).get("adminOwnerPreview") === "1";
 const app = getApps().find(existing => existing.name === "[DEFAULT]") || initializeApp(firebaseConfig);
@@ -23,5 +23,13 @@ const isOwnerPage = window.location.pathname.startsWith("/owner/");
 const isSuperAdminPage = window.location.pathname === "/superadmin.html" || window.location.pathname === "/superadmin";
 const sessionApp = (isAdminOwnerPreview || isSuperAdminPage) ? superAdminApp : isOwnerPage ? ownerApp : app;
 const db = getFirestore(sessionApp);
+
+// Keep local development isolated from production Firebase services.
+if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+  [auth, superAdminAuth, ownerAuth].forEach(authInstance => {
+    connectAuthEmulator(authInstance, "http://127.0.0.1:9099", { disableWarnings: true });
+  });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
 
 export { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview };
