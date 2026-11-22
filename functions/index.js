@@ -113,6 +113,161 @@ async function activateOwnerPlanAfterVerifiedPayment({
 }
 
 
+
+function ownerPlanGroundLimit(owner) {
+  const status = String(owner.subscriptionStatus || "").trim().toLowerCase();
+  if (!["trial", "active", "paid"].includes(status)) {
+    throw new HttpsError("failed-precondition", "Your subscription is not active. Please contact Super Admin.");
+  }
+
+  const expiryValue = status === "trial"
+    ? owner.trialExpiresAt
+    : (owner.subscriptionExpiry || owner.expiryDate);
+  const expiryTime = expiryValue && typeof expiryValue.toDate === "function"
+    ? expiryValue.toDate().getTime()
+    : Date.parse(String(expiryValue || ""));
+  if (!Number.isFinite(expiryTime) || expiryTime <= Date.now()) {
+    throw new HttpsError("failed-precondition", "Your subscription has expired or has no valid expiry date. Please renew your plan.");
+  }
+
+  const configuredLimit = Number(owner.groundLimit);
+  const groundLimit = Number.isInteger(configuredLimit) && configuredLimit > 0
+    ? configuredLimit
+    : (status === "trial" && String(owner.planName || "").toLowerCase().startsWith("free trial") ? 1 : 0);
+  if (!groundLimit) {
+    throw new HttpsError("failed-precondition", "Your plan does not have a valid ground limit. Please contact Super Admin.");
+  }
+  return groundLimit;
+}
+
+// Owner profiles are created by trusted server code so clients cannot assign
+// themselves a paid plan, extend a trial, or increase their ground allowance.
+exports.createOwnerProfile = onCall(async (request) => {
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError("unauthenticated", "Please sign in before creating your owner profile.");
+  }
+
+  const fullName = String(request.data && request.data.fullName || "").trim();
+  const mobile = String(request.data && request.data.mobile || "").trim();
+  const email = String(request.auth.token.email || "").trim().toLowerCase();
+  if (!fullName || fullName.length > 80 || !/^[0-9]{10}$/.test(mobile) ||
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    throw new HttpsError("invalid-argument", "Enter a valid name, email address and 10-digit mobile number.");
+  }
+
+  const ownerRef = getFirestore().collection("owners").doc(request.auth.uid);
+  const existing = await ownerRef.get();
+  if (existing.exists) {
+    const existingEmail = String((existing.data() || {}).email || "").trim().toLowerCase();
+    if (existingEmail && existingEmail !== email) {
+      throw new HttpsError("already-exists", "An owner profile already exists for this account. Please contact support.");
+    }
+    return { created: false };
+  }
+
+  const now = new Date();
+  const trialExpiry = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+  await ownerRef.create({
+    fullName,
+    mobile,
+    email,
+    planName: "Free Trial - 1 Ground",
+    groundLimit: 1,
+    subscriptionStatus: "trial",
+    trialStartedAt: now.toISOString(),
+    trialExpiresAt: trialExpiry.toISOString(),
+    planAssignedBy: "system_trial_signup",
+    planActivationMethod: "automatic_signup",
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  });
+  return { created: true, planName: "Free Trial - 1 Ground", groundLimit: 1, trialExpiresAt: trialExpiry.toISOString() };
+});
+
+// All owner ground writes pass through this function. The server checks the
+// current subscription and ground allowance before saving the requested list.
+exports.saveOwnerGrounds = onCall(async (request) => {
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError("unauthenticated", "Please sign in before saving your grounds.");
+  }
+
+  const ownerUid = request.auth.uid;
+  const requestedGrounds = request.data && request.data.grounds;
+  if (!Array.isArray(requestedGrounds) || requestedGrounds.length > 100) {
+    throw new HttpsError("invalid-argument", "The ground list is invalid.");
+  }
+
+  const ids = requestedGrounds.map(ground => String(ground && ground.id || "").trim());
+  if (ids.some(id => !/^[A-Za-z0-9_-]{1,180}$/.test(id)) || new Set(ids).size !== ids.length) {
+    throw new HttpsError("invalid-argument", "Every ground must have a unique valid ID.");
+  }
+
+  const db = getFirestore();
+  const ownerRef = db.collection("owners").doc(ownerUid);
+  const ownerSnapshot = await ownerRef.get();
+  if (!ownerSnapshot.exists) {
+    throw new HttpsError("failed-precondition", "Your owner profile could not be found. Please contact support.");
+  }
+  const owner = ownerSnapshot.data() || {};
+  const groundLimit = ownerPlanGroundLimit(owner);
+  if (requestedGrounds.length > groundLimit) {
+    throw new HttpsError("resource-exhausted", "Your current plan allows up to " + groundLimit + (groundLimit === 1 ? " ground." : " grounds."));
+  }
+
+  const ownerEmail = String(owner.contactEmail || owner.email || request.auth.token.email || "").trim().toLowerCase();
+  const groundsRef = db.collection("grounds");
+  await db.runTransaction(async transaction => {
+    const existingSnapshot = await transaction.get(groundsRef.where("ownerUid", "==", ownerUid));
+    const requestedRefs = requestedGrounds.map(ground => groundsRef.doc(String(ground.id)));
+    const requestedSnapshots = await Promise.all(requestedRefs.map(ref => transaction.get(ref)));
+    const requestedIdSet = new Set(ids);
+
+    for (let index = 0; index < requestedSnapshots.length; index += 1) {
+      if (requestedSnapshots[index].exists &&
+          String((requestedSnapshots[index].data() || {}).ownerUid || "") !== ownerUid) {
+        throw new HttpsError("already-exists", "A ground with this ID belongs to another owner.");
+      }
+    }
+
+    for (const existingGround of existingSnapshot.docs) {
+      if (!requestedIdSet.has(existingGround.id)) transaction.delete(existingGround.ref);
+    }
+    requestedGrounds.forEach((ground, index) => {
+      const { id, ...data } = ground;
+      transaction.set(requestedRefs[index], {
+        ...data,
+        ownerUid,
+        owner: ownerEmail,
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    });
+  });
+
+  const activity = request.data && request.data.activity;
+  if (activity && typeof activity === "object") {
+    try {
+      await db.collection("ownerActivityLogs").add({
+        ownerUid,
+        ownerEmail,
+        ownerName: String(owner.fullName || "Owner"),
+        actorUid: ownerUid,
+        actorEmail: String(request.auth.token.email || ownerEmail),
+        actorName: String(activity.actorName || owner.fullName || "Owner"),
+        activityType: String(activity.activityType || ""),
+        groundId: String(activity.groundId || ""),
+        groundName: String(activity.groundName || "Sports Ground"),
+        sport: String(activity.sport || ""),
+        location: String(activity.location || ""),
+        createdAt: FieldValue.serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Owner Activity Log could not be saved:", error);
+    }
+  }
+
+  return { savedCount: requestedGrounds.length, groundLimit };
+});
+
 function bookingError(code, message) {
   throw new HttpsError(code, message);
 }
