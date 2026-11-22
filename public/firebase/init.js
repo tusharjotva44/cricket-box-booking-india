@@ -1,6 +1,6 @@
 
 import { app, auth, superAdminAuth, ownerAuth, db, isAdminOwnerPreview } from "./config.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js";
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -37,6 +37,9 @@ import {
 const isOwnerPage = window.location.pathname.startsWith("/owner/");
 const sessionAuth = isAdminOwnerPreview ? superAdminAuth : isOwnerPage ? ownerAuth : auth;
 const functions = getFunctions(sessionAuth.app, "asia-south1");
+if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+}
 
 // Let the owner dashboard wait until Firebase setup and Super Admin preview verification finish.
 window.firebaseReadyPromise = new Promise(resolve => {
