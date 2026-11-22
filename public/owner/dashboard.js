@@ -509,17 +509,10 @@
     button.textContent = 'Sending…';
     try {
       const { user, db } = await getOwnerFirebaseContext();
-      const firestore = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
-      await firestore.addDoc(firestore.collection(db,'owners',ownerUid || user.uid,'purchaseHistory'), {
-        ownerUid: ownerUid || user.uid,
-        ownerEmail: String(user.email || OWNER_EMAIL).trim().toLowerCase(),
-        planId,
-        planName: String(button.dataset.plan || 'Plan'),
-        amount: Number(button.dataset.planAmount || 0),
-        source: 'Owner Dashboard',
-        status: 'Pending',
-        createdAt: firestore.serverTimestamp()
-      });
+      const functionsApi = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js');
+      const ownerFunctions = functionsApi.getFunctions(window.firebaseAuth.app, 'asia-south1');
+      const createOwnerPlanRequest = functionsApi.httpsCallable(ownerFunctions, 'createOwnerPlanRequest');
+      await createOwnerPlanRequest({ planId });
       toast('Your plan request was added to Purchase History.');
     } catch (error) {
       console.error('Could not save plan purchase request:', error);
