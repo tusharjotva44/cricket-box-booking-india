@@ -1132,7 +1132,7 @@
                   profileSave.textContent = 'Save Changes';
                   return;
                 }
-                await api.updateOwnerProfile(db, ownerUid || user.uid, { fullName: updatedName, email });
+                await api.updateOwnerProfile(db, ownerUid || user.uid, { fullName: updatedName });
                 ownerProfile = { ...savedProfile, fullName: updatedName, email };
                 profileMessage.textContent = 'Profile updated successfully.';
                 profileMessage.style.color = '#15803d';
