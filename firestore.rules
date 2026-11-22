@@ -20,7 +20,8 @@ service cloud.firestore {
     match /owners/{ownerId} {
       allow read: if request.auth != null
         && (request.auth.uid == ownerId || isSuperAdmin());
-      allow create: if request.auth != null && request.auth.uid == ownerId;
+      // Owner profiles are created only by the trusted createOwnerProfile function.
+      allow create: if false;
       allow update: if request.auth != null
         && (
           isSuperAdmin()
@@ -64,22 +65,9 @@ service cloud.firestore {
 
     match /grounds/{groundId} {
       allow read: if true;
-      allow create: if request.auth != null
-        && (
-          request.resource.data.ownerUid == request.auth.uid
-          || isSuperAdmin()
-        );
-      allow update: if request.auth != null
-        && request.resource.data.ownerUid == resource.data.ownerUid
-        && (
-          resource.data.ownerUid == request.auth.uid
-          || isSuperAdmin()
-        );
-      allow delete: if request.auth != null
-        && (
-          resource.data.ownerUid == request.auth.uid
-          || isSuperAdmin()
-        );
+      // Owner ground writes go through saveOwnerGrounds, which checks the
+      // current subscription and ground limit before using the Admin SDK.
+      allow create, update, delete: if isSuperAdmin();
     }
 
     match /bookingSlots/{slotId} {
