@@ -114,30 +114,23 @@ async function activateOwnerPlanAfterVerifiedPayment({
 
 
 
-function ownerPlanGroundLimit(owner) {
+function ownerPlanGroundAccess(owner) {
   const status = String(owner.subscriptionStatus || "").trim().toLowerCase();
-  if (!["trial", "active", "paid"].includes(status)) {
-    throw new HttpsError("failed-precondition", "Your subscription is not active. Please contact Super Admin.");
-  }
-
   const expiryValue = status === "trial"
     ? owner.trialExpiresAt
     : (owner.subscriptionExpiry || owner.expiryDate);
   const expiryTime = expiryValue && typeof expiryValue.toDate === "function"
     ? expiryValue.toDate().getTime()
     : Date.parse(String(expiryValue || ""));
-  if (!Number.isFinite(expiryTime) || expiryTime <= Date.now()) {
-    throw new HttpsError("failed-precondition", "Your subscription has expired or has no valid expiry date. Please renew your plan.");
-  }
+  const subscriptionActive = ["trial", "active", "paid"].includes(status)
+    && Number.isFinite(expiryTime)
+    && expiryTime > Date.now();
 
   const configuredLimit = Number(owner.groundLimit);
   const groundLimit = Number.isInteger(configuredLimit) && configuredLimit > 0
     ? configuredLimit
     : (status === "trial" && String(owner.planName || "").toLowerCase().startsWith("free trial") ? 1 : 0);
-  if (!groundLimit) {
-    throw new HttpsError("failed-precondition", "Your plan does not have a valid ground limit. Please contact Super Admin.");
-  }
-  return groundLimit;
+  return { subscriptionActive, groundLimit };
 }
 
 // Owner profiles are created by trusted server code so clients cannot assign
@@ -216,16 +209,28 @@ exports.saveOwnerGrounds = onCall(async (request) => {
       throw new HttpsError("failed-precondition", "Your owner profile could not be found. Please contact support.");
     }
     owner = ownerSnapshot.data() || {};
-    groundLimit = ownerPlanGroundLimit(owner);
-    if (requestedGrounds.length > groundLimit) {
-      throw new HttpsError("resource-exhausted", "Your current plan allows up to " + groundLimit + (groundLimit === 1 ? " ground." : " grounds."));
-    }
+    const planAccess = ownerPlanGroundAccess(owner);
+    groundLimit = planAccess.groundLimit;
     ownerEmail = String(owner.contactEmail || owner.email || request.auth.token.email || "").trim().toLowerCase();
 
     const existingSnapshot = await transaction.get(groundsRef.where("ownerUid", "==", ownerUid));
+    const existingIds = new Set(existingSnapshot.docs.map(item => item.id));
     const requestedRefs = requestedGrounds.map(ground => groundsRef.doc(String(ground.id)));
     const requestedSnapshots = await Promise.all(requestedRefs.map(ref => transaction.get(ref)));
     const requestedIdSet = new Set(ids);
+
+    if (planAccess.subscriptionActive) {
+      if (!groundLimit) {
+        throw new HttpsError("failed-precondition", "Your plan does not have a valid ground limit. Please contact Super Admin.");
+      }
+      if (requestedGrounds.length > groundLimit) {
+        throw new HttpsError("resource-exhausted", "Your current plan allows up to " + groundLimit + (groundLimit === 1 ? " ground." : " grounds."));
+      }
+    } else if (ids.some(id => !existingIds.has(id))) {
+      // Expired or inactive owners may still edit or remove existing grounds,
+      // but cannot add new grounds until their subscription is renewed.
+      throw new HttpsError("failed-precondition", "Your subscription is inactive or expired. Renew your plan before adding a ground.");
+    }
 
     for (let index = 0; index < requestedSnapshots.length; index += 1) {
       if (requestedSnapshots[index].exists &&
@@ -275,7 +280,7 @@ exports.saveOwnerGrounds = onCall(async (request) => {
     }
   }
 
-  return { savedCount: requestedGrounds.length, groundLimit };
+  return { savedCount: requestedGrounds.length, groundLimit, subscriptionActive: ownerPlanGroundAccess(owner).subscriptionActive };
 });
 
 function bookingError(code, message) {
