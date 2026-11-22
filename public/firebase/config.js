@@ -1,9 +1,11 @@
 const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const useFirebaseEmulators = isLocalDevelopment
+  && new URLSearchParams(window.location.search).get("useEmulators") === "1";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD9SqHkNfIKlEoL4l3WSIb_hZ37LTU-Kk",
   authDomain: "box-book-india-5183f.firebaseapp.com",
-  projectId: isLocalDevelopment ? "demo-boxbook-local" : "box-book-india-5183f",
+  projectId: useFirebaseEmulators ? "demo-boxbook-local" : "box-book-india-5183f",
   storageBucket: "box-book-india-5183f.firebasestorage.app",
   messagingSenderId: "625081417102",
   appId: "1:625081417102:web:c922a00e8ab3d8677b38df",
@@ -26,8 +28,9 @@ const isSuperAdminPage = window.location.pathname === "/superadmin.html" || wind
 const sessionApp = (isAdminOwnerPreview || isSuperAdminPage) ? superAdminApp : isOwnerPage ? ownerApp : app;
 const db = getFirestore(sessionApp);
 
-// Keep local development isolated from production Firebase services.
-if (isLocalDevelopment) {
+// Use the live Firebase project by default on localhost, matching the previous working setup.
+// Emulators are opt-in with ?useEmulators=1 so existing live accounts keep working locally.
+if (useFirebaseEmulators) {
   [auth, superAdminAuth, ownerAuth].forEach(authInstance => {
     connectAuthEmulator(authInstance, "http://127.0.0.1:9099", { disableWarnings: true });
   });
