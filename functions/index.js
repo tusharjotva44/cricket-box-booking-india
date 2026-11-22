@@ -204,19 +204,23 @@ exports.saveOwnerGrounds = onCall(async (request) => {
 
   const db = getFirestore();
   const ownerRef = db.collection("owners").doc(ownerUid);
-  const ownerSnapshot = await ownerRef.get();
-  if (!ownerSnapshot.exists) {
-    throw new HttpsError("failed-precondition", "Your owner profile could not be found. Please contact support.");
-  }
-  const owner = ownerSnapshot.data() || {};
-  const groundLimit = ownerPlanGroundLimit(owner);
-  if (requestedGrounds.length > groundLimit) {
-    throw new HttpsError("resource-exhausted", "Your current plan allows up to " + groundLimit + (groundLimit === 1 ? " ground." : " grounds."));
-  }
-
-  const ownerEmail = String(owner.contactEmail || owner.email || request.auth.token.email || "").trim().toLowerCase();
   const groundsRef = db.collection("grounds");
+  let owner = {};
+  let ownerEmail = "";
+  let groundLimit = 0;
+
   await db.runTransaction(async transaction => {
+    const ownerSnapshot = await transaction.get(ownerRef);
+    if (!ownerSnapshot.exists) {
+      throw new HttpsError("failed-precondition", "Your owner profile could not be found. Please contact support.");
+    }
+    owner = ownerSnapshot.data() || {};
+    groundLimit = ownerPlanGroundLimit(owner);
+    if (requestedGrounds.length > groundLimit) {
+      throw new HttpsError("resource-exhausted", "Your current plan allows up to " + groundLimit + (groundLimit === 1 ? " ground." : " grounds."));
+    }
+    ownerEmail = String(owner.contactEmail || owner.email || request.auth.token.email || "").trim().toLowerCase();
+
     const existingSnapshot = await transaction.get(groundsRef.where("ownerUid", "==", ownerUid));
     const requestedRefs = requestedGrounds.map(ground => groundsRef.doc(String(ground.id)));
     const requestedSnapshots = await Promise.all(requestedRefs.map(ref => transaction.get(ref)));
