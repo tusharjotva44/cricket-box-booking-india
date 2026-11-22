@@ -1209,6 +1209,7 @@
       renderGrounds();
       renderSubscriptionPlans();
       renderOwnerPlanOptions($('editOwnerPlan').value);
+      renderPaymentRequests();
       const recent = [...state.owners].sort((a,b) => {
         const av = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || a.trialStartedAt || 0).getTime();
         const bv = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || b.trialStartedAt || 0).getTime();
