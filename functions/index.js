@@ -457,11 +457,20 @@ exports.reviewOwnerPlanRequest = onCall(async (request) => {
   }
 
   if (action === "reject") {
-    await requestRef.update({
-      status: "Rejected",
-      reviewNote,
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: request.auth.token.email
+    await db.runTransaction(async transaction => {
+      const latestRequest = await transaction.get(requestRef);
+      if (!latestRequest.exists || latestRequest.data().ownerUid !== ownerId) {
+        throw new HttpsError("not-found", "The purchase request was not found.");
+      }
+      if (String(latestRequest.data().status || "").toLowerCase() !== "pending") {
+        throw new HttpsError("failed-precondition", "This purchase request has already been reviewed.");
+      }
+      transaction.update(requestRef, {
+        status: "Rejected",
+        reviewNote,
+        reviewedAt: FieldValue.serverTimestamp(),
+        reviewedBy: request.auth.token.email
+      });
     });
     return { status: "Rejected" };
   }
