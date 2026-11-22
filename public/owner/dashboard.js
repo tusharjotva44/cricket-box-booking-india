@@ -509,14 +509,53 @@
     button.textContent = 'Sending…';
     try {
       const { user, db } = await getOwnerFirebaseContext();
-      const functionsApi = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-functions.js');
-      const ownerFunctions = functionsApi.getFunctions(window.firebaseAuth.app, 'asia-south1');
-      const createOwnerPlanRequest = functionsApi.httpsCallable(ownerFunctions, 'createOwnerPlanRequest');
-      await createOwnerPlanRequest({ planId });
+      const firestoreApi = await import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js');
+      const [ownerSnapshot, planSnapshot] = await Promise.all([
+        firestoreApi.getDoc(firestoreApi.doc(db, 'owners', user.uid)),
+        firestoreApi.getDoc(firestoreApi.doc(db, 'subscriptionPlans', planId))
+      ]);
+      if (!ownerSnapshot.exists()) throw new Error('Your owner profile could not be found.');
+      if (!planSnapshot.exists()) throw new Error('The selected subscription plan was not found.');
+
+      const owner = ownerSnapshot.data() || {};
+      const plan = planSnapshot.data() || {};
+      if (plan.active === false || plan.kind === 'trial') {
+        throw new Error('Only an active paid plan can be requested.');
+      }
+
+      const durationValue = Number(plan.durationValue || 1);
+      const durationUnit = String(plan.durationUnit || 'months');
+      const groundLimit = Number(plan.grounds || 1);
+      const basePrice = Number(plan.price);
+      const discount = Number(plan.discount || 0);
+      const amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
+      if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120
+          || !['days', 'months', 'years'].includes(durationUnit)
+          || !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100
+          || !Number.isFinite(basePrice) || basePrice <= 0
+          || !Number.isFinite(discount) || discount < 0 || discount > 100
+          || !Number.isFinite(amount) || amount <= 0) {
+        throw new Error('The selected plan has invalid price or duration settings.');
+      }
+
+      const planName = String(plan.name || 'Subscription');
+      const requestRef = firestoreApi.doc(firestoreApi.collection(db, 'owners', user.uid, 'purchaseHistory'));
+      await firestoreApi.setDoc(requestRef, {
+        ownerUid: user.uid,
+        ownerEmail: String(user.email || owner.email || '').trim().toLowerCase(),
+        ownerName: String(owner.fullName || 'Owner'),
+        planId,
+        planName,
+        amount,
+        planSnapshot: { name: planName, durationValue, durationUnit, groundLimit, amount },
+        source: 'Owner Dashboard',
+        status: 'Pending',
+        createdAt: firestoreApi.serverTimestamp()
+      });
       toast('Your plan request was added to Purchase History.');
     } catch (error) {
       console.error('Could not save plan purchase request:', error);
-      toast('Could not save your plan request. Please try again.');
+      toast(error?.message || 'Could not save your plan request. Please try again.');
     } finally {
       pendingPlanRequests.delete(planId);
       if (button.isConnected) {
