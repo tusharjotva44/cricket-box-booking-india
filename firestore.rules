@@ -40,20 +40,16 @@ service cloud.firestore {
       function isValidOwnerPlanRequest() {
         let planPath = /databases/$(database)/documents/subscriptionPlans/$(request.resource.data.planId);
         let ownerPath = /databases/$(database)/documents/owners/$(ownerId);
-        let planExists = exists(planPath);
-        let ownerExists = exists(ownerPath);
-        let plan = planExists ? get(planPath).data : {};
-        let owner = ownerExists ? get(ownerPath).data : {};
-        let durationValue = plan.get('durationValue', 1);
-        let durationUnit = plan.get('durationUnit', 'months');
-        let groundLimit = plan.get('grounds', 1);
-        let discount = plan.get('discount', 0);
-        let expectedAmount = plan.get('price', 0) * (100 - discount) / 100;
+        let durationValue = get(planPath).data.get('durationValue', 1);
+        let durationUnit = get(planPath).data.get('durationUnit', 'months');
+        let groundLimit = get(planPath).data.get('grounds', 1);
+        let discount = get(planPath).data.get('discount', 0);
+        let expectedAmount = get(planPath).data.get('price', 0) * (100 - discount) / 100;
         let snapshot = request.resource.data.planSnapshot;
         return request.auth != null
           && request.auth.uid == ownerId
-          && planExists
-          && ownerExists
+          && exists(planPath)
+          && exists(ownerPath)
           && request.resource.data.keys().hasOnly([
             'ownerUid','ownerEmail','ownerName','planId','planName','amount',
             'planSnapshot','source','status','createdAt'
@@ -61,14 +57,14 @@ service cloud.firestore {
           && request.resource.data.ownerUid == ownerId
           && request.resource.data.ownerEmail is string
           && request.resource.data.ownerEmail.size() <= 254
-          && request.resource.data.ownerName == owner.get('fullName', 'Owner')
+          && request.resource.data.ownerName == get(ownerPath).data.get('fullName', 'Owner')
           && request.resource.data.planId is string
           && request.resource.data.planId.size() > 0
-          && request.resource.data.planName == plan.get('name', '')
-          && plan.get('active', true) != false
-          && plan.get('kind', 'active') != 'trial'
-          && plan.get('price', 0) is number
-          && plan.get('price', 0) > 0
+          && request.resource.data.planName == get(planPath).data.get('name', '')
+          && get(planPath).data.get('active', true) != false
+          && get(planPath).data.get('kind', 'active') != 'trial'
+          && get(planPath).data.get('price', 0) is number
+          && get(planPath).data.get('price', 0) > 0
           && discount is number
           && discount >= 0
           && discount <= 100
@@ -86,7 +82,7 @@ service cloud.firestore {
           && snapshot is map
           && snapshot.keys().hasAll(['name','durationValue','durationUnit','groundLimit','amount'])
           && snapshot.keys().hasOnly(['name','durationValue','durationUnit','groundLimit','amount'])
-          && snapshot.name == plan.get('name', '')
+          && snapshot.name == get(planPath).data.get('name', '')
           && snapshot.durationValue == durationValue
           && snapshot.durationUnit == durationUnit
           && snapshot.groundLimit == groundLimit
