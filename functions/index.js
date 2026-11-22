@@ -423,6 +423,60 @@ exports.createOwnerDashboardSession = onCall(
   }
 );
 
+// Create a trusted, immutable snapshot of an owner's selected paid plan.
+exports.createOwnerPlanRequest = onCall(async (request) => {
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError("unauthenticated", "Please sign in before requesting a subscription plan.");
+  }
+  const ownerId = request.auth.uid;
+  const planId = String(request.data && request.data.planId || "").trim();
+  if (!/^[A-Za-z0-9_-]{1,180}$/.test(planId)) {
+    throw new HttpsError("invalid-argument", "Choose a valid subscription plan.");
+  }
+
+  const db = getFirestore();
+  const ownerRef = db.collection("owners").doc(ownerId);
+  const planRef = db.collection("subscriptionPlans").doc(planId);
+  const [ownerSnapshot, planSnapshot] = await Promise.all([ownerRef.get(), planRef.get()]);
+  if (!ownerSnapshot.exists) throw new HttpsError("failed-precondition", "Your owner profile could not be found.");
+  if (!planSnapshot.exists) throw new HttpsError("not-found", "The selected subscription plan was not found.");
+
+  const plan = planSnapshot.data() || {};
+  if (plan.active === false || plan.kind === "trial") {
+    throw new HttpsError("failed-precondition", "Only an active paid plan can be requested.");
+  }
+  const durationValue = Number(plan.durationValue || 1);
+  const durationUnit = String(plan.durationUnit || "months");
+  const groundLimit = Number(plan.grounds || 1);
+  const basePrice = Number(plan.price);
+  const discount = Number(plan.discount || 0);
+  const amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
+  if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120
+      || !["days", "months", "years"].includes(durationUnit)
+      || !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100
+      || !Number.isFinite(basePrice) || basePrice <= 0
+      || !Number.isFinite(discount) || discount < 0 || discount > 100
+      || !Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError("failed-precondition", "The selected plan has invalid price or duration settings.");
+  }
+
+  const owner = ownerSnapshot.data() || {};
+  const requestRef = ownerRef.collection("purchaseHistory").doc();
+  await requestRef.create({
+    ownerUid: ownerId,
+    ownerEmail: String(request.auth.token.email || owner.email || "").trim().toLowerCase(),
+    ownerName: String(owner.fullName || "Owner"),
+    planId,
+    planName: String(plan.name || "Subscription"),
+    amount,
+    planSnapshot: { name: String(plan.name || "Subscription"), durationValue, durationUnit, groundLimit, amount },
+    source: "Owner Dashboard",
+    status: "Pending",
+    createdAt: FieldValue.serverTimestamp()
+  });
+  return { requestId: requestRef.id, amount, status: "Pending" };
+});
+
 exports.reviewOwnerPlanRequest = onCall(async (request) => {
   if (!request.auth
       || request.auth.token.superAdmin !== true
@@ -475,24 +529,40 @@ exports.reviewOwnerPlanRequest = onCall(async (request) => {
     return { status: "Rejected" };
   }
 
-  const planRef = db.collection("subscriptionPlans").doc(String(purchase.planId || ""));
-  const planSnapshot = await planRef.get();
-  if (!planSnapshot.exists) throw new HttpsError("not-found", "The requested subscription plan no longer exists.");
-  const plan = planSnapshot.data() || {};
-  if (plan.active === false || plan.kind === "trial") {
-    throw new HttpsError("failed-precondition", "Only an active paid subscription plan can be approved.");
+  let plan = purchase.planSnapshot && typeof purchase.planSnapshot === "object" ? {
+    name: purchase.planSnapshot.name,
+    durationValue: purchase.planSnapshot.durationValue,
+    durationUnit: purchase.planSnapshot.durationUnit,
+    grounds: purchase.planSnapshot.groundLimit
+  } : null;
+  let amount = Number(purchase.planSnapshot && purchase.planSnapshot.amount);
+  if (!plan || !Number.isFinite(amount) || amount <= 0) {
+    // Backward compatibility for pending requests created before trusted snapshots.
+    const planRef = db.collection("subscriptionPlans").doc(String(purchase.planId || ""));
+    const planSnapshot = await planRef.get();
+    if (!planSnapshot.exists) throw new HttpsError("not-found", "The requested subscription plan no longer exists.");
+    const currentPlan = planSnapshot.data() || {};
+    if (currentPlan.active === false || currentPlan.kind === "trial") {
+      throw new HttpsError("failed-precondition", "Only an active paid subscription plan can be approved.");
+    }
+    const basePrice = Number(currentPlan.price);
+    const discount = Number(currentPlan.discount || 0);
+    amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
+    plan = {
+      name: currentPlan.name,
+      durationValue: currentPlan.durationValue || 1,
+      durationUnit: currentPlan.durationUnit || "months",
+      grounds: currentPlan.grounds || 1
+    };
   }
   const durationValue = Number(plan.durationValue || 1);
   const durationUnit = String(plan.durationUnit || "months");
   const groundLimit = Number(plan.grounds || 1);
-  const basePrice = Number(plan.price);
-  const discount = Number(plan.discount || 0);
-  const amount = Math.round(basePrice * (1 - discount / 100) * 100) / 100;
   if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > 120
       || !["days", "months", "years"].includes(durationUnit)
       || !Number.isInteger(groundLimit) || groundLimit < 1 || groundLimit > 100
       || !Number.isFinite(amount) || amount <= 0) {
-    throw new HttpsError("failed-precondition", "The selected plan has invalid price or duration settings.");
+    throw new HttpsError("failed-precondition", "The saved subscription plan details are invalid.");
   }
 
   const safeTxnId = txnId.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 120);
