@@ -101,8 +101,7 @@ service cloud.firestore {
           && (request.auth.uid == ownerId || isSuperAdmin());
         // Owners may create only a validated pending request for an active paid plan.
         // Super Admin may still create its own manual activation history rows.
-        allow create: if isValidOwnerPlanRequest()
-          || (isSuperAdmin()
+        allow create: if (isSuperAdmin()
             && request.resource.data.ownerUid == ownerId
             && request.resource.data.ownerEmail is string
             && request.resource.data.planId is string
@@ -111,7 +110,8 @@ service cloud.firestore {
             && request.resource.data.createdAt == request.time
             && request.resource.data.keys().hasOnly(['ownerUid','ownerEmail','planId','planName','amount','source','status','createdAt'])
             && request.resource.data.source == 'Super Admin'
-            && request.resource.data.status in ['Paid','Active']);
+            && request.resource.data.status in ['Paid','Active'])
+          || isValidOwnerPlanRequest();
         allow update: if isSuperAdmin()
           && request.resource.data.ownerUid == resource.data.ownerUid
           && resource.data.status == 'Pending'
