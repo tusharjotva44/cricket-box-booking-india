@@ -17,6 +17,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Allows the authorized Super Admin to query all nested purchase requests.
+    match /{path=**}/purchaseHistory/{historyId} {
+      allow read: if isSuperAdmin();
+    }
+
     match /owners/{ownerId} {
       allow read: if request.auth != null
         && (request.auth.uid == ownerId || isSuperAdmin());
